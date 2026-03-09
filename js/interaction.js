@@ -165,22 +165,11 @@
         Orbital.resetCamera();
     });
 
-    // Keyboard navigation
+    // Escape to close panel
     window.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && Orbital.focusedPlanet) {
             if (typeof Orbital.closePanels === "function") { Orbital.closePanels(); }
             Orbital.resetCamera();
-            return;
-        }
-        if (Orbital.focusedPlanet || Orbital.isTransitioning) { return; }
-        var panelMap = { "1": "about-panel", "2": "projects-panel", "3": "skills-panel", "4": "contact-panel" };
-        var panelId = panelMap[e.key];
-        if (!panelId) { return; }
-        for (var i = 0; i < Orbital.interactiveBodies.length; i++) {
-            if (Orbital.interactiveBodies[i].userData.panelId === panelId) {
-                Orbital.focusPlanet(Orbital.interactiveBodies[i]);
-                return;
-            }
         }
     });
 }());
