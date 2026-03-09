@@ -5,10 +5,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Charlie Xue</title>
+    <meta name="description"
+        content="Charlie Xue — CS &amp; Statistics student at Cornell. Building AI-powered systems." />
+    <meta property="og:title" content="Charlie Xue" />
+    <meta property="og:description" content="CS &amp; Statistics student at Cornell. Building AI-powered systems." />
+    <meta property="og:type" content="website" />
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23e8e4dc'/></svg>" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -32,10 +39,12 @@
 
             <h2>About</h2>
             <p>
-                Hi, I'm Charlie. I'm a student at Cornell University studying Computer Science and Statistics. Some
-                things I enjoy are rock climbing, skiing, and cooking.
+                Hi, I'm Charlie. I'm a student at Cornell University studying Computer Science and Statistics.
             </p>
             <p class="dim">My current focus is using generative AI to automate complex systems and workflows.</p>
+            <button class="about-contact-btn"
+                onclick="Orbital.focusPlanet(Orbital.interactiveBodies.find(function(b){ return b.userData.panelId === 'contact-panel'; }))">Contact
+                ↗</button>
         </article>
 
         <article class="panel" id="projects-panel">
@@ -43,7 +52,7 @@
             <h2>Projects</h2>
             <div class="project-grid">
                 <div class="project-card">
-                    <img src="images/SkyOps.png" alt="Preview for SkyOps project"
+                    <img src="images/SkyOps.png" alt="Preview for SkyOps project" loading="lazy"
                         style="object-position: left center;" />
                     <div class="project-content">
                         <h3>SkyOps</h3>
@@ -60,7 +69,7 @@
                     </div>
                 </div>
                 <div class="project-card">
-                    <img src="images/Gatekeeper.png" alt="Preview for Gatekeeper project" />
+                    <img src="images/Gatekeeper.png" alt="Preview for Gatekeeper project" loading="lazy" />
                     <div class="project-content">
                         <h3>Gatekeeper</h3>
                         <p>A desktop application that enforces time-based restrictions on applications, supporting
