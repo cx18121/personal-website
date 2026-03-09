@@ -203,6 +203,12 @@
   // Mouse parallax — track normalized cursor position
   var parallaxTarget = { x: 0, y: 0 };
   var parallaxCurrent = { x: 0, y: 0 };
+  Orbital.resetParallax = function () {
+    parallaxCurrent.x = 0;
+    parallaxCurrent.y = 0;
+    parallaxTarget.x = 0;
+    parallaxTarget.y = 0;
+  };
   window.addEventListener(
     "mousemove",
     function (e) {
@@ -244,7 +250,7 @@
     }
 
     // Update orbit trails
-    var hideTrails = reducedMotion || !!Orbital.focusedPlanet;
+    var hideTrails = reducedMotion || !!Orbital.focusedPlanet || Orbital.isTransitioning;
     Orbital.trails.forEach(function (t) {
       t.frame++;
       if (!Orbital.isOrbitPaused && t.frame % 2 === 0) {

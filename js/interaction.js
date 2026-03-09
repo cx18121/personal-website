@@ -96,6 +96,11 @@
       onComplete: function () {
         Orbital.isOrbitPaused = false;
         Orbital.isTransitioning = false;
+        if (Orbital.resetParallax) { Orbital.resetParallax(); }
+        // Clear trail history so they rebuild cleanly from current positions
+        if (Orbital.trails) {
+          Orbital.trails.forEach(function (t) { t.history = []; });
+        }
       },
     });
     gsap.to(currentLookTarget, {
@@ -175,7 +180,7 @@
         .subVectors(Orbital.camera.position, currentLookTarget)
         .normalize();
       var dist = Orbital.camera.position.distanceTo(currentLookTarget);
-      var newDist = Math.max(18, Math.min(120, dist + event.deltaY * 0.08));
+      var newDist = Math.max(18, Math.min(160, dist + event.deltaY * 0.08));
       var newPos = currentLookTarget.clone().addScaledVector(dir, newDist);
       gsap.to(Orbital.camera.position, {
         x: newPos.x,
@@ -187,6 +192,43 @@
     },
     { passive: true },
   );
+
+  // Pinch-to-zoom on touch devices
+  var pinchStartDist = null;
+
+  function getTouchDist(touches) {
+    var dx = touches[0].clientX - touches[1].clientX;
+    var dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  window.addEventListener("touchstart", function (e) {
+    if (e.touches.length === 2 && !Orbital.focusedPlanet) {
+      pinchStartDist = getTouchDist(e.touches);
+    }
+  }, { passive: true });
+
+  window.addEventListener("touchmove", function (e) {
+    if (e.touches.length !== 2 || pinchStartDist === null || Orbital.focusedPlanet) { return; }
+    var newDist = getTouchDist(e.touches);
+    var delta = (pinchStartDist - newDist) * 0.18;
+    pinchStartDist = newDist;
+    var dir = new THREE.Vector3()
+      .subVectors(Orbital.camera.position, currentLookTarget)
+      .normalize();
+    var dist = Orbital.camera.position.distanceTo(currentLookTarget);
+    var newCamDist = Math.max(18, Math.min(160, dist + delta));
+    var newPos = currentLookTarget.clone().addScaledVector(dir, newCamDist);
+    gsap.to(Orbital.camera.position, {
+      x: newPos.x, y: newPos.y, z: newPos.z,
+      duration: 0.12,
+      ease: "none",
+    });
+  }, { passive: true });
+
+  window.addEventListener("touchend", function (e) {
+    if (e.touches.length < 2) { pinchStartDist = null; }
+  }, { passive: true });
 
   backButton.addEventListener("click", function () {
     if (typeof Orbital.closePanels === "function") {

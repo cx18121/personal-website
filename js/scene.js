@@ -29,7 +29,7 @@ window.Orbital = {
     lookAt: new THREE.Vector3(2, -3.5, 0),
   },
   defaultCameraMobile: {
-    position: new THREE.Vector3(20, 14, 24),
+    position: new THREE.Vector3(72, 50, 88),
     lookAt: new THREE.Vector3(1, -3, 0),
   },
   defaultCamera: {
