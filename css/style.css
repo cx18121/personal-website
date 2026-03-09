@@ -165,6 +165,7 @@ canvas {
 
 .panel {
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     position: absolute;
     width: min(640px, 92vw);
     max-height: min(78vh, 680px);
@@ -396,7 +397,7 @@ canvas {
         right: 0.75rem;
         font-size: 0.66rem;
         letter-spacing: 0.08em;
-        padding: 0.48rem 0.66rem;
+        padding: 0.62rem 1rem;
     }
 
     #planet-label {

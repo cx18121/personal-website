@@ -66,7 +66,7 @@
     }
   }, 80);
 
-  // 6. Typewriter — type site name letter by letter after fade begins
+// 6. Typewriter — type site name letter by letter after fade begins
   var siteNameEl = document.querySelector(".site-name");
   var fullText = siteNameEl.textContent;
   if (reducedMotion) {

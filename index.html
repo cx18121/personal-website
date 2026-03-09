@@ -38,7 +38,7 @@
 
     <div id="planet-label"></div>
     <div id="hover-reticle"></div>
-    <button id="back-btn" type="button">Back</button>
+<button id="back-btn" type="button">Back</button>
 
     <section id="panels" aria-live="polite">
       <article class="panel" id="about-panel">
@@ -54,11 +54,13 @@
         <button
           class="about-contact-btn"
           onclick="
+            if (typeof Orbital.closePanels === 'function') { Orbital.closePanels(); }
+            Orbital.focusedPlanet = null;
             Orbital.focusPlanet(
               Orbital.interactiveBodies.find(function (b) {
                 return b.userData.panelId === 'contact-panel';
               }),
-            )
+            );
           "
         >
           Contact ↗
