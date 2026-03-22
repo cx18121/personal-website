@@ -266,6 +266,39 @@ canvas {
     font-weight: 300;
 }
 
+.about-links {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+    flex-wrap: wrap;
+}
+
+.about-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: "Space Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+    text-decoration: none;
+    border: 1px solid rgba(196, 185, 154, 0.28);
+    border-radius: 999px;
+    padding: 0.3rem 0.7rem 0.3rem 0.55rem;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.about-link:hover {
+    background: rgba(196, 185, 154, 0.08);
+    border-color: rgba(196, 185, 154, 0.55);
+}
+
+.about-link svg {
+    flex-shrink: 0;
+    opacity: 0.75;
+}
+
 .about-contact-btn {
     display: inline-block;
     margin-top: 1.1rem;
