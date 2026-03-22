@@ -266,6 +266,87 @@ canvas {
     font-weight: 300;
 }
 
+.about-hero {
+    margin-bottom: 0;
+}
+
+.about-eyebrow {
+    font-family: "Space Mono", monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    margin: 0 0 0.4rem;
+    text-transform: uppercase;
+}
+
+.about-name {
+    font-family: "Space Mono", monospace !important;
+    font-size: clamp(1.9rem, 4.5vw, 2.7rem) !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em !important;
+    text-transform: none !important;
+    margin: 0 0 0.35rem !important;
+    line-height: 1.08 !important;
+}
+
+.about-subtitle {
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 300;
+    color: var(--text-dim);
+    margin: 0 0 0.9rem;
+    line-height: 1.5;
+}
+
+
+.about-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 1.15rem 0 1.05rem;
+}
+
+.about-divider div {
+    flex: 1;
+    height: 1px;
+    background: rgba(196, 185, 154, 0.16);
+}
+
+.about-divider span {
+    font-size: 0.4rem;
+    color: rgba(196, 185, 154, 0.38);
+    letter-spacing: 0;
+    line-height: 1;
+}
+
+
+.about-explore {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.4rem;
+}
+
+.about-explore-btn {
+    flex: 1;
+    font-family: "Space Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+    background: rgba(196, 185, 154, 0.06);
+    border: 1px solid rgba(196, 185, 154, 0.38);
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.about-explore-btn:hover {
+    background: rgba(196, 185, 154, 0.12);
+    border-color: rgba(196, 185, 154, 0.7);
+    box-shadow: 0 0 12px rgba(196, 185, 154, 0.08);
+}
+
 .about-links {
     display: flex;
     gap: 0.6rem;
@@ -277,15 +358,15 @@ canvas {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    font-family: "Space Mono", monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.85rem;
+    font-weight: 300;
+    letter-spacing: 0;
     color: var(--text);
     text-decoration: none;
     border: 1px solid rgba(196, 185, 154, 0.28);
     border-radius: 999px;
-    padding: 0.3rem 0.7rem 0.3rem 0.55rem;
+    padding: 0.3rem 0.75rem 0.3rem 0.6rem;
     transition: background 0.15s ease, border-color 0.15s ease;
 }
 

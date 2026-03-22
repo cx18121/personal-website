@@ -115,7 +115,7 @@
       interactive: true,
       outlineColor: 0xd4c060, // Saturn — pale gold
       radius: 1.1,
-      orbitRadius: 22.5,
+      orbitRadius: 19.5,
       orbitSpeed: 0.072,
       orbitOffset: 5.5,
       tilt: 0.03,

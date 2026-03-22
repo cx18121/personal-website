@@ -128,60 +128,7 @@
     };
   });
 
-  // 2. Comet — occasional visitor arcing through the system
-  var cometMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12, 8, 8),
-    new THREE.MeshBasicMaterial({
-      color: 0xf0ead8,
-      transparent: true,
-      opacity: 0,
-    }),
-  );
-  Orbital.scene.add(cometMesh);
-  var cometTrailLen = 16;
-  var cometTrailBuf = new Float32Array(cometTrailLen * 3);
-  var cometTrailGeo = new THREE.BufferGeometry();
-  cometTrailGeo.setAttribute(
-    "position",
-    new THREE.BufferAttribute(cometTrailBuf, 3),
-  );
-  cometTrailGeo.setDrawRange(0, 0);
-  var cometTrailMat = new THREE.LineBasicMaterial({
-    color: 0xe8dfc8,
-    transparent: true,
-    opacity: 0,
-  });
-  Orbital.scene.add(new THREE.Line(cometTrailGeo, cometTrailMat));
-  var comet = {
-    active: false,
-    progress: 0,
-    duration: 5,
-    start: new THREE.Vector3(),
-    end: new THREE.Vector3(),
-    history: [],
-    nextSpawn: 22,
-  };
-  function spawnComet() {
-    var a = Math.random() * Math.PI * 2;
-    var r = 44;
-    comet.start.set(
-      Math.cos(a) * r,
-      Orbital.systemCenterY + (Math.random() - 0.5) * 22,
-      Math.sin(a) * r,
-    );
-    var b = a + Math.PI + (Math.random() - 0.5) * 1.0;
-    comet.end.set(
-      Math.cos(b) * r,
-      Orbital.systemCenterY + (Math.random() - 0.5) * 22,
-      Math.sin(b) * r,
-    );
-    comet.progress = 0;
-    comet.history = [];
-    comet.duration = 4 + Math.random() * 2.5;
-    comet.active = true;
-  }
-
-  // 3. Planet pulse on hover — track previous hovered body to reset scale
+  // 2. Planet pulse on hover — track previous hovered body to reset scale
   var prevHovered = null;
 
   // Hyperspace warp — star size spike when jumping to a planet
@@ -338,46 +285,7 @@
       reticleEl.classList.remove("visible");
     }
 
-    // Comet animation
-    comet.nextSpawn -= delta;
-    if (
-      !reducedMotion &&
-      !comet.active &&
-      comet.nextSpawn <= 0 &&
-      !Orbital.focusedPlanet
-    ) {
-      spawnComet();
-    }
-    if (comet.active) {
-      comet.progress += delta / comet.duration;
-      var ct = comet.progress;
-      var cOpacity = Math.min(ct * 6, 1) * Math.min((1 - ct) * 6, 1);
-      var cx = comet.start.x + (comet.end.x - comet.start.x) * ct;
-      var cy = comet.start.y + (comet.end.y - comet.start.y) * ct;
-      var cz = comet.start.z + (comet.end.z - comet.start.z) * ct;
-      cometMesh.position.set(cx, cy, cz);
-      cometMesh.material.opacity = cOpacity;
-      comet.history.unshift({ x: cx, y: cy, z: cz });
-      if (comet.history.length > cometTrailLen) {
-        comet.history.pop();
-      }
-      var cn = comet.history.length;
-      for (var ci = 0; ci < cn; ci++) {
-        cometTrailBuf[ci * 3] = comet.history[ci].x;
-        cometTrailBuf[ci * 3 + 1] = comet.history[ci].y;
-        cometTrailBuf[ci * 3 + 2] = comet.history[ci].z;
-      }
-      cometTrailGeo.setDrawRange(0, cn);
-      cometTrailGeo.attributes.position.needsUpdate = true;
-      cometTrailMat.opacity = cOpacity * 0.6;
-      if (comet.progress >= 1) {
-        comet.active = false;
-        cometMesh.material.opacity = 0;
-        cometTrailMat.opacity = 0;
-        cometTrailGeo.setDrawRange(0, 0);
-        comet.nextSpawn = 16 + Math.random() * 20;
-      }
-    }
+
 
     // Planet pulse on hover
     if (!reducedMotion && Orbital.hoveredPlanet && !Orbital.focusedPlanet) {

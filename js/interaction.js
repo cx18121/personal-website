@@ -62,7 +62,7 @@
       x: destination.x,
       y: destination.y,
       z: destination.z,
-      duration: 0.65,
+      duration: 1.4,
       ease: "power2.inOut",
       onComplete: function () {
         if (typeof Orbital.openPanel === "function") {
@@ -74,7 +74,7 @@
       x: worldPos.x,
       y: worldPos.y,
       z: worldPos.z,
-      duration: 0.65,
+      duration: 1.4,
       ease: "power2.inOut",
       onUpdate: function () {
         Orbital.camera.lookAt(currentLookTarget);
@@ -91,7 +91,7 @@
       x: Orbital.defaultCamera.position.x,
       y: Orbital.defaultCamera.position.y,
       z: Orbital.defaultCamera.position.z,
-      duration: 0.65,
+      duration: 1.4,
       ease: "power2.inOut",
       onComplete: function () {
         Orbital.isOrbitPaused = false;
@@ -107,7 +107,7 @@
       x: lookTarget.x,
       y: lookTarget.y,
       z: lookTarget.z,
-      duration: 0.65,
+      duration: 1.4,
       ease: "power2.inOut",
       onUpdate: function () {
         Orbital.camera.lookAt(currentLookTarget);
