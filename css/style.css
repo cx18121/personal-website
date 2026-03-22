@@ -41,81 +41,11 @@ canvas {
 }
 
 #site-identity {
-    display: none;
-}
-
-#hero-card {
     position: fixed;
-    top: clamp(1.2rem, 3vh, 2rem);
-    left: clamp(1.2rem, 3vw, 2rem);
-    width: clamp(240px, 28vw, 360px);
+    top: 1.3rem;
+    left: 1.4rem;
     z-index: 8;
-    padding: clamp(1.1rem, 2.5vw, 1.8rem);
-    background: rgba(8, 8, 11, 0.82);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--panel-border);
-    border-radius: 14px;
     pointer-events: none;
-    transition: opacity 350ms ease;
-}
-
-body:has(#panels.has-open) #hero-card {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.hero-name {
-    margin: 0 0 0.25rem;
-    font-family: "Space Mono", monospace;
-    font-size: clamp(0.85rem, 1.4vw, 1rem);
-    font-weight: 400;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text);
-}
-
-.hero-title {
-    margin: 0 0 0.55rem;
-    font-family: "Space Mono", monospace;
-    font-size: clamp(0.55rem, 0.85vw, 0.65rem);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent);
-}
-
-.hero-bio {
-    margin: 0 0 0.9rem;
-    font-family: "DM Sans", sans-serif;
-    font-size: clamp(0.8rem, 1.1vw, 0.88rem);
-    font-weight: 300;
-    line-height: 1.55;
-    color: var(--text-dim);
-}
-
-.hero-links {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.hero-links a {
-    font-family: "Space Mono", monospace;
-    font-size: 0.62rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text);
-    text-decoration: none;
-    border: 1px solid rgba(196, 185, 154, 0.28);
-    border-radius: 999px;
-    padding: 0.2rem 0.55rem;
-    pointer-events: auto;
-    transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.hero-links a:hover {
-    background: rgba(196, 185, 154, 0.08);
-    border-color: rgba(196, 185, 154, 0.55);
 }
 
 .site-name {

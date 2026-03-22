@@ -66,6 +66,13 @@
     }
   }, 80);
 
+  // Auto-focus sun on load — open about panel after intro settles
+  setTimeout(function () {
+    if (!Orbital.focusedPlanet && typeof Orbital.focusPlanet === 'function') {
+      Orbital.focusPlanet(Orbital.sun);
+    }
+  }, 1800);
+
 // 6. Typewriter — type site name letter by letter after fade begins
   var siteNameEl = document.querySelector(".site-name");
   var fullText = siteNameEl.textContent;
