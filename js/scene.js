@@ -25,15 +25,15 @@ window.Orbital = {
   systemCenterY: -1.15,
   isMobileViewport: false,
   defaultCameraDesktop: {
-    position: new THREE.Vector3(26, 17, 32),
+    position: new THREE.Vector3(21, 13, 25),
     lookAt: new THREE.Vector3(2, -3.5, 0),
   },
   defaultCameraMobile: {
-    position: new THREE.Vector3(72, 50, 88),
+    position: new THREE.Vector3(58, 40, 71),
     lookAt: new THREE.Vector3(1, -3, 0),
   },
   defaultCamera: {
-    position: new THREE.Vector3(26, 17, 32),
+    position: new THREE.Vector3(21, 13, 25),
     lookAt: new THREE.Vector3(2, -3.5, 0),
   },
 };
