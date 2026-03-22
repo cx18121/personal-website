@@ -71,7 +71,7 @@
     if (!Orbital.focusedPlanet && typeof Orbital.focusPlanet === 'function') {
       Orbital.focusPlanet(Orbital.sun);
     }
-  }, 1200);
+  }, 0);
 
 // 6. Typewriter — type site name letter by letter after fade begins
   var siteNameEl = document.querySelector(".site-name");
