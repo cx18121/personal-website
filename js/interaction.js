@@ -237,13 +237,4 @@
     Orbital.resetCamera();
   });
 
-  // Escape to close panel
-  window.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && Orbital.focusedPlanet) {
-      if (typeof Orbital.closePanels === "function") {
-        Orbital.closePanels();
-      }
-      Orbital.resetCamera();
-    }
-  });
 })();

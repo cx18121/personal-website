@@ -103,11 +103,11 @@
       interactive: true,
       outlineColor: 0xc07840, // Jupiter — orange-tan
       radius: 1.35,
-      orbitRadius: 16.5,
+      orbitRadius: 15.5,
       orbitSpeed: 0.1,
       orbitOffset: 4.3,
       tilt: -0.04,
-      focusDistance: 3.8,
+      focusDistance: 6.5,
     },
     {
       name: "Projects",
@@ -127,7 +127,7 @@
       interactive: false,
       outlineColor: 0x70d8d0, // Uranus — pale aqua
       radius: 0.7,
-      orbitRadius: 27.5,
+      orbitRadius: 23.5,
       orbitSpeed: 0.05,
       orbitOffset: 2.9,
       tilt: -0.02,
@@ -137,7 +137,7 @@
       interactive: false,
       outlineColor: 0x2848b0, // Neptune — deep blue
       radius: 0.65,
-      orbitRadius: 32.5,
+      orbitRadius: 27.5,
       orbitSpeed: 0.036,
       orbitOffset: 1.7,
       tilt: 0.01,
@@ -219,7 +219,7 @@
   var beltPos = new Float32Array(beltCount * 3);
   for (var bi = 0; bi < beltCount; bi++) {
     var bAngle = Math.random() * Math.PI * 2;
-    var bR = 13.0 + Math.random() * 2.2;
+    var bR = 13.2 + Math.random() * 1.0;
     beltPos[bi * 3] = Math.cos(bAngle) * bR;
     beltPos[bi * 3 + 1] = Orbital.systemCenterY + (Math.random() - 0.5) * 0.9;
     beltPos[bi * 3 + 2] = Math.sin(bAngle) * bR;

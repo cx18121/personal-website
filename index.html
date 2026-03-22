@@ -132,12 +132,14 @@
         <h2>Projects</h2>
         <div class="project-grid">
           <div class="project-card">
-            <img
-              src="images/SkyOps.png"
-              alt="Preview for SkyOps project"
-              loading="lazy"
-              style="object-position: left center"
-            />
+            <div class="project-img-wrap">
+              <img
+                src="images/SkyOps.png"
+                alt="Preview for SkyOps project"
+                loading="lazy"
+                style="object-position: left center"
+              />
+            </div>
             <div class="project-content">
               <h3>SkyOps</h3>
               <p>
@@ -145,10 +147,7 @@
                 requests from emails and automates flight quoting, routing
                 decisions, and pricing workflows.
               </p>
-              <div class="tags">
-                <span>Typescript</span><span>React</span><span>Next.js</span
-                ><span>Claude Agent SDK</span><span>PostgreSQL</span>
-              </div>
+              <p class="project-tech">TypeScript, React, Next.js, Anthropic API, PostgreSQL</p>
               <div class="project-links">
                 <a
                   href="https://github.com/erics118/skyops"
@@ -166,11 +165,13 @@
             </div>
           </div>
           <div class="project-card">
-            <img
-              src="images/Gatekeeper.png"
-              alt="Preview for Gatekeeper project"
-              loading="lazy"
-            />
+            <div class="project-img-wrap">
+              <img
+                src="images/Gatekeeper.png"
+                alt="Preview for Gatekeeper project"
+                loading="lazy"
+              />
+            </div>
             <div class="project-content">
               <h3>Gatekeeper</h3>
               <p>
@@ -179,10 +180,7 @@
                 monitoring of running processes, and real-time system
                 notifications.
               </p>
-              <div class="tags">
-                <span>Javascript</span><span>Electron</span><span>Node.js</span>
-                <span>Gemini API</span>
-              </div>
+              <p class="project-tech">JavaScript, Electron, Node.js, Gemini API</p>
               <div class="project-links">
                 <a
                   href="https://github.com/cx18121/gatekeeper"
@@ -205,29 +203,17 @@
       <article class="panel" id="skills-panel">
         <h2>Skills</h2>
         <div class="skills-list">
-          <div>
+          <div class="skills-group">
             <h3>Languages</h3>
-            <div class="tags">
-              <span>Java</span><span>Python</span><span>Bash</span
-              ><span>JavaScript</span><span>TypeScript</span><span>SQL</span
-              ><span>R</span><span>Go</span>
-            </div>
+            <p>Java, Python, Bash, JavaScript, TypeScript, SQL, R, Go</p>
           </div>
-          <div>
+          <div class="skills-group">
             <h3>Frameworks &amp; Libraries</h3>
-            <div class="tags">
-              <span>React</span><span>Next.js</span><span>Node.js</span
-              ><span>Flask</span><span>Javalin</span><span>Electron</span
-              ><span>Claude Agent SDK</span><span>Supabase</span>
-            </div>
+            <p>React, Next.js, Node.js, Flask, Javalin, Electron, Anthropic API, Supabase</p>
           </div>
-          <div>
+          <div class="skills-group">
             <h3>Tools</h3>
-            <div class="tags">
-              <span>Git</span><span>GitHub</span><span>Linux</span
-              ><span>Docker</span><span>PostgreSQL</span><span>Redis</span
-              ><span>Ghidra</span>
-            </div>
+            <p>Git, GitHub, Linux, Docker, PostgreSQL, Redis, Ghidra</p>
           </div>
         </div>
       </article>
