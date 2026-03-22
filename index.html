@@ -60,22 +60,20 @@
           My current focus is using generative AI to automate complex systems
           and workflows.
         </p>
-        <button
-          class="about-contact-btn"
-          onclick="
-            if (typeof Orbital.closePanels === 'function') {
-              Orbital.closePanels();
-            }
-            Orbital.focusedPlanet = null;
-            Orbital.focusPlanet(
-              Orbital.interactiveBodies.find(function (b) {
-                return b.userData.panelId === 'contact-panel';
-              }),
-            );
-          "
-        >
-          Contact ↗
-        </button>
+        <div class="contact-list" style="margin-top: 1.2rem;">
+          <a class="contact-row" href="mailto:cx267@cornell.edu">
+            <span class="contact-label">Email</span>
+            <span>cx267@cornell.edu</span>
+          </a>
+          <a class="contact-row" href="https://github.com/cx18121" target="_blank" rel="noreferrer">
+            <span class="contact-label">GitHub</span>
+            <span>/cx18121</span>
+          </a>
+          <a class="contact-row" href="https://www.linkedin.com/in/charles-xue/" target="_blank" rel="noreferrer">
+            <span class="contact-label">LinkedIn</span>
+            <span>/in/charles-xue</span>
+          </a>
+        </div>
       </article>
 
       <article class="panel" id="projects-panel">
@@ -182,33 +180,6 @@
         </div>
       </article>
 
-      <article class="panel" id="contact-panel">
-        <h2>Contact</h2>
-        <div class="contact-list">
-          <a class="contact-row" href="mailto:cx267@cornell.edu">
-            <span class="contact-label">Email</span>
-            <span>cx267@cornell.edu</span>
-          </a>
-          <a
-            class="contact-row"
-            href="https://github.com/cx18121"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span class="contact-label">GitHub</span>
-            <span>/cx18121</span>
-          </a>
-          <a
-            class="contact-row"
-            href="https://www.linkedin.com/in/charles-xue/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span class="contact-label">LinkedIn</span>
-            <span>/in/charles-xue</span>
-          </a>
-        </div>
-      </article>
     </section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

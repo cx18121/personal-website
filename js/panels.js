@@ -25,7 +25,6 @@
     about: document.getElementById("about-panel"),
     projects: document.getElementById("projects-panel"),
     skills: document.getElementById("skills-panel"),
-    contact: document.getElementById("contact-panel"),
   };
 
   Orbital.openPanel = function openPanel(panelId) {

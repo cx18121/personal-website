@@ -78,16 +78,14 @@
       tilt: -0.02,
     },
     {
-      name: "Projects",
-      panelId: "projects-panel",
-      interactive: true,
-      outlineColor: 0x3a6eb5, // Earth — blue
+      name: null,
+      interactive: false,
+      outlineColor: 0x3a6eb5, // Earth — blue (decorative)
       radius: 0.9,
       orbitRadius: 9.2,
       orbitSpeed: 0.22,
       orbitOffset: 0.4,
       tilt: -0.03,
-      focusDistance: 2.8,
     },
     {
       name: null,
@@ -112,8 +110,8 @@
       focusDistance: 3.8,
     },
     {
-      name: "Contact",
-      panelId: "contact-panel",
+      name: "Projects",
+      panelId: "projects-panel",
       interactive: true,
       outlineColor: 0xd4c060, // Saturn — pale gold
       radius: 1.1,
