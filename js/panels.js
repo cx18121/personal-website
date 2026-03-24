@@ -8,12 +8,6 @@
     skills: document.getElementById("skills-panel"),
   };
 
-  var panelTitles = {
-    'about-panel':    'About',
-    'projects-panel': 'Projects',
-    'skills-panel':   'Skills',
-  };
-
   Orbital.openPanel = function openPanel(panelId) {
     Object.keys(Orbital.panelElements).forEach(function (key) {
       Orbital.panelElements[key].classList.remove("open");
@@ -26,7 +20,7 @@
       panel.scrollTop = 0;
     }
     backButton.classList.add("visible");
-    document.title = (panelTitles[panelId] ? panelTitles[panelId] + ' \u2014 ' : '') + 'Charlie Xue';
+    document.title = 'Charlie Xue';
   };
 
   Orbital.closePanels = function closePanels() {
