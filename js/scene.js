@@ -65,7 +65,15 @@ Orbital.applyViewportConfig = function applyViewportConfig() {
   Orbital.camera.position.copy(Orbital.defaultCamera.position);
   Orbital.camera.lookAt(Orbital.defaultCamera.lookAt);
 
-  Orbital.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  // MSAA is redundant on high-DPI screens — the pixel density handles aliasing
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  try {
+    Orbital.renderer = new THREE.WebGLRenderer({ antialias: dpr < 2, alpha: false });
+  } catch (e) {
+    document.getElementById('webgl-error').style.display = 'flex';
+    document.getElementById('intro-overlay').style.display = 'none';
+    throw e;
+  }
   Orbital.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   Orbital.renderer.setSize(window.innerWidth, window.innerHeight);
   root.appendChild(Orbital.renderer.domElement);

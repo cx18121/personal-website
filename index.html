@@ -15,7 +15,7 @@
       gtag("js", new Date());
       gtag("config", "G-8Q43PZ3L42");
     </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Charlie Xue</title>
     <meta
       name="description"
@@ -35,16 +35,26 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/style.css" />
   </head>
 
   <body>
+    <noscript>
+      <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#050508;color:#e8e4dc;font-family:monospace;font-size:0.85rem;letter-spacing:0.1em;text-align:center;padding:2rem;">
+        This site requires JavaScript.
+      </div>
+    </noscript>
+
     <div id="intro-overlay"></div>
 
     <div id="scene-root" aria-hidden="true"></div>
+
+    <div id="webgl-error" aria-live="assertive" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:#050508;color:#6b6760;font-family:monospace;font-size:0.78rem;letter-spacing:0.12em;text-align:center;padding:2rem;z-index:999;">
+      WebGL is not available in this browser.<br>Try Chrome, Firefox, or Safari on a modern device.
+    </div>
 
     <div id="site-identity" aria-hidden="true">
       <div class="site-name">Charlie Xue</div>
@@ -52,12 +62,12 @@
 
     <div id="planet-label"></div>
     <div id="hover-reticle"></div>
+
     <button id="back-btn" type="button">Back</button>
 
     <section id="panels" aria-live="polite">
       <article class="panel" id="about-panel">
         <div class="about-hero">
-          <p class="about-eyebrow">// about</p>
           <h2 class="about-name">Charlie Xue</h2>
           <p class="about-subtitle">
             CS &amp; Stats &nbsp;·&nbsp; Cornell University
@@ -75,8 +85,8 @@
           Interested in the intersection of generative AI and cybersecurity.
         </p>
         <div class="about-explore">
-          <button class="about-explore-btn" onclick="Orbital.closePanels();var b=Orbital.interactiveBodies.find(function(p){return p.userData.panelId==='projects-panel'});if(b)Orbital.focusPlanet(b)">Projects ↗</button>
-          <button class="about-explore-btn" onclick="Orbital.closePanels();var b=Orbital.interactiveBodies.find(function(p){return p.userData.panelId==='skills-panel'});if(b)Orbital.focusPlanet(b)">Skills ↗</button>
+          <button type="button" class="about-explore-btn" onclick="Orbital.closePanels();var b=Orbital.interactiveBodies.find(function(p){return p.userData.panelId==='projects-panel'});if(b)Orbital.focusPlanet(b)">Projects ↗</button>
+          <button type="button" class="about-explore-btn" onclick="Orbital.closePanels();var b=Orbital.interactiveBodies.find(function(p){return p.userData.panelId==='skills-panel'});if(b)Orbital.focusPlanet(b)">Skills ↗</button>
         </div>
         <div class="about-links">
           <a href="mailto:cx267@cornell.edu" class="about-link" title="Email">
@@ -133,19 +143,21 @@
         <div class="project-grid">
           <div class="project-card">
             <div class="project-img-wrap">
-              <img
-                src="images/SkyOps.png"
-                alt="Preview for SkyOps project"
-                loading="lazy"
-                style="object-position: left center"
-              />
+              <picture>
+                <source srcset="images/SkyOps.webp" type="image/webp" />
+                <img
+                  src="images/SkyOps.png"
+                  alt="Preview for SkyOps project"
+                  loading="lazy"
+                  style="object-position: left center"
+                />
+              </picture>
             </div>
             <div class="project-content">
               <h3>SkyOps</h3>
               <p>
-                An AI-powered charter operations platform that parses booking
-                requests from emails and automates flight quoting, routing
-                decisions, and pricing workflows.
+                An AI-powered air charter platform that parses booking requests
+                from emails and automates flight quoting, routing, and pricing.
               </p>
               <p class="project-tech">TypeScript, React, Next.js, Anthropic API, PostgreSQL</p>
               <div class="project-links">
@@ -166,11 +178,15 @@
           </div>
           <div class="project-card">
             <div class="project-img-wrap">
-              <img
-                src="images/Gatekeeper.png"
-                alt="Preview for Gatekeeper project"
-                loading="lazy"
-              />
+              <picture>
+                <source srcset="images/Gatekeeper.webp" type="image/webp" />
+                <img
+                  src="images/Gatekeeper.png"
+                  alt="Preview for Gatekeeper project"
+                  loading="lazy"
+                  style="object-position: center top"
+                />
+              </picture>
             </div>
             <div class="project-content">
               <h3>Gatekeeper</h3>
@@ -205,15 +221,41 @@
         <div class="skills-list">
           <div class="skills-group">
             <h3>Languages</h3>
-            <p>Java, Python, Bash, JavaScript, TypeScript, SQL, R, Go</p>
+            <div class="skill-tags">
+              <span class="skill-tag">Python</span>
+              <span class="skill-tag">TypeScript</span>
+              <span class="skill-tag">JavaScript</span>
+              <span class="skill-tag">Go</span>
+              <span class="skill-tag">Java</span>
+              <span class="skill-tag">SQL</span>
+              <span class="skill-tag">Bash</span>
+              <span class="skill-tag">R</span>
+            </div>
           </div>
           <div class="skills-group">
-            <h3>Frameworks &amp; Libraries</h3>
-            <p>React, Next.js, Node.js, Flask, Javalin, Electron, Anthropic API, Supabase</p>
+            <h3>Frameworks</h3>
+            <div class="skill-tags">
+              <span class="skill-tag">React</span>
+              <span class="skill-tag">Next.js</span>
+              <span class="skill-tag">Node.js</span>
+              <span class="skill-tag">Flask</span>
+              <span class="skill-tag">Electron</span>
+              <span class="skill-tag">Anthropic API</span>
+              <span class="skill-tag">Supabase</span>
+              <span class="skill-tag">Javalin</span>
+            </div>
           </div>
           <div class="skills-group">
             <h3>Tools</h3>
-            <p>Git, GitHub, Linux, Docker, PostgreSQL, Redis, Ghidra</p>
+            <div class="skill-tags">
+              <span class="skill-tag">Git</span>
+              <span class="skill-tag">Docker</span>
+              <span class="skill-tag">Linux</span>
+              <span class="skill-tag">PostgreSQL</span>
+              <span class="skill-tag">Redis</span>
+              <span class="skill-tag">GitHub</span>
+              <span class="skill-tag">Ghidra</span>
+            </div>
           </div>
         </div>
       </article>

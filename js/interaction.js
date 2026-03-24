@@ -26,11 +26,12 @@
   }
 
   Orbital.focusPlanet = function focusPlanet(body) {
-    if (!body || Orbital.focusedPlanet === body) {
+    if (!body || Orbital.focusedPlanet === body || Orbital.isTransitioning) {
       return;
     }
     Orbital.focusedPlanet = body;
     Orbital.isOrbitPaused = true;
+    Orbital.isTransitioning = true;
     if (typeof Orbital.spawnRipple === "function") {
       Orbital.spawnRipple(body);
     }
@@ -65,6 +66,7 @@
       duration: 1.4,
       ease: "power2.inOut",
       onComplete: function () {
+        Orbital.isTransitioning = false;
         if (typeof Orbital.openPanel === "function") {
           Orbital.openPanel(body.userData.panelId);
         }
@@ -130,6 +132,7 @@
   });
 
   function tryFocusFromPointer(event) {
+    if (Orbital.isTransitioning) { return; }
     if (Orbital.focusedPlanet) {
       var openPanel = document.querySelector(".panel.open");
       if (
@@ -170,22 +173,22 @@
   window.addEventListener("pointerup", tryFocusFromPointer);
 
   // Scroll wheel zoom — moves camera along view axis, clamped between near/far limits
+  var _zoomDir = new THREE.Vector3();
+  var _zoomPos = new THREE.Vector3();
   window.addEventListener(
     "wheel",
     function (event) {
       if (Orbital.focusedPlanet) {
         return;
       }
-      var dir = new THREE.Vector3()
-        .subVectors(Orbital.camera.position, currentLookTarget)
-        .normalize();
+      _zoomDir.subVectors(Orbital.camera.position, currentLookTarget).normalize();
       var dist = Orbital.camera.position.distanceTo(currentLookTarget);
       var newDist = Math.max(18, Math.min(160, dist + event.deltaY * 0.08));
-      var newPos = currentLookTarget.clone().addScaledVector(dir, newDist);
+      _zoomPos.copy(currentLookTarget).addScaledVector(_zoomDir, newDist);
       gsap.to(Orbital.camera.position, {
-        x: newPos.x,
-        y: newPos.y,
-        z: newPos.z,
+        x: _zoomPos.x,
+        y: _zoomPos.y,
+        z: _zoomPos.z,
         duration: 0.5,
         ease: "power2.out",
       });
@@ -213,14 +216,12 @@
     var newDist = getTouchDist(e.touches);
     var delta = (pinchStartDist - newDist) * 0.18;
     pinchStartDist = newDist;
-    var dir = new THREE.Vector3()
-      .subVectors(Orbital.camera.position, currentLookTarget)
-      .normalize();
+    _zoomDir.subVectors(Orbital.camera.position, currentLookTarget).normalize();
     var dist = Orbital.camera.position.distanceTo(currentLookTarget);
     var newCamDist = Math.max(18, Math.min(160, dist + delta));
-    var newPos = currentLookTarget.clone().addScaledVector(dir, newCamDist);
+    _zoomPos.copy(currentLookTarget).addScaledVector(_zoomDir, newCamDist);
     gsap.to(Orbital.camera.position, {
-      x: newPos.x, y: newPos.y, z: newPos.z,
+      x: _zoomPos.x, y: _zoomPos.y, z: _zoomPos.z,
       duration: 0.12,
       ease: "none",
     });
