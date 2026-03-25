@@ -1,7 +1,7 @@
 :root {
     --bg: #050508;
     --text: #e8e4dc;
-    --text-dim: #6b6760;
+    --text-dim: #9a9690;
     --accent: #c4b99a;
     --panel-bg: rgba(8, 8, 11, 0.88);
     --panel-border: rgba(196, 185, 154, 0.28);
@@ -321,16 +321,19 @@ canvas {
     font-size: var(--text-secondary);
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--text-dim);
+    color: var(--text);
     background: none;
-    border: none;
-    padding: 0;
+    border: 1px solid rgba(196, 185, 154, 0.25);
+    padding: 0.35em 0.75em;
+    border-radius: 4px;
     cursor: pointer;
-    transition: color 0.18s ease;
+    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
 
 .about-explore-btn:hover {
     color: var(--text);
+    border-color: rgba(196, 185, 154, 0.55);
+    background: rgba(196, 185, 154, 0.06);
 }
 
 .about-explore-btn:active {
@@ -472,7 +475,7 @@ canvas {
 .project-links a {
     font-family: "Space Mono", monospace;
     font-size: var(--text-label);
-    color: var(--text-dim);
+    color: var(--text);
     text-decoration: none;
     border: 1px solid rgba(196, 185, 154, 0.22);
     border-radius: 999px;
@@ -651,7 +654,9 @@ canvas {
 /* Disable hover effects on touch — prevents sticky-hover on tap */
 @media (hover: none) and (pointer: coarse) {
     .about-explore-btn:hover {
-        color: var(--text-dim);
+        color: var(--text);
+        border-color: rgba(196, 185, 154, 0.25);
+        background: none;
     }
     .about-link:hover {
         color: var(--text-dim);
