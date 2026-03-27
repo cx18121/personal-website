@@ -280,6 +280,12 @@
       radius:         data.radius,
     };
 
+    // Set initial position from orbitOffset so interactive planets aren't at origin
+    var initAngle = data.orbitOffset;
+    mesh.position.x = Math.cos(initAngle) * data.orbitRadius;
+    mesh.position.z = Math.sin(initAngle) * data.orbitRadius;
+    mesh.position.y = Orbital.systemCenterY + Math.sin(initAngle * 1.4) * data.tilt;
+
     Orbital.scene.add(mesh);
     Orbital.planets.push(mesh);
     if (data.interactive) {
@@ -310,7 +316,7 @@
     }
     Orbital.planets.forEach(function (planet) {
       var info  = planet.userData;
-      var angle = elapsed * info.orbitSpeed + info.orbitOffset;
+      var angle = elapsed * info.orbitSpeed * 0.2 + info.orbitOffset;
       planet.position.x = Math.cos(angle) * info.orbitRadius;
       planet.position.z = Math.sin(angle) * info.orbitRadius;
       planet.position.y = Orbital.systemCenterY + Math.sin(angle * 1.4) * info.tilt;

@@ -126,17 +126,7 @@
     });
   };
 
-  // Mouse parallax
-  var parallaxTarget  = { x: 0, y: 0 };
-  var parallaxCurrent = { x: 0, y: 0 };
-  Orbital.resetParallax = function () {
-    parallaxCurrent.x = 0; parallaxCurrent.y = 0;
-    parallaxTarget.x  = 0; parallaxTarget.y  = 0;
-  };
-  window.addEventListener("mousemove", function (e) {
-    parallaxTarget.x =  (e.clientX / window.innerWidth  - 0.5) * 2;
-    parallaxTarget.y = -(e.clientY / window.innerHeight - 0.5) * 2;
-  }, { passive: true });
+  Orbital.resetParallax = function () {};
 
   // Click ripples
   Orbital.ripples = [];
@@ -263,18 +253,6 @@
         Orbital.scene.remove(rip.mesh);
         Orbital.ripples.splice(ri, 1);
       }
-    }
-
-    // Mouse parallax
-    if (!Orbital.focusedPlanet && !Orbital.isTransitioning) {
-      parallaxCurrent.x += (parallaxTarget.x - parallaxCurrent.x) * 0.04;
-      parallaxCurrent.y += (parallaxTarget.y - parallaxCurrent.y) * 0.04;
-      var base = Orbital.defaultCamera.lookAt;
-      Orbital.camera.lookAt(
-        base.x + parallaxCurrent.x * 1.8,
-        base.y + parallaxCurrent.y * 0.9,
-        base.z,
-      );
     }
 
     Orbital.renderer.render(Orbital.scene, Orbital.camera);
