@@ -52,18 +52,18 @@
     Type <tspan class="yellow">/help</tspan> to see all commands.
   </text>
   <text x="600" y="238" class="mono fg" font-size="16">
-    Try <tspan class="yellow">/projects</tspan> to see what I've built.
+    Try <tspan class="yellow">/projects</tspan>, or <tspan class="yellow">/about</tspan> to learn more about me.
   </text>
 
   <line x1="600" y1="270" x2="1100" y2="270" stroke="#d97757" stroke-width="1" opacity="0.4"/>
 
   <text x="600" y="310" class="mono orange" font-size="18" font-weight="600">What's new</text>
-  <text x="600" y="350" class="mono fg" font-size="16">Redesigned site as an interactive terminal</text>
+  <text x="600" y="350" class="mono fg" font-size="16">Redesigned this site as an interactive terminal</text>
   <text x="600" y="378" class="mono fg" font-size="16">
     Shipped <tspan class="yellow">/podium</tspan> — ML-powered speech practice
   </text>
   <text x="600" y="406" class="mono fg" font-size="16">
-    Shipped <tspan class="yellow">/philly-vibe-map</tspan> — 1.1M reviews
+    Shipped <tspan class="yellow">/philly-vibe-map</tspan> — vibes from 1.1M yelp reviews
   </text>
 
   <!-- Footer hint -->
