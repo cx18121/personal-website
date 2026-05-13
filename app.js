@@ -843,7 +843,7 @@ async function openReader(adapter, name) {
   );
   document.getElementById('reader-nav').innerHTML = `
     <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(prev.name)}" href="#">← ${escapeHtml(prev.name)}</a>
-    <span class="muted">[← →] navigate · [esc] close</span>
+    <span class="muted kbd-hint">[← →] navigate · [esc] close</span>
     <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(next.name)}" href="#">${escapeHtml(next.name)} →</a>
   `;
 
@@ -1249,6 +1249,14 @@ document.addEventListener('click', (e) => {
     const pv = document.getElementById('photoviewer');
     if (pv && !pv.hidden) closePhotoViewer();
     else closeReader();
+  }
+  if (e.target.id === 'reader-close' || e.target.closest?.('#reader-close')) {
+    e.preventDefault();
+    closeReader();
+  }
+  if (e.target.id === 'photoviewer-close' || e.target.closest?.('#photoviewer-close')) {
+    e.preventDefault();
+    closePhotoViewer();
   }
   const photoBtn = e.target.closest('[data-trav-photos]');
   if (photoBtn) {

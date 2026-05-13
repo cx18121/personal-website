@@ -355,6 +355,31 @@ a:hover {
 .reader-titlebar .muted {
   color: var(--dim);
 }
+.reader-titlebar .right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+/* X button — small on desktop where Esc/click-backdrop are primary, but
+   sized to a proper touch target on mobile (overridden below). */
+.reader-close {
+  all: unset;
+  cursor: pointer;
+  color: var(--dim);
+  font-size: 20px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+.reader-close:hover {
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.05);
+}
+.reader-close:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
 .reader-grid {
   display: grid;
   grid-template-columns: 200px 1fr;
@@ -796,6 +821,21 @@ a:hover {
   }
   body {
     font-size: 14px;
+  }
+  /* Honor iOS safe areas (notch / home-indicator). The footer pads from
+     the bottom inset so the status row never tucks behind the indicator;
+     the prompt also lifts above the inset so the input stays tappable. */
+  .footer {
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  .promptouter {
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px) * 0.4);
+  }
+  /* iOS Safari auto-zooms inputs whose computed font-size is <16px on
+     focus. The 13px terminal font reads fine elsewhere, but the prompt
+     input must be 16px+ to suppress that zoom. */
+  .promptbox input {
+    font-size: 16px;
   }
   .scrollarea {
     overflow: visible;
@@ -1239,8 +1279,19 @@ button:focus-visible,
     border-radius: 8px;
   }
   .reader-titlebar {
-    padding: 10px 14px;
+    padding: 8px 8px 8px 14px;
     font-size: 11px;
+  }
+  /* Bump to a 44px hit target on touch; the visible glyph stays at the
+     same weight, the padding does the work. */
+  .reader-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    padding: 0;
   }
   .reader-grid {
     grid-template-columns: 1fr;
@@ -1253,10 +1304,13 @@ button:focus-visible,
     padding-right: 0;
     padding-bottom: 14px;
     position: static;
-    /* Travel sidebar can have many entries; cap height so it doesn't push
-       the body too far down. */
-    max-height: 30vh;
-    overflow-y: auto;
+    /* Desktop sets align-self:start so the sticky sidebar can hug the
+       top. In the mobile single-column grid that — combined with
+       overflow:auto's implicit min-height:0 — collapses the row to ~0px
+       and lets the side render *on top of* the body. Reset on mobile and
+       let the side flow naturally; the whole reader scrolls, so we don't
+       need an inner scroll container here. */
+    align-self: auto;
   }
   .reader-body {
     font-size: 15px;
@@ -1337,5 +1391,52 @@ button:focus-visible,
   .photoviewer-thumb {
     width: 40px;
     height: 40px;
+  }
+  /* Keyboard-only hints ("[← →] navigate · [esc] close") are noise on
+     touch — the visible × close and ‹ › arrows do the job. Hide them and
+     let the visible affordances breathe. */
+  .kbd-hint {
+    display: none;
+  }
+  /* Reader-nav becomes 2-up (prev/next) with the center hint hidden. */
+  .reader-nav {
+    grid-template-columns: 1fr 1fr;
+  }
+  .reader-nav > :nth-child(3) {
+    grid-column: 2;
+  }
+  /* Larger AC item rows on touch — 13px → 15px line-height + padding lands
+     at ~44px tall. */
+  .autocomplete .item {
+    padding: 10px 14px;
+    gap: 12px;
+  }
+  .autocomplete .item .cmd {
+    min-width: 96px;
+  }
+  /* Travel sidebar nav items: already padded for touch; make sure groups
+     aren't squashed when the side becomes a single column. */
+  .reader-side .trav-group {
+    margin-top: 14px;
+  }
+}
+
+/* Below the iPhone-SE width: shrink the welcome panel a touch so it
+   doesn't dominate the first screen. */
+@media (max-width: 380px) {
+  .welcome {
+    padding: 14px 14px 16px;
+  }
+  .welcome .mascot {
+    font-size: 12px;
+  }
+  .welcomewrap,
+  .topline,
+  .echoline,
+  .main,
+  .promptouter,
+  .footer {
+    padding-left: 10px;
+    padding-right: 10px;
   }
 }

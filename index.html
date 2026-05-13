@@ -181,12 +181,20 @@
             <span class="cmd" id="photoviewer-cmd">/travels</span> ·
             photos</span
           >
-          <span class="right"
-            ><span class="muted"
-              ><span id="photoviewer-count">1 / 1</span> · ← → navigate ·
-              [esc] close</span
-            ></span
-          >
+          <span class="right">
+            <span class="muted"
+              ><span id="photoviewer-count">1 / 1</span
+              ><span class="kbd-hint"> · ← → navigate · [esc] close</span></span
+            >
+            <button
+              class="reader-close"
+              id="photoviewer-close"
+              type="button"
+              aria-label="close photo viewer"
+            >
+              ×
+            </button>
+          </span>
         </div>
         <div class="photoviewer-stage" id="photoviewer-stage">
           <button
@@ -221,9 +229,17 @@
             ><span class="chev">›</span>
             <span class="cmd" id="reader-cmd">/open</span></span
           >
-          <span class="right"
-            ><span class="muted" id="reader-count">— of —</span></span
-          >
+          <span class="right">
+            <span class="muted" id="reader-count">— of —</span>
+            <button
+              class="reader-close"
+              id="reader-close"
+              type="button"
+              aria-label="close"
+            >
+              ×
+            </button>
+          </span>
         </div>
         <div class="reader-grid">
           <aside class="reader-side" id="reader-side"></aside>
