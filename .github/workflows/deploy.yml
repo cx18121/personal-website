@@ -1,0 +1,59 @@
+name: deploy
+
+# Builds and deploys the site to GitHub Pages on every push to main.
+# Generates version.json from git history (no client-side GitHub API fetch,
+# no auto-commit back to main). The artifact uploaded to Pages includes
+# version.json alongside the static files.
+#
+# Requires repo Pages source to be set to "GitHub Actions" (Settings → Pages).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version.json
+        run: |
+          MONTH_START=$(date -u +%Y-%m-01)
+          COUNT=$(git rev-list --count --since="$MONTH_START" HEAD)
+          YEAR=$(date -u +%Y)
+          MONTH=$(date -u +%-m)
+          MAJOR=$((YEAR - 2026))
+          VER="v${MAJOR}.${MONTH}.${COUNT}"
+          SHA=$(git rev-parse --short HEAD)
+          DATE=$(git log -1 --format=%cI)
+          printf '{"ver":"%s","sha":"%s","date":"%s"}\n' "$VER" "$SHA" "$DATE" > version.json
+          cat version.json
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -2,18 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8Q43PZ3L42"></script>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-8Q43PZ3L42"
+    ></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag() { dataLayer.push(arguments); }
-      gtag("js", new Date());
-      gtag("config", "G-8Q43PZ3L42");
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', 'G-8Q43PZ3L42');
     </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>Charlie Xue</title>
-    <meta name="description" content="Charlie Xue — CS & Statistics student at Cornell. Building AI-powered systems." />
+    <meta
+      name="description"
+      content="Charlie Xue — CS & Statistics student at Cornell. Building AI-powered systems."
+    />
     <meta property="og:title" content="Charlie Xue" />
-    <meta property="og:description" content="CS & Statistics student at Cornell. Building AI-powered systems." />
+    <meta
+      property="og:description"
+      content="CS & Statistics student at Cornell. Building AI-powered systems."
+    />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://charliexue.com/" />
     <meta property="og:image" content="https://charliexue.com/og.png" />
@@ -21,581 +35,268 @@
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Charlie Xue" />
-    <meta name="twitter:description" content="CS & Statistics student at Cornell. Building AI-powered systems." />
+    <meta
+      name="twitter:description"
+      content="CS & Statistics student at Cornell. Building AI-powered systems."
+    />
     <meta name="twitter:image" content="https://charliexue.com/og.png" />
     <link rel="canonical" href="https://charliexue.com/" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23d97757'/></svg>" />
-    <style>
-      :root {
-        --bg: #1a1a1a;
-        --orange: #d97757;
-        --orange-dim: #c46d4f;
-        --fg: #e5e2dd;
-        --dim: #7a7670;
-        --mute: #5c5852;
-        --violet: #b08ad6;
-        --cyan: #6fb1bc;
-        --pink: #d36a8c;
-        --yellow: #c9a96e;
-        --red: #d96363;
-      }
-      * { box-sizing: border-box; }
-      html, body {
-        margin: 0; padding: 0;
-        background: var(--bg); color: var(--fg);
-        font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
-        font-size: 13px; line-height: 1.5;
-      }
-      html, body { height: 100%; overflow: hidden; }
-      body { display: flex; flex-direction: column; }
-      .scrollarea { flex: 1; overflow-y: auto; min-height: 0; }
-
-      .topline { padding: 8px 18px 2px; font-size: 13px; }
-      .topline .cwd { color: var(--violet); }
-      .topline .branch { color: var(--cyan); }
-      .topline .dirty { color: var(--pink); }
-      .echoline { padding: 0 18px 8px; }
-      .echoline .chev { color: var(--orange); }
-      .echoline .cmd { color: var(--yellow); }
-
-      .welcomewrap { padding: 0 16px 10px; }
-      .welcome {
-        position: relative;
-        border: 1px solid var(--orange); border-radius: 8px;
-        padding: 16px 20px 18px;
-        display: grid;
-        grid-template-columns: minmax(280px, 360px) 1px 1fr;
-        gap: 22px;
-        background: var(--bg);
-      }
-      .welcome .title {
-        position: absolute; top: -10px; left: 18px;
-        background: var(--bg); padding: 0 8px;
-        color: var(--orange); font-weight: 600; font-size: 12px;
-      }
-      .welcome .left { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-      .welcome .greet { font-weight: 600; margin-bottom: 4px; }
-      .welcome .mascot {
-        color: var(--orange); line-height: 1; white-space: pre;
-        font-size: 14px; margin: 4px 0 10px;
-      }
-      .welcome .meta { text-align: center; line-height: 1.55; }
-      .welcome .meta .dim { color: var(--dim); }
-      .welcome .divider { background: var(--orange); opacity: .55; width: 1px; }
-      .welcome .right { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-      .welcome .right h3 { margin: 0; color: var(--orange); font-weight: 600; font-size: 13px; }
-      .welcome .right .hr { border-top: 1px solid var(--orange); opacity: .4; margin: 4px 0; }
-      .welcome .right .body { line-height: 1.55; white-space: pre-wrap; }
-      .welcome .right .body em { color: var(--dim); font-style: italic; }
-      .welcome .right .body .cmd { color: var(--yellow); }
-
-      .main { padding: 0 18px; white-space: pre-wrap; flex: 1; }
-      .main .echo { color: var(--orange); margin-top: 10px; }
-      .main .echo .slash { color: var(--yellow); }
-      .main .block {
-        margin: 4px 0 6px; padding-left: 14px;
-        border-left: 1px solid var(--mute); line-height: 1.55;
-      }
-      .muted { color: var(--dim); }
-      .ok { color: var(--orange); }
-      .warn { color: var(--red); }
-      .key { color: var(--yellow); }
-      a { color: var(--cyan); text-decoration: none; }
-      a:hover { text-decoration: underline; }
-
-      .promptouter { padding: 8px 16px 4px; position: relative; background: var(--bg); }
-      .promptbox {
-        border: 1px solid var(--mute); border-radius: 8px;
-        padding: 10px 14px; display: flex; align-items: center; gap: 10px;
-        background: var(--bg);
-      }
-      .promptbox.focused { border-color: var(--orange); }
-      .promptbox .chev { color: var(--orange); }
-      .promptbox input {
-        flex: 1; background: transparent; border: none; outline: none;
-        color: var(--fg); font: inherit; caret-color: var(--orange);
-      }
-      .promptbox input::placeholder { color: var(--mute); }
-      .autocomplete {
-        position: fixed;
-        background: var(--bg); border: 1px solid var(--orange); border-radius: 8px;
-        overflow-y: auto; overscroll-behavior: contain;
-        display: none; z-index: 100;
-      }
-      .autocomplete.show { display: block; }
-      .autocomplete .item {
-        padding: 6px 14px; cursor: pointer;
-        display: flex; gap: 14px; align-items: baseline;
-      }
-      .autocomplete .item.active { background: rgba(217,119,87,.15); }
-      .autocomplete .item .cmd { color: var(--yellow); min-width: 110px; }
-      .autocomplete .item .desc { color: var(--dim); font-size: 12px; }
-
-      .footer {
-        padding: 6px 18px 14px; font-size: 12px;
-        display: flex; flex-direction: column; gap: 3px;
-      }
-      .footer .statusrow { display: flex; align-items: center; gap: 0; }
-      .footer .statusrow .clock-block { margin-left: auto; color: var(--dim); }
-      .footer .statusrow .clock-block .moon  { color: var(--cyan); }
-      .footer .statusrow .clock-block .mode  { color: var(--dim); }
-      .footer .statusrow .clock-block .time  { color: var(--yellow); }
-      .footer .statusrow .pill { color: var(--yellow); }
-      .footer .statusrow .sep { color: var(--mute); padding: 0 6px; }
-      .footer .statusrow .arrow { color: var(--orange); }
-      .footer .statusrow .repo { color: var(--violet); }
-      .footer .statusrow .handle { color: var(--cyan); }
-      .footer .perms { color: var(--pink); }
-      .footer .perms .arrows { color: var(--orange); }
-      .footer .perms .on { color: var(--pink); font-weight: 600; }
-      .footer .perms .hint { color: var(--dim); }
-
-      .sr-only {
-        position: absolute; width: 1px; height: 1px; padding: 0;
-        margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
-        white-space: nowrap; border: 0;
-      }
-    </style>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23d97757'/></svg>"
+    />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="scrollarea" id="scrollarea">
-    <div class="topline">
-      <span class="cwd">personal-website</span> <span class="branch">main</span><span class="dirty">*</span>
-    </div>
-    <div class="echoline">
-      <span class="chev">›</span> <span class="cmd">charlie</span>
-    </div>
+      <div class="topline">
+        <span class="cwd">personal-website</span>
+        <span class="branch">main</span><span class="dirty">*</span>
+      </div>
+      <div class="echoline">
+        <span class="chev">›</span> <span class="cmd">charlie</span>
+      </div>
 
-    <div class="welcomewrap">
-      <div class="welcome">
-        <div class="title">─ charlie.xue v0.1.0 ─</div>
-        <div class="left">
-          <div class="greet">Welcome to my site!</div>
-<div class="mascot">    ▄▄▄▄▄▄▄
-   █ ◕   ◕ █
-   █   ▽   █
-    ▀▀▀▀▀▀▀</div>
-          <div class="meta">
-            cs &amp; statistics @ cornell<br>
-            <span class="dim">building ai-powered systems</span><br>
-            <span class="dim">~/personal-website</span>
+      <div class="welcomewrap">
+        <div class="welcome">
+          <div class="title">─ charlie.xue ─</div>
+          <div class="left">
+            <div class="greet">Welcome to my site!</div>
+            <div class="mascot" aria-hidden="true">
+              ▄▄▄▄▄▄▄<br />
+              █ ◕ ◕ █<br />
+              █ ▽ █<br />
+              ▀▀▀▀▀▀▀
+            </div>
+            <div class="meta">
+              cs &amp; statistics @ cornell<br />
+              <span class="dim">building ai-powered systems</span><br />
+              <span class="dim">~/personal-website</span>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="right">
+            <h3>Tips for getting started</h3>
+            <div class="body">
+              <div>
+                Type <span class="cmd">/help</span> to see all commands.
+              </div>
+              <div>
+                Try <span class="cmd">/projects</span> to see what I've built,
+                or <span class="cmd">/about</span> to learn more about me.
+              </div>
+            </div>
+            <div class="hr"></div>
+            <h3>What's new</h3>
+            <div class="body" id="whats-new"></div>
           </div>
         </div>
-        <div class="divider"></div>
-        <div class="right">
-          <h3>Tips for getting started</h3>
-          <div class="body">Type <span class="cmd">/help</span> to see all commands.
-Try <span class="cmd">/projects</span> to see what I've built, or <span class="cmd">/about</span> to learn more about me.</div>
-          <div class="hr"></div>
-          <h3>What's new</h3>
-<div class="body">Redesigned this site as an interactive terminal
-Shipped <span class="cmd">/podium</span> — ML-powered speech practice
-Shipped <span class="cmd">/philly-vibe-map</span> — neighborhood vibes from 1.1M reviews</div>
+      </div>
+
+      <div class="main" id="main"></div>
+
+      <div class="promptouter">
+        <div class="promptbox" id="promptbox">
+          <span class="chev">›</span>
+          <input
+            id="input"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            aria-label="Command input, type slash for available commands"
+            placeholder="try /help, or type / for commands"
+          />
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="statusrow">
+          <span class="handle">charliexue.com</span>
+          <span class="sep">│</span>
+          <span class="repo">personal-website</span>
+          <span class="clock-block">
+            <span class="moon">◐</span> <span class="mode" id="mode">ithaca</span> ·
+            <span class="time" id="clock">—</span>
+          </span>
+        </div>
+        <div class="perms">
+          <span class="arrows">»</span> theme:
+          <span class="on" id="theme-name">classic</span>
+          <span class="hint">(type /theme to change)</span>
         </div>
       </div>
     </div>
-
-    <div class="main" id="main"></div>
-
-    <div class="promptouter">
-      <div class="promptbox" id="promptbox">
-        <span class="chev">›</span>
-        <input id="input" autocomplete="off" autocapitalize="off" spellcheck="false"
-               placeholder="try /help, or type / for commands" />
-      </div>
-    </div>
-
-    <div class="footer">
-      <div class="statusrow">
-        <span class="arrow">↑</span> <span class="pill">/help</span>
-        <span class="sep">│</span>
-        <span class="handle">@cx18121</span>
-        <span class="sep">│</span>
-        <span class="repo">personal-website</span>
-        <span class="clock-block">
-          <span class="moon">◐</span> <span class="mode">ithaca</span> · <span class="time" id="clock">—</span>
-        </span>
-      </div>
-      <div class="perms">
-        <span class="arrows">»</span> theme: <span class="on" id="theme-name">classic</span>
-        <span class="hint">(type /theme to cycle)</span>
-      </div>
-    </div>
-    </div><!-- /scrollarea -->
+    <!-- /scrollarea -->
 
     <div class="autocomplete" id="ac"></div>
 
+    <div class="photoviewer" id="photoviewer" hidden>
+      <div class="reader-backdrop"></div>
+      <div class="reader-window photoviewer-window">
+        <div class="reader-titlebar">
+          <span class="left"
+            ><span class="chev">›</span>
+            <span class="cmd" id="photoviewer-cmd">/travels</span> ·
+            photos</span
+          >
+          <span class="right"
+            ><span class="muted"
+              ><span id="photoviewer-count">1 / 1</span> · ← → navigate ·
+              [esc] close</span
+            ></span
+          >
+        </div>
+        <div class="photoviewer-stage" id="photoviewer-stage">
+          <button
+            class="photoviewer-arrow l"
+            id="photoviewer-prev"
+            aria-label="previous photo"
+          >
+            ‹
+          </button>
+          <img class="photoviewer-photo" id="photoviewer-img" alt="" />
+          <button
+            class="photoviewer-arrow r"
+            id="photoviewer-next"
+            aria-label="next photo"
+          >
+            ›
+          </button>
+        </div>
+        <div class="photoviewer-caption">
+          <span id="photoviewer-caption-text"></span>
+          <span class="muted" id="photoviewer-caption-meta"></span>
+        </div>
+        <div class="photoviewer-thumbs" id="photoviewer-thumbs"></div>
+      </div>
+    </div>
+
+    <div class="reader" id="reader" hidden>
+      <div class="reader-backdrop"></div>
+      <div class="reader-window">
+        <div class="reader-titlebar">
+          <span class="left"
+            ><span class="chev">›</span>
+            <span class="cmd" id="reader-cmd">/open</span></span
+          >
+          <span class="right"
+            ><span class="muted" id="reader-count">— of —</span></span
+          >
+        </div>
+        <div class="reader-grid">
+          <aside class="reader-side" id="reader-side"></aside>
+          <div class="reader-body" id="reader-body"></div>
+        </div>
+        <div class="reader-nav" id="reader-nav"></div>
+      </div>
+    </div>
+
     <section class="sr-only" aria-label="content">
       <h1>Charlie Xue — CS &amp; Statistics @ Cornell</h1>
-      <p>Personal site of Charlie Xue, CS &amp; Statistics student at Cornell University. Builds full-stack AI applications and ML systems. Currently focused on building for early-stage startups. Email: cx267@cornell.edu. GitHub: github.com/cx18121. LinkedIn: linkedin.com/in/charles-xue.</p>
+      <p>
+        Personal site of Charlie Xue, CS &amp; Statistics student at Cornell
+        University. Builds full-stack AI applications and ML systems. Currently
+        focused on building for early-stage startups. Email: cx267@cornell.edu.
+        GitHub: github.com/cx18121. LinkedIn: linkedin.com/in/charles-xue.
+      </p>
       <h2>About</h2>
-      <p>I build full-stack AI applications and ML systems. Currently focused on building for early-stage startups.</p>
+      <p>
+        I build full-stack AI applications and ML systems. Currently focused on
+        building for early-stage startups.
+      </p>
       <h2>Projects</h2>
-      <article><h3>Podium</h3><p>An ML-powered speech practice app that uses MediaPipe and Whisper to analyze webcam and audio inputs, delivering real-time feedback on delivery, posture, and pronunciation. Stack: TypeScript, React, MediaPipe, Whisper.wasm, IndexedDB.</p></article>
-      <article><h3>Philly Vibe Map</h3><p>Interactive map of Philadelphia neighborhoods colored by dominant vibe, derived from NLP analysis of 1.1M Yelp reviews, with a temporal slider showing character shifts year-over-year. Stack: Python, TypeScript, React, FastAPI, BERTopic, sentence-transformers, MapLibre GL.</p></article>
-      <article><h3>CVE Intel</h3><p>Natural language search and analysis engine for CVE data, using pgvector semantic search and Claude AI to query and synthesize vulnerability intelligence. Stack: Python, TypeScript, Next.js, FastAPI, PostgreSQL, pgvector, Anthropic API.</p></article>
-      <article><h3>CourseMap</h3><p>Syncs Canvas assignments and school calendar events into Google Calendar, automatically organized by course and event type using Claude for AI-assisted classification. Stack: TypeScript, Next.js, PostgreSQL, Drizzle ORM, Anthropic API, Google Calendar API.</p></article>
-      <article><h3>Auto Shorts</h3><p>Automated pipeline that scrapes Reddit posts and tweets, narrates them via ElevenLabs TTS, and assembles and publishes YouTube Shorts and Instagram Reels with subtitle overlays. Stack: Python, Anthropic API, ElevenLabs, FFmpeg, YouTube API, Instagram Graph API.</p></article>
-      <article><h3>VulnScan</h3><p>CLI tool that analyzes Python source files for security vulnerabilities using AST analysis, with AI-powered fix suggestions via the Claude API. Stack: Python, Anthropic API.</p></article>
-      <article><h3>SkyOps</h3><p>AI-powered air charter platform that parses booking requests from emails and automates flight quoting, routing, and pricing. Stack: TypeScript, React, Next.js, Anthropic API, PostgreSQL.</p></article>
-      <article><h3>Gatekeeper</h3><p>Desktop application that enforces time-based restrictions on applications, supporting per-app daily usage limits, automatic monitoring of running processes, and real-time system notifications. Stack: JavaScript, Electron, Node.js, Gemini API.</p></article>
+      <article>
+        <h3>Podium</h3>
+        <p>
+          An ML-powered speech practice app that uses MediaPipe and Whisper to
+          analyze webcam and audio inputs, delivering real-time feedback on
+          delivery, posture, and pronunciation. Stack: TypeScript, React,
+          MediaPipe, Whisper.wasm, IndexedDB.
+        </p>
+      </article>
+      <article>
+        <h3>Philly Vibe Map</h3>
+        <p>
+          Interactive map of Philadelphia neighborhoods colored by dominant
+          vibe, derived from NLP analysis of 1.1M Yelp reviews, with a temporal
+          slider showing character shifts year-over-year. Stack: Python,
+          TypeScript, React, FastAPI, BERTopic, sentence-transformers, MapLibre
+          GL.
+        </p>
+      </article>
+      <article>
+        <h3>CVE Intel</h3>
+        <p>
+          Natural language search and analysis engine for CVE data, using
+          pgvector semantic search and Claude AI to query and synthesize
+          vulnerability intelligence. Stack: Python, TypeScript, Next.js,
+          FastAPI, PostgreSQL, pgvector, Anthropic API.
+        </p>
+      </article>
+      <article>
+        <h3>CourseMap</h3>
+        <p>
+          Syncs Canvas assignments and school calendar events into Google
+          Calendar, automatically organized by course and event type using
+          Claude for AI-assisted classification. Stack: TypeScript, Next.js,
+          PostgreSQL, Drizzle ORM, Anthropic API, Google Calendar API.
+        </p>
+      </article>
+      <article>
+        <h3>Auto Shorts</h3>
+        <p>
+          Automated pipeline that scrapes Reddit posts and tweets, narrates them
+          via ElevenLabs TTS, and assembles and publishes YouTube Shorts and
+          Instagram Reels with subtitle overlays. Stack: Python, Anthropic API,
+          ElevenLabs, FFmpeg, YouTube API, Instagram Graph API.
+        </p>
+      </article>
+      <article>
+        <h3>VulnScan</h3>
+        <p>
+          CLI tool that analyzes Python source files for security
+          vulnerabilities using AST analysis, with AI-powered fix suggestions
+          via the Claude API. Stack: Python, Anthropic API.
+        </p>
+      </article>
+      <article>
+        <h3>SkyOps</h3>
+        <p>
+          AI-powered air charter platform that parses booking requests from
+          emails and automates flight quoting, routing, and pricing. Stack:
+          TypeScript, React, Next.js, Anthropic API, PostgreSQL.
+        </p>
+      </article>
+      <article>
+        <h3>Gatekeeper</h3>
+        <p>
+          Desktop application that enforces time-based restrictions on
+          applications, supporting per-app daily usage limits, automatic
+          monitoring of running processes, and real-time system notifications.
+          Stack: JavaScript, Electron, Node.js, Gemini API.
+        </p>
+      </article>
       <h2>Skills</h2>
-      <p>Languages: Python, TypeScript, JavaScript, Go, Java, SQL, Bash, R. AI/ML: Whisper, MediaPipe, BERTopic, sentence-transformers, pgvector. Frameworks: React, Next.js, Node.js, FastAPI, Electron, Supabase. Tools: Git, Docker, Linux, PostgreSQL, Redis, GitHub.</p>
+      <p>
+        Languages: Python, TypeScript, JavaScript, Go, Java, SQL, Bash, R.
+        AI/ML: Whisper, MediaPipe, BERTopic, sentence-transformers, pgvector.
+        Frameworks: React, Next.js, Node.js, FastAPI, Electron, Supabase. Tools:
+        Git, Docker, Linux, PostgreSQL, Redis, GitHub.
+      </p>
       <h2>Contact</h2>
-      <p>Email: cx267@cornell.edu. GitHub: github.com/cx18121. LinkedIn: linkedin.com/in/charles-xue.</p>
+      <p>
+        Email: cx267@cornell.edu. GitHub: github.com/cx18121. LinkedIn:
+        linkedin.com/in/charles-xue.
+      </p>
     </section>
 
-<script>
-const PROJECTS = [
-  { name: "podium", tagline: "ml-powered speech practice", status: "live",
-    stack: "typescript · react · mediapipe · whisper.wasm · indexeddb",
-    body: `An ML-powered speech practice app that uses MediaPipe and Whisper to analyze webcam and audio inputs, delivering real-time feedback on delivery, posture, and pronunciation.
-
-live    <a href="https://podium-speech-practice.vercel.app/" target="_blank" rel="noreferrer">podium-speech-practice.vercel.app</a>
-repo    <a href="https://github.com/cx18121/podium" target="_blank" rel="noreferrer">github.com/cx18121/podium</a>` },
-  { name: "philly-vibe-map", tagline: "neighborhood vibes from 1.1M yelp reviews", status: "live",
-    stack: "python · typescript · react · fastapi · bertopic · maplibre gl",
-    body: `An interactive map of Philadelphia neighborhoods colored by dominant vibe, derived from NLP analysis of 1.1M Yelp reviews — with a temporal slider showing character shifts year-over-year.
-
-live    <a href="https://philly-vibe-map.vercel.app" target="_blank" rel="noreferrer">philly-vibe-map.vercel.app</a>
-repo    <a href="https://github.com/cx18121/philly-vibe-map" target="_blank" rel="noreferrer">github.com/cx18121/philly-vibe-map</a>` },
-  { name: "cve-intel", tagline: "semantic search for vulnerability data", status: "live",
-    stack: "python · typescript · next.js · fastapi · pgvector · anthropic api",
-    body: `A natural language search and analysis engine for CVE data, using pgvector semantic search and Claude AI to query and synthesize vulnerability intelligence.
-
-live    <a href="https://cve-intel.vercel.app" target="_blank" rel="noreferrer">cve-intel.vercel.app</a>
-repo    <a href="https://github.com/cx18121/cve-intel" target="_blank" rel="noreferrer">github.com/cx18121/cve-intel</a>` },
-  { name: "coursemap", tagline: "canvas → google calendar, auto-organized by claude", status: "live",
-    stack: "typescript · next.js · postgres · drizzle · anthropic api · google calendar api",
-    body: `Syncs Canvas assignments and school calendar events into Google Calendar, automatically organized by course and event type using Claude for AI-assisted classification.
-
-live    <a href="https://coursemap-calendar-tracker.vercel.app" target="_blank" rel="noreferrer">coursemap-calendar-tracker.vercel.app</a>
-repo    <a href="https://github.com/cx18121/coursemap" target="_blank" rel="noreferrer">github.com/cx18121/coursemap</a>` },
-  { name: "auto-shorts", tagline: "reddit & tweets → youtube shorts pipeline", status: "live",
-    stack: "python · anthropic api · elevenlabs · ffmpeg · youtube api · instagram graph api",
-    body: `An automated pipeline that scrapes Reddit posts and tweets, narrates them via ElevenLabs TTS, and assembles and publishes YouTube Shorts and Instagram Reels with subtitle overlays.
-
-repo    <a href="https://github.com/cx18121/auto-shorts" target="_blank" rel="noreferrer">github.com/cx18121/auto-shorts</a>` },
-  { name: "vulnscan", tagline: "AST-based python vuln scanner w/ claude fixes", status: "live",
-    stack: "python · anthropic api",
-    body: `A CLI tool that analyzes Python source files for security vulnerabilities using AST analysis, with AI-powered fix suggestions via the Claude API.
-
-repo    <a href="https://github.com/cx18121/vulnscan" target="_blank" rel="noreferrer">github.com/cx18121/vulnscan</a>` },
-  { name: "skyops", tagline: "ai air-charter ops platform", status: "live",
-    stack: "typescript · react · next.js · anthropic api · postgres",
-    body: `An AI-powered air charter platform that parses booking requests from emails and automates flight quoting, routing, and pricing.
-
-live    <a href="https://skyops-ai.vercel.app/dashboard" target="_blank" rel="noreferrer">skyops-ai.vercel.app</a>
-repo    <a href="https://github.com/erics118/skyops" target="_blank" rel="noreferrer">github.com/erics118/skyops</a>` },
-  { name: "gatekeeper", tagline: "time-based app usage limits, desktop", status: "live",
-    stack: "javascript · electron · node.js · gemini api",
-    body: `A desktop application that enforces time-based restrictions on applications, supporting per-app daily usage limits, automatic monitoring of running processes, and real-time system notifications.
-
-repo    <a href="https://github.com/cx18121/gatekeeper" target="_blank" rel="noreferrer">github.com/cx18121/gatekeeper</a>
-release <a href="https://github.com/cx18121/gatekeeper/releases/tag/v0.1.0" target="_blank" rel="noreferrer">v0.1.0</a>` },
-];
-
-const SKILLS = {
-  "languages":  ["python", "typescript", "javascript", "go", "java", "sql", "bash", "r"],
-  "ai / ml":    ["whisper", "mediapipe", "bertopic", "sentence-transformers", "pgvector"],
-  "frameworks": ["react", "next.js", "node.js", "fastapi", "electron", "supabase"],
-  "tools":      ["git", "docker", "linux", "postgres", "redis", "github"],
-};
-
-const ABOUT = `charlie xue
-cs & statistics @ cornell
-
-I build full-stack AI applications and ML systems.
-Currently focused on building for early-stage startups.`;
-
-const CONTACT = `email     <a href="mailto:cx267@cornell.edu">cx267@cornell.edu</a>
-github    <a href="https://github.com/cx18121" target="_blank" rel="noreferrer">github.com/cx18121</a>
-linkedin  <a href="https://www.linkedin.com/in/charles-xue/" target="_blank" rel="noreferrer">linkedin.com/in/charles-xue</a>`;
-
-const COMMANDS = [
-  { cmd: "/about",    desc: "who I am" },
-  { cmd: "/projects", desc: "what I've built" },
-  { cmd: "/open",     desc: "open a project" },
-  { cmd: "/skills",   desc: "stack & tools" },
-  { cmd: "/contact",  desc: "how to reach me" },
-  { cmd: "/theme",    desc: "cycle color scheme" },
-  { cmd: "/clear",    desc: "clear the screen" },
-  { cmd: "/help",     desc: "show all commands" },
-];
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
-}
-
-// Levenshtein-based "did you mean" suggestion across known commands + project names.
-function levenshtein(a, b) {
-  const m = a.length, n = b.length;
-  if (!m) return n; if (!n) return m;
-  const dp = Array.from({length: m+1}, (_,i) => [i, ...Array(n).fill(0)]);
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
-    const cost = a[i-1] === b[j-1] ? 0 : 1;
-    dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
-  }
-  return dp[m][n];
-}
-function closestCommand(name) {
-  const candidates = COMMANDS.map(c => c.cmd.slice(1)).concat(PROJECTS.map(p => p.name));
-  let best = null, bestD = Infinity;
-  for (const c of candidates) {
-    const d = levenshtein(name, c);
-    if (d < bestD) { bestD = d; best = c; }
-  }
-  // Only suggest if reasonably close.
-  if (bestD <= Math.max(2, Math.floor(name.length / 2))) {
-    return PROJECTS.some(p => p.name === best) ? "/open " + best : "/" + best;
-  }
-  return null;
-}
-
-const ui = {
-  main: null, input: null, ac: null, box: null,
-  acItems: [], acIdx: 0,
-  history: [], histIdx: -1,
-  init() {
-    this.main  = document.getElementById("main");
-    this.input = document.getElementById("input");
-    this.ac    = document.getElementById("ac");
-    this.box   = document.getElementById("promptbox");
-    this.input.addEventListener("input",   () => this.updateAutocomplete());
-    this.input.addEventListener("keydown", e => this.onKey(e));
-    this.input.addEventListener("focus",   () => this.box.classList.add("focused"));
-    this.input.addEventListener("blur",    () => { this.box.classList.remove("focused"); setTimeout(() => this.hideAc(), 120); });
-    document.body.addEventListener("click", e => {
-      if (e.target.closest("a") || e.target.closest(".autocomplete")) return;
-      this.input.focus();
-    });
-    window.addEventListener("resize",   () => { if (this.ac.classList.contains("show")) this.positionAc(); });
-    document.getElementById("scrollarea").addEventListener("scroll", () => { if (this.ac.classList.contains("show")) this.positionAc(); });
-    document.addEventListener("keydown", e => {
-      if (e.key !== "/") return;
-      const tag = document.activeElement?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
-      e.preventDefault();
-      this.input.focus();
-      this.input.value = "/";
-      this.updateAutocomplete();
-    });
-    const deep = new URLSearchParams(location.search).get("cmd");
-    if (deep) setTimeout(() => this.run(deep.startsWith("/") ? deep : "/" + deep), 0);
-    this.input.focus();
-  },
-  print(html) {
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    this.main.appendChild(div);
-    const sa = document.getElementById("scrollarea");
-    sa.scrollTo({ top: sa.scrollHeight, behavior: "smooth" });
-  },
-  echo(cmd) {
-    const slash = cmd.startsWith("/") ? cmd.slice(0,1) : "";
-    const rest  = cmd.startsWith("/") ? cmd.slice(1) : cmd;
-    this.print(`<div class="echo">› <span class="slash">${slash}</span>${escapeHtml(rest)}</div>`);
-  },
-  block(html) { this.print(`<div class="block">${html}</div>`); },
-  updateAutocomplete() {
-    const v = this.input.value;
-    if (!v.startsWith("/")) { this.hideAc(); return; }
-    let matches;
-    // Second-arg autocomplete: after `/open `, show project names.
-    const openMatch = v.match(/^\/open(?:\s+(\S*))?$/);
-    if (openMatch && v.includes(" ")) {
-      const q = (openMatch[1] || "").toLowerCase();
-      matches = PROJECTS.filter(p => p.name.toLowerCase().startsWith(q))
-                       .map(p => ({ cmd: "/open " + p.name, desc: p.tagline }));
-    } else {
-      const q = v.slice(1).toLowerCase();
-      matches = COMMANDS.filter(c => c.cmd.slice(1).startsWith(q));
-    }
-    if (!matches.length) { this.hideAc(); return; }
-    this.acItems = matches; this.acIdx = 0;
-    this.ac.innerHTML = matches.map((m,i) =>
-      `<div class="item ${i===0?"active":""}" data-i="${i}">
-         <span class="cmd">${m.cmd}</span><span class="desc">${m.desc}</span>
-       </div>`
-    ).join("");
-    this.ac.classList.add("show");
-    this.positionAc();
-    this.ac.querySelectorAll(".item").forEach(el => {
-      el.addEventListener("mousedown", e => {
-        e.preventDefault();
-        this.run(this.acItems[+el.dataset.i].cmd);
-      });
-    });
-  },
-  positionAc() {
-    const r        = this.box.getBoundingClientRect();
-    const vh       = window.innerHeight;
-    const margin   = 12;
-    const cap      = 320;
-    this.ac.style.left  = r.left + "px";
-    this.ac.style.width = r.width + "px";
-    // Allow dropdown to size to content first, capped, so we can read scrollHeight.
-    this.ac.style.maxHeight = cap + "px";
-    const content  = this.ac.scrollHeight;
-    const below    = vh - r.bottom - margin - 4;
-    const above    = r.top - margin - 4;
-    if (below >= above) {
-      // Drop below — fit dropdown to either content or available space.
-      const h = Math.min(content, below, cap);
-      this.ac.style.top       = (r.bottom + 4) + "px";
-      this.ac.style.maxHeight = h + "px";
-    } else {
-      const h = Math.min(content, above, cap);
-      this.ac.style.top       = (r.top - h - 4) + "px";
-      this.ac.style.maxHeight = h + "px";
-    }
-  },
-  hideAc() { this.ac.classList.remove("show"); this.acItems = []; },
-  setAcActive(i) {
-    this.acIdx = i;
-    this.ac.querySelectorAll(".item").forEach((el,j) => el.classList.toggle("active", i===j));
-  },
-  onKey(e) {
-    const acOpen = this.ac.classList.contains("show");
-    if (e.key === "ArrowDown" && acOpen) { e.preventDefault(); this.setAcActive((this.acIdx + 1) % this.acItems.length); }
-    else if (e.key === "ArrowUp" && acOpen) { e.preventDefault(); this.setAcActive((this.acIdx - 1 + this.acItems.length) % this.acItems.length); }
-    else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      if (!this.history.length) return;
-      this.histIdx = Math.max(0, this.histIdx === -1 ? this.history.length-1 : this.histIdx-1);
-      this.input.value = this.history[this.histIdx] || "";
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (this.histIdx === -1) return;
-      this.histIdx++;
-      if (this.histIdx >= this.history.length) { this.histIdx = -1; this.input.value = ""; }
-      else this.input.value = this.history[this.histIdx];
-    } else if (e.key === "Tab" && acOpen) {
-      e.preventDefault();
-      this.input.value = this.acItems[this.acIdx].cmd + " ";
-      this.updateAutocomplete();
-    } else if (e.key === "Enter") {
-      if (acOpen) this.input.value = this.acItems[this.acIdx].cmd;
-      const v = this.input.value; this.input.value = "";
-      this.hideAc();
-      this.run(v);
-    } else if (e.key === "Escape") {
-      if (acOpen) { e.preventDefault(); this.hideAc(); }
-    }
-  },
-  run(raw) {
-    const cmd = (raw || "").trim();
-    this.echo(raw || "");
-    if (!cmd) return;
-    this.history.push(cmd); this.histIdx = -1;
-    const norm = cmd.startsWith("/") ? cmd.slice(1) : cmd;
-    const [name, ...args] = norm.split(/\s+/);
-
-    if (name === "clear") { this.main.innerHTML = ""; return; }
-    if (name === "help") {
-      this.block(COMMANDS.map(c =>
-        `  <span class="key">${c.cmd.padEnd(12)}</span> <span class="muted">${c.desc}</span>`
-      ).join("\n"));
-      return;
-    }
-    if (name === "about")    { this.block(ABOUT.replace(/\n/g, "\n")); return; }
-    if (name === "contact")  { this.block(CONTACT); return; }
-    if (name === "skills") {
-      this.block(Object.entries(SKILLS).map(([k,v]) =>
-        `  <span class="key">${k.padEnd(10)}</span> ${v.join(", ")}`
-      ).join("\n"));
-      return;
-    }
-    if (name === "projects") {
-      this.block(PROJECTS.map(p => {
-        const status = p.status === "live" ? `<span class="ok">[live]</span>`
-                    : p.status === "wip"  ? `<span class="warn">[wip]</span>`
-                    :                       `<span class="muted">[${p.status}]</span>`;
-        return `  ${status} <span class="key">/${p.name}</span>  <span class="muted">${p.tagline}</span>\n      <span class="muted">${p.stack}</span>`;
-      }).join("\n") + `\n\n<span class="muted">open with <span class="key">/open ${PROJECTS[0].name}</span></span>`);
-      return;
-    }
-    if (name === "open") {
-      const p = PROJECTS.find(x => x.name === args[0]);
-      if (!p) {
-        this.block(`<span class="muted">usage:</span> <span class="key">/open &lt;project&gt;</span>\n` +
-          PROJECTS.map(x => `  <span class="key">/open ${x.name}</span>  <span class="muted">${x.tagline}</span>`).join("\n"));
-        return;
-      }
-      this.printProject(p);
-      return;
-    }
-    if (name === "theme") {
-      const themes = [
-        { name: "classic",
-          bg:"#1a1a1a", fg:"#e5e2dd", orange:"#d97757", orangeDim:"#c46d4f",
-          dim:"#7a7670", mute:"#5c5852", yellow:"#c9a96e",
-          violet:"#b08ad6", cyan:"#6fb1bc", pink:"#d36a8c", red:"#d96363" },
-        { name: "tokyo-night",
-          bg:"#1a1b26", fg:"#c0caf5", orange:"#ff9e64", orangeDim:"#cc7e50",
-          dim:"#565f89", mute:"#414868", yellow:"#e0af68",
-          violet:"#bb9af7", cyan:"#7dcfff", pink:"#f7768e", red:"#f7768e" },
-        { name: "one-dark",
-          bg:"#282c34", fg:"#abb2bf", orange:"#d19a66", orangeDim:"#a87a52",
-          dim:"#5c6370", mute:"#3e4451", yellow:"#e5c07b",
-          violet:"#c678dd", cyan:"#56b6c2", pink:"#e06c75", red:"#e06c75" },
-        { name: "crt-green",
-          bg:"#001100", fg:"#00ff66", orange:"#00ff66", orangeDim:"#00bb44",
-          dim:"#008833", mute:"#005522", yellow:"#ccff66",
-          violet:"#66ff99", cyan:"#33ffaa", pink:"#88ff88", red:"#ff3366" },
-        { name: "solarized",
-          bg:"#002b36", fg:"#93a1a1", orange:"#cb4b16", orangeDim:"#a23a10",
-          dim:"#586e75", mute:"#475a62", yellow:"#b58900",
-          violet:"#6c71c4", cyan:"#2aa198", pink:"#d33682", red:"#dc322f" },
-      ];
-      const cur = (parseInt(document.body.dataset.theme || "0") + 1) % themes.length;
-      document.body.dataset.theme = cur;
-      const t = themes[cur];
-      const r = document.documentElement.style;
-      r.setProperty("--bg",         t.bg);
-      r.setProperty("--fg",         t.fg);
-      r.setProperty("--orange",     t.orange);
-      r.setProperty("--orange-dim", t.orangeDim);
-      r.setProperty("--dim",        t.dim);
-      r.setProperty("--mute",       t.mute);
-      r.setProperty("--yellow",     t.yellow);
-      r.setProperty("--violet",     t.violet);
-      r.setProperty("--cyan",       t.cyan);
-      r.setProperty("--pink",       t.pink);
-      r.setProperty("--red",        t.red);
-      const indicator = document.getElementById("theme-name");
-      if (indicator) indicator.textContent = t.name;
-      this.block(`<span class="muted">theme:</span> <span class="key">${t.name}</span>`);
-      return;
-    }
-    const suggestion = closestCommand(name);
-    if (suggestion) {
-      this.block(`<span class="warn">${escapeHtml(name)}: command not found</span>. did you mean <span class="key">${suggestion}</span>?`);
-    } else {
-      this.block(`<span class="warn">${escapeHtml(name)}: command not found</span>. try <span class="key">/help</span>.`);
-    }
-  },
-  printProject(p) {
-    this.block(
-      `<span class="key">${p.name}</span> <span class="muted">— ${p.tagline}</span>\n` +
-      `<span class="muted">stack: ${p.stack}</span>\n\n` +
-      p.body
-    );
-  },
-};
-
-ui.init();
-
-function updateClock() {
-  const t = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    hour: 'numeric', minute: '2-digit', hour12: true,
-  }).format(new Date());
-  document.getElementById('clock').textContent = t.replace(' AM', 'am').replace(' PM', 'pm');
-}
-updateClock();
-setInterval(updateClock, 30_000);
-</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
+    <script src="./vendor/marked.min.js" defer></script>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>

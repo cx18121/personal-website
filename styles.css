@@ -1,0 +1,1341 @@
+:root {
+  --bg: #1a1a1a;
+  --orange: #d97757;
+  --fg: #e5e2dd;
+  --dim: #7a7670;
+  --mute: #5c5852;
+  --violet: #b08ad6;
+  --cyan: #6fb1bc;
+  --pink: #d36a8c;
+  --yellow: #c9a96e;
+  --red: #d96363;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  display: flex;
+  flex-direction: column;
+}
+.scrollarea {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.topline {
+  padding: 8px 18px 2px;
+  font-size: 13px;
+}
+.topline .cwd {
+  color: var(--violet);
+}
+.topline .branch {
+  color: var(--cyan);
+}
+.topline .dirty {
+  color: var(--pink);
+}
+.echoline {
+  padding: 0 18px 8px;
+}
+.echoline .chev {
+  color: var(--orange);
+}
+.echoline .cmd {
+  color: var(--yellow);
+}
+
+.welcomewrap {
+  padding: 0 16px 10px;
+}
+.welcome {
+  position: relative;
+  border: 1px solid var(--orange);
+  border-radius: 8px;
+  padding: 16px 20px 18px;
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1px 1fr;
+  gap: 22px;
+  background: var(--bg);
+}
+.welcome .title {
+  position: absolute;
+  top: -10px;
+  left: 18px;
+  background: var(--bg);
+  padding: 0 8px;
+  color: var(--orange);
+  font-weight: 600;
+  font-size: 12px;
+}
+.welcome .left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.welcome .greet {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.welcome .mascot {
+  color: var(--orange);
+  line-height: 1;
+  white-space: pre;
+  font-size: 14px;
+  margin: 4px 0 10px;
+}
+.welcome .meta {
+  text-align: center;
+  line-height: 1.55;
+}
+.welcome .meta .dim {
+  color: var(--dim);
+}
+.welcome .divider {
+  background: var(--orange);
+  opacity: 0.55;
+  width: 1px;
+}
+.welcome .right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.welcome .right h3 {
+  margin: 0;
+  color: var(--orange);
+  font-weight: 600;
+  font-size: 13px;
+}
+.welcome .right .hr {
+  border-top: 1px solid var(--orange);
+  opacity: 0.4;
+  margin: 4px 0;
+}
+.welcome .right .body {
+  line-height: 1.55;
+}
+.welcome .right .body > div + div {
+  margin-top: 2px;
+}
+.welcome .right .body em {
+  color: var(--dim);
+  font-style: italic;
+}
+.welcome .right .body .cmd {
+  color: var(--yellow);
+}
+
+.main {
+  padding: 0 18px;
+  white-space: pre-wrap;
+  flex: 1;
+}
+.main .echo {
+  color: var(--orange);
+  margin-top: 10px;
+}
+.main .echo .slash {
+  color: var(--yellow);
+}
+.main .block {
+  margin: 4px 0 6px;
+  padding-left: 14px;
+  border-left: 1px solid var(--mute);
+  line-height: 1.55;
+}
+.muted {
+  color: var(--dim);
+}
+.warn {
+  color: var(--red);
+}
+.key {
+  color: var(--yellow);
+}
+a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.promptouter {
+  padding: 8px 16px 4px;
+  position: relative;
+  background: var(--bg);
+}
+.promptbox {
+  border: 1px solid var(--mute);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+}
+.promptbox.focused {
+  border-color: var(--orange);
+}
+.promptbox .chev {
+  color: var(--orange);
+}
+.promptbox input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--fg);
+  font: inherit;
+  caret-color: var(--orange);
+}
+.promptbox input::placeholder {
+  color: var(--mute);
+}
+.autocomplete {
+  position: fixed;
+  background: var(--bg);
+  border: 1px solid var(--orange);
+  border-radius: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: none;
+  z-index: 100;
+}
+.autocomplete.show {
+  display: block;
+}
+.autocomplete .item {
+  padding: 6px 14px;
+  cursor: pointer;
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+}
+.autocomplete .item.active {
+  background: color-mix(in oklab, var(--orange) 15%, transparent);
+}
+.autocomplete .item .cmd {
+  color: var(--yellow);
+  min-width: 110px;
+}
+.autocomplete .item .desc {
+  color: var(--dim);
+  font-size: 12px;
+}
+
+.footer {
+  padding: 6px 18px 14px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.footer .statusrow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.footer .statusrow .clock-block {
+  margin-left: auto;
+  color: var(--dim);
+}
+.footer .statusrow .clock-block .moon {
+  color: var(--cyan);
+}
+.footer .statusrow .clock-block .mode {
+  color: var(--dim);
+}
+.footer .statusrow .clock-block .time {
+  color: var(--yellow);
+}
+.footer .statusrow .sep {
+  color: var(--mute);
+  padding: 0 6px;
+}
+.footer .statusrow .repo {
+  color: var(--violet);
+}
+.footer .statusrow .handle {
+  color: var(--cyan);
+}
+.footer .perms {
+  color: var(--pink);
+}
+.footer .perms .arrows {
+  color: var(--orange);
+}
+.footer .perms .on {
+  color: var(--pink);
+  font-weight: 600;
+}
+.footer .perms .hint {
+  color: var(--dim);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── reader (project pages, rendered from markdown) ─────────── */
+
+.reader[hidden] {
+  display: none;
+}
+.reader {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.reader-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+.reader-window {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  height: min(85vh, 820px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--orange);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+.reader-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--mute);
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.reader-titlebar .chev {
+  color: var(--orange);
+}
+.reader-titlebar .cmd {
+  color: var(--yellow);
+}
+.reader-titlebar .muted {
+  color: var(--dim);
+}
+.reader-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 32px;
+  padding: 28px 32px 40px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+.reader-side {
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--dim);
+  border-right: 1px dashed var(--mute);
+  padding-right: 20px;
+  position: sticky;
+  top: 0;
+  align-self: start;
+}
+.reader-side .row {
+  margin-bottom: 14px;
+}
+.reader-side .label {
+  color: var(--orange);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+.reader-side .val {
+  color: var(--fg);
+}
+.reader-side .val.live {
+  color: var(--orange);
+}
+.reader-side a {
+  color: var(--cyan);
+}
+
+.reader-body {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--fg);
+  min-width: 0;
+}
+.reader-body p {
+  margin: 0 0 1em;
+}
+.reader-body a {
+  color: var(--cyan);
+}
+.reader-body ul {
+  margin: 0 0 1em;
+  padding-left: 0;
+  list-style: none;
+}
+.reader-body li {
+  margin-bottom: 0.4em;
+}
+.reader-body strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+.reader-body em {
+  font-style: italic;
+  color: var(--fg);
+}
+.reader-body h1,
+.reader-body h2,
+.reader-body h3 {
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 32px 0 14px;
+}
+.reader-body h1 {
+  font-size: 22px;
+}
+.reader-body h2 {
+  font-size: 18px;
+}
+.reader-body h3 {
+  font-size: 15px;
+}
+.reader-body h1::before {
+  content: '# ';
+  color: var(--orange);
+}
+.reader-body h2::before {
+  content: '## ';
+  color: var(--orange);
+}
+.reader-body h3::before {
+  content: '### ';
+  color: var(--orange);
+}
+.reader-body h1:first-child {
+  margin-top: 0;
+}
+
+/* fenced ```decisions``` blocks — numbered editorial layout */
+.reader-body .decisions {
+  counter-reset: decision;
+  margin: 0 0 1em;
+}
+.reader-body .decisions .item {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  column-gap: 18px;
+  padding: 16px 0;
+  border-top: 1px solid rgba(92, 88, 82, 0.4);
+}
+.reader-body .decisions .item:last-child {
+  border-bottom: 1px solid rgba(92, 88, 82, 0.4);
+}
+.reader-body .decisions .item::before {
+  counter-increment: decision;
+  content: 'D' counter(decision, decimal-leading-zero);
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  color: var(--orange);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding-top: 6px;
+}
+.reader-body .decisions .head {
+  font-weight: 600;
+  color: var(--fg);
+  margin-bottom: 4px;
+}
+.reader-body .decisions .body {
+  color: var(--dim);
+}
+.reader-body .decisions .body a {
+  color: var(--cyan);
+}
+
+.reader-body .proj-title {
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-weight: 600;
+  font-size: 22px;
+  margin: 0;
+  color: var(--fg);
+}
+.reader-body .proj-title::before {
+  content: '# ';
+  color: var(--orange);
+}
+.reader-body .proj-tagline {
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--dim);
+  margin: 4px 0 24px;
+}
+
+.reader-nav {
+  /* 3-column grid with equal outer columns so the center hint stays
+     anchored to the middle regardless of prev/next label length. */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--mute);
+  background: rgba(255, 255, 255, 0.02);
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+}
+.reader-nav > :nth-child(1) {
+  justify-self: start;
+}
+.reader-nav > :nth-child(3) {
+  justify-self: end;
+}
+.reader-nav .nav-link {
+  color: var(--cyan);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.reader-nav .nav-link:hover {
+  background: color-mix(in oklab, var(--cyan) 15%, transparent);
+}
+.reader-nav .muted {
+  color: var(--dim);
+  text-align: center;
+}
+
+.section-head {
+  color: var(--orange);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 14px 0 6px;
+}
+.section-head:first-child {
+  margin-top: 0;
+}
+
+.proj-hint {
+  margin-bottom: 12px;
+}
+.proj-row {
+  display: flex;
+  gap: 12px;
+  padding: 6px 0;
+  align-items: flex-start;
+  white-space: normal;
+}
+.proj-tick {
+  color: var(--orange);
+  opacity: 0.55;
+  font-size: 12px;
+  min-width: 16px;
+  padding-top: 2px;
+  user-select: none;
+}
+.proj-body {
+  flex: 1;
+  min-width: 0;
+}
+.proj-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.proj-head .proj-link {
+  font-size: 13.5px;
+}
+.proj-tag {
+  color: var(--fg);
+}
+.proj-stack {
+  color: var(--mute);
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+
+.theme-row {
+  display: flex;
+  gap: 12px;
+  padding: 6px 0;
+  align-items: flex-start;
+}
+.theme-body {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.theme-link {
+  font-size: 13.5px;
+  min-width: 120px;
+  display: inline-block;
+}
+.theme-swatches {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+.theme-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.theme-desc {
+  color: var(--mute);
+  font-size: 11.5px;
+}
+.theme-active {
+  color: var(--orange);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.proj-link {
+  cursor: pointer;
+  color: var(--yellow);
+  text-decoration: underline;
+  text-decoration-color: var(--mute);
+  text-underline-offset: 3px;
+  padding: 1px 4px;
+  margin: 0 -4px;
+  border-radius: 3px;
+  transition:
+    background-color 0.12s ease,
+    text-decoration-color 0.12s ease;
+}
+.proj-link:hover {
+  background: color-mix(in oklab, var(--orange) 12%, transparent);
+  text-decoration-color: var(--orange);
+}
+
+.reader-body figure.full-bleed {
+  margin: 28px 0;
+}
+/* Soft dim at rest to take the edge off light-themed screenshots against
+   the dark page. Tuned mild so dark-themed screenshots don't get crushed.
+   Hover restores; click opens the photoviewer at full brightness. */
+.reader-body figure.full-bleed img {
+  width: 100%;
+  display: block;
+  border-radius: 10px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    0 24px 56px rgba(0, 0, 0, 0.35);
+  filter: brightness(0.9) saturate(0.92);
+  transition: filter 0.2s ease;
+  cursor: zoom-in;
+}
+/* Hover anywhere on the figure brightens the image. Stays bright while
+   the cursor moves onto the caption — image and caption read as one unit. */
+.reader-body figure.full-bleed:hover img {
+  filter: none;
+}
+.reader-body figure.full-bleed figcaption {
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  /* Slightly brighter than --dim so the caption doesn't appear to dip when
+     the image alongside it brightens. Stable regardless of image state. */
+  color: color-mix(in oklab, var(--fg) 70%, transparent);
+  margin-top: 12px;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.reader-body .term-frame {
+  border: 1px solid var(--mute);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 24px 0;
+  background: color-mix(in oklab, var(--bg) 75%, black);
+}
+.reader-body .term-frame .bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--mute);
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--dim);
+}
+.reader-body .term-frame .bar .title {
+  color: var(--violet);
+}
+.reader-body .term-frame pre {
+  margin: 0;
+  padding: 14px 18px;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--fg);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+
+.reader-body .strip {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 4px 4px 16px;
+  margin: 24px -4px;
+  scroll-snap-type: x mandatory;
+}
+.reader-body .strip figure {
+  flex: 0 0 320px;
+  margin: 0;
+  scroll-snap-align: start;
+}
+.reader-body .strip img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.reader-body .strip figcaption {
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--dim);
+  margin-top: 8px;
+}
+
+.reader-body pre:not(.term-frame pre) {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--mute);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: var(--fg);
+}
+.reader-body code {
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--fg);
+}
+.reader-body pre code {
+  background: transparent;
+  padding: 0;
+}
+
+@media (max-width: 720px) {
+  .reader {
+    padding: 12px;
+  }
+  .reader-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 20px 18px 32px;
+  }
+  .reader-side {
+    border-right: none;
+    border-bottom: 1px dashed var(--mute);
+    padding-right: 0;
+    padding-bottom: 14px;
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+  }
+  body {
+    font-size: 14px;
+  }
+  .scrollarea {
+    overflow: visible;
+    flex: none;
+  }
+  .topline,
+  .echoline {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .welcomewrap {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .welcome {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 18px 16px 20px;
+  }
+  .welcome .divider {
+    display: none;
+  }
+  .welcome .left {
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .welcome .mascot {
+    font-size: 13px;
+    margin: 2px 0 6px;
+  }
+  .welcome .meta {
+    text-align: left;
+  }
+  .main {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .promptouter {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .footer {
+    padding-left: 14px;
+    padding-right: 14px;
+    font-size: 11px;
+  }
+  .footer .statusrow {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .footer .statusrow .clock-block {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* ── /travels list ──────────────────────────────────────────────── */
+.travels-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(260px, 320px);
+  gap: 32px;
+  margin-top: 4px;
+}
+.travels-col {
+  min-width: 0;
+}
+.travels-col .section-head {
+  margin-top: 0;
+}
+.travel-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 2px 0;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+.travel-link {
+  color: var(--yellow);
+  text-decoration: underline;
+  text-decoration-color: var(--mute);
+  text-underline-offset: 3px;
+}
+.travel-link:hover {
+  color: var(--orange);
+}
+.travel-date {
+  color: var(--dim);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .travels-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+/* ── /travels reader sidebar (nav, not metadata) ───────────────── */
+.reader-side .trav-group {
+  color: var(--orange);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  margin: 16px 0 4px;
+}
+.reader-side .trav-group:first-child {
+  margin-top: 0;
+}
+.reader-side .trav-item {
+  display: block;
+  color: var(--dim);
+  text-decoration: none;
+  padding: 2px 0 2px 6px;
+  border-left: 2px solid transparent;
+  margin-left: -2px;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+.reader-side .trav-item:hover {
+  color: var(--fg);
+}
+.reader-side .trav-item.active {
+  color: var(--yellow);
+  border-left-color: var(--orange);
+}
+
+/* ── /travels reader body — fields & photos button ─────────────── */
+.reader-body .trav-fields {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 6px 16px;
+  margin: 24px 0 0;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  max-width: 60ch;
+}
+.reader-body .trav-fields dt {
+  color: var(--dim);
+}
+.reader-body .trav-fields dd {
+  color: var(--fg);
+  margin: 0;
+}
+.reader-body .trav-route .trav-route-seg {
+  white-space: nowrap;
+}
+.reader-body .trav-route .trav-route-sep {
+  color: var(--dim);
+}
+.reader-body .trav-why {
+  /* Plain prose. Inherits Newsreader serif + var(--fg) from .reader-body —
+     same body style as visited entries, no special framing. */
+}
+.reader-body .trav-photos {
+  margin-top: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.reader-body .trav-photos-strip {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0 10px;
+  /* Hide scrollbar across browsers — the right-edge fade is the affordance. */
+  scrollbar-width: none; /* Firefox */
+  /* right-edge fade hints at more content past the visible scroll. The
+     mask drops opacity to ~0 in the last 48px of the strip, which feels
+     like the photos extend beyond the frame instead of cutting off. */
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent);
+          mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent);
+}
+.reader-body .trav-photos-strip::-webkit-scrollbar {
+  display: none; /* WebKit (Safari/Chrome) */
+}
+.reader-body .trav-photos-thumb {
+  all: unset;
+  display: block;
+  width: 120px;
+  height: 80px;
+  border-radius: 3px;
+  border: 1px solid var(--mute);
+  flex: 0 0 auto;
+  overflow: hidden;
+  cursor: zoom-in;
+  transition: border-color 0.15s ease;
+}
+.reader-body .trav-photos-thumb:focus-visible {
+  outline: 1px solid var(--orange);
+  outline-offset: 2px;
+}
+.reader-body .trav-photos-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.95) brightness(0.92);
+  transition: filter 0.15s ease;
+}
+.reader-body .trav-photos-thumb:hover img {
+  filter: saturate(1.05) brightness(1);
+}
+.reader-body .trav-photos-btn {
+  align-self: flex-start;
+  font: inherit;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  color: var(--cyan);
+  background: transparent;
+  border: 1px solid var(--mute);
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.reader-body .trav-photos-btn:hover {
+  border-color: var(--cyan);
+}
+.reader-body .trav-photos-btn .muted {
+  color: var(--dim);
+}
+.reader-body .trav-photos-label {
+  color: var(--cyan);
+}
+
+/* ── photo viewer (reader-style framed) ────────────────────────── */
+.photoviewer[hidden] {
+  display: none;
+}
+.photoviewer {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.photoviewer-window {
+  width: 100%;
+  max-width: 1600px;
+  height: min(95vh, 1100px);
+}
+.photoviewer-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 64px;
+  background: rgba(0, 0, 0, 0.25);
+}
+.photoviewer-photo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border: 1px solid var(--mute);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.photoviewer-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--dim);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 12px 14px;
+  font-family: inherit;
+}
+.photoviewer-arrow:hover {
+  color: var(--fg);
+}
+.photoviewer-arrow.l {
+  left: 8px;
+}
+.photoviewer-arrow.r {
+  right: 8px;
+}
+.photoviewer-caption {
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--mute);
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  color: var(--fg);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+.photoviewer-caption .muted {
+  color: var(--dim);
+  font-size: 11.5px;
+}
+
+/* Stage gets touch-action so vertical scroll still works on the page while
+   horizontal swipe is captured for prev/next photo navigation. */
+.photoviewer-stage {
+  touch-action: pan-y;
+}
+
+/* Thumbnail strip — horizontal row beneath the caption. Current photo
+   gets the orange outline; clicking a thumb jumps to that photo. */
+.photoviewer-thumbs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--mute);
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  background: rgba(255, 255, 255, 0.015);
+  scrollbar-width: none;
+}
+.photoviewer-thumbs::-webkit-scrollbar {
+  display: none;
+}
+.photoviewer-thumb {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 3px;
+  background: var(--bg);
+  border: 1px solid transparent;
+  opacity: 0.55;
+  cursor: pointer;
+  transition:
+    opacity 0.12s ease,
+    border-color 0.12s ease;
+  padding: 0;
+  overflow: hidden;
+}
+.photoviewer-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.photoviewer-thumb:hover {
+  opacity: 0.9;
+}
+.photoviewer-thumb.active {
+  opacity: 1;
+  border-color: var(--orange);
+}
+
+/* ── /favorites (grouped by tag, ─── books ─── heads + ▸ rows) ──── */
+.fav-list {
+  margin-top: 4px;
+}
+.fav-section-head {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 14px 0 6px;
+  font-size: 13px;
+  /* Color per tag — section head replaces the in-row tag column. */
+}
+.fav-section:first-child .fav-section-head {
+  margin-top: 0;
+}
+.fav-section-head[data-tag='book']       { color: var(--violet); }
+.fav-section-head[data-tag='film']       { color: var(--pink); }
+.fav-section-head[data-tag='places']     { color: var(--cyan); }
+.fav-section-head[data-tag='food']       { color: var(--red); }
+.fav-section-head[data-tag='team']       { color: var(--yellow); }
+.fav-section-head[data-tag='restaurant'] { color: var(--orange); }
+
+.fav-row {
+  padding: 4px 0;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.fav-marker {
+  color: var(--mute);
+  margin-right: 8px;
+  user-select: none;
+}
+.fav-title {
+  color: var(--fg);
+}
+.fav-by {
+  color: var(--dim);
+}
+.fav-blurb {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+  padding-left: 20px;
+  margin-top: 2px;
+  color: var(--dim);
+  font-size: 12.5px;
+}
+.fav-blurb-conn {
+  color: var(--mute);
+  user-select: none;
+}
+
+/* ── focus-visible (keyboard nav) ──────────────────────────────── */
+/* Default browser outline doesn't match the palette. Custom focus ring */
+/* uses the orange brand accent, only shown for keyboard navigation. */
+a:focus-visible,
+button:focus-visible,
+.autocomplete .item:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+.reader-nav .nav-link:focus-visible,
+.trav-item:focus-visible,
+.travel-link:focus-visible,
+.proj-link:focus-visible {
+  outline-offset: 3px;
+}
+
+/* ── reduced motion ────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── reader + photo viewer mobile ──────────────────────────────── */
+@media (max-width: 640px) {
+  .reader,
+  .photoviewer {
+    padding: 8px;
+  }
+  .reader-window,
+  .photoviewer-window {
+    height: min(94vh, 100%);
+    border-radius: 8px;
+  }
+  .reader-titlebar {
+    padding: 10px 14px;
+    font-size: 11px;
+  }
+  .reader-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 20px 18px 28px;
+  }
+  .reader-side {
+    border-right: none;
+    border-bottom: 1px dashed var(--mute);
+    padding-right: 0;
+    padding-bottom: 14px;
+    position: static;
+    /* Travel sidebar can have many entries; cap height so it doesn't push
+       the body too far down. */
+    max-height: 30vh;
+    overflow-y: auto;
+  }
+  .reader-body {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  .reader-body h1,
+  .reader-body .proj-title {
+    font-size: 19px;
+  }
+  .reader-body h2 {
+    font-size: 16px;
+  }
+  .reader-body .trav-fields {
+    grid-template-columns: 80px 1fr;
+    font-size: 12.5px;
+  }
+  .reader-nav {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .reader-nav .nav-link {
+    padding: 10px 8px;
+  }
+
+  /* Touch: expand inline-link hit boxes toward ~44px tall. Inline-block
+     plus min-height gives a real tap area without breaking row layout. */
+  .proj-link,
+  .travel-link {
+    display: inline-block;
+    min-height: 36px;
+    padding: 8px 6px;
+    margin: -8px -6px;
+  }
+  .proj-row {
+    padding: 8px 0;
+  }
+  .travel-row {
+    padding: 6px 0;
+  }
+  .reader-side .trav-item {
+    padding: 10px 6px;
+    margin-left: -6px;
+    border-left-width: 0;
+  }
+  .reader-side .trav-item.active {
+    padding-left: 8px;
+    border-left-width: 2px;
+    margin-left: -8px;
+  }
+
+  .photoviewer-stage {
+    padding: 14px 52px;
+    min-height: 240px;
+  }
+  .photoviewer-arrow {
+    /* iOS HIG: 44x44 minimum touch target. */
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .photoviewer-arrow.l {
+    left: 2px;
+  }
+  .photoviewer-arrow.r {
+    right: 2px;
+  }
+  .photoviewer-caption {
+    padding: 12px 16px 14px;
+    font-size: 12px;
+  }
+  .photoviewer-thumbs {
+    padding: 8px 12px 12px;
+  }
+  .photoviewer-thumb {
+    width: 40px;
+    height: 40px;
+  }
+}
