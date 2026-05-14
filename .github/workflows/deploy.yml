@@ -1,11 +1,13 @@
 name: deploy
 
-# Builds and deploys the site to GitHub Pages on every push to main.
-# Generates version.json from git history (no client-side GitHub API fetch,
-# no auto-commit back to main). The artifact uploaded to Pages includes
-# version.json alongside the static files.
-#
-# Requires repo Pages source to be set to "GitHub Actions" (Settings → Pages).
+# Why this workflow exists:
+# The site is plain HTML/CSS/JS — no framework, no bundler, no build step —
+# but it still needs a workflow because version.json (the v{Y}.{M}.{N} tag
+# shown in the welcome panel) is generated from `git rev-list` at deploy
+# time and is gitignored, never in the repo. GitHub Pages "deploy from
+# branch" can't run that step, so Pages source is set to "GitHub Actions"
+# (Settings → Pages) and this workflow uploads the repo + the freshly
+# computed version.json as the Pages artifact on every push to main.
 
 on:
   push:
