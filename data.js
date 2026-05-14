@@ -202,11 +202,11 @@ export const WHATS_NEW = [
   },
   {
     date: '2026-05',
-    body: 'Shipped <span class="cmd">sparrow</span> · ai-personalized cold-email campaigns, for students',
+    body: 'Shipped <span class="cmd">sparrow</span> · automatic cold email outreach to startups, for students',
   },
   {
     date: '2026-04',
-    body: 'Shipped <span class="cmd">spectre</span> · real-time 1v1 fighting game, played with your body',
+    body: 'Shipped <span class="cmd">spectre</span> · real-time 1v1 fighting, from anywhere, with just a camera',
   },
 ];
 
