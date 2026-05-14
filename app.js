@@ -171,6 +171,22 @@ const ui = {
     if (deep)
       setTimeout(() => this.run(deep.startsWith('/') ? deep : '/' + deep), 0);
     if (!matchMedia('(pointer: coarse)').matches) this.input.focus();
+    // Tab-away blurs the input; nothing refocuses on return, so all the
+    // keydown handlers (incl. list nav) silently die. Reclaim focus on
+    // window-focus and visibility-restore. Coarse-pointer devices opt out
+    // to avoid yanking the soft keyboard up on mobile tab-switch.
+    if (!matchMedia('(pointer: coarse)').matches) {
+      const refocus = () => {
+        if (document.visibilityState !== 'visible') return;
+        // Skip if user is interacting with another focusable element
+        // (the reader, photoviewer, or any link/button).
+        const ae = document.activeElement;
+        if (ae && ae !== document.body && ae !== this.input) return;
+        this.input.focus();
+      };
+      window.addEventListener('focus', refocus);
+      document.addEventListener('visibilitychange', refocus);
+    }
     // Warm the project index in the background so /projects and the
     // /open autocomplete don't pay a fetch round-trip on first use.
     getProjectIndex().catch(() => {});
@@ -181,6 +197,7 @@ const ui = {
     this.main.appendChild(div);
     const sa = document.getElementById('scrollarea');
     sa.scrollTo({ top: sa.scrollHeight, behavior: 'smooth' });
+    return div;
   },
   echo(cmd) {
     const hasSlash = cmd.startsWith('/');
@@ -191,7 +208,7 @@ const ui = {
     );
   },
   block(html) {
-    this.print(`<div class="block">${html}</div>`);
+    return this.print(`<div class="block">${html}</div>`);
   },
   updateAutocomplete() {
     const v = this.input.value;
@@ -291,7 +308,25 @@ const ui = {
       .forEach((el, j) => el.classList.toggle('active', i === j));
   },
   onKey(e) {
+    // Reader/photoviewer own the keyboard while open. The input keeps focus
+    // (we never blur it — keeps the CLI metaphor intact), but its handlers
+    // must stand down so ↑↓⏎ don't fire commands behind the overlay, AND
+    // we must preventDefault so letter keys (e.g. `v`) don't insert text.
+    // Allow the rare keys the overlay shouldn't shadow (Cmd/Ctrl combos
+    // like ⌘R, ⌘L for browser actions).
+    const reader = document.getElementById('reader');
+    const pv = document.getElementById('photoviewer');
+    if ((reader && !reader.hidden) || (pv && !pv.hidden)) {
+      if (!e.metaKey && !e.ctrlKey) e.preventDefault();
+      return;
+    }
     const acOpen = this.ac.classList.contains('show');
+    const inputEmpty = !this.input.value;
+    // ↑↓ navigate the most-recent rendered list when input is empty.
+    // ↑ at row 0 falls through to history (boundary leak — the list hint
+    // surfaces this so it isn't a hidden trick). ↓ at the last row no-ops.
+    // ←/→ jump between columns for columnar lists (travels).
+    const listNav = inputEmpty && _activeList && !acOpen;
     if (e.key === 'ArrowDown' && acOpen) {
       e.preventDefault();
       this.setAcActive((this.acIdx + 1) % this.acItems.length);
@@ -300,6 +335,18 @@ const ui = {
       this.setAcActive(
         (this.acIdx - 1 + this.acItems.length) % this.acItems.length
       );
+    } else if (e.key === 'ArrowDown' && listNav) {
+      e.preventDefault();
+      if (_activeList.idx < _activeList.rows.length - 1) moveActiveList(1);
+    } else if (e.key === 'ArrowUp' && listNav && _activeList.idx > 0) {
+      e.preventDefault();
+      moveActiveList(-1);
+    } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && listNav) {
+      // Only consume the key if a column actually moved; otherwise let the
+      // input cursor handle it (which on empty input is a no-op anyway).
+      if (moveActiveListHoriz(e.key === 'ArrowRight' ? 1 : -1)) {
+        e.preventDefault();
+      }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (!this.history.length) return;
@@ -320,8 +367,17 @@ const ui = {
       e.preventDefault();
       this.input.value = this.acItems[this.acIdx].cmd + ' ';
       this.updateAutocomplete();
+    } else if (e.key === 'Tab') {
+      // No autocomplete to fill — swallow Tab so focus doesn't escape the
+      // prompt. There's nothing useful to tab to on the root view.
+      e.preventDefault();
     } else if (e.key === 'Enter') {
       if (acOpen) this.input.value = this.acItems[this.acIdx].cmd;
+      if (inputEmpty && !acOpen && _activeList) {
+        e.preventDefault();
+        activateActiveList();
+        return;
+      }
       const v = this.input.value;
       this.input.value = '';
       this.hideAc();
@@ -332,9 +388,9 @@ const ui = {
         this.hideAc();
       } else if (this.input.value) {
         this.input.value = '';
-      } else {
-        this.input.blur();
       }
+      // Empty input + no autocomplete: esc is a no-op. The CLI is keyboard-
+      // first; blurring strands subsequent keypresses (incl. list-nav ↑↓).
     }
   },
   run(raw) {
@@ -345,6 +401,15 @@ const ui = {
     this.histIdx = -1;
     const norm = cmd.startsWith('/') ? cmd.slice(1) : cmd;
     const [name, ...args] = norm.split(/\s+/);
+
+    // Drop the list highlight unless this command is "drill into the list"
+    // (open/travels/theme with an argument). Those route through the body
+    // click delegate when activating a row, and clearing here would kill
+    // the list before the user has a chance to esc back to it.
+    const isDrillIn =
+      (name === 'open' || name === 'travels' || name === 'theme') &&
+      args.length > 0;
+    if (!isDrillIn) clearActiveList();
 
     const handler = commandHandlers[name];
     if (handler) {
@@ -364,6 +429,67 @@ const ui = {
     }
   },
 };
+
+// ── Active list (keyboard nav) ───────────────────────────────────
+// The most-recently rendered selectable list (projects/themes/travels) gets
+// ↑↓ + ⏎ + esc when the input is empty. Replaced on every command run; only
+// one list is "live" at a time. Activation programmatic-clicks the row's
+// link, which the body click delegate already routes to the right command.
+let _activeList = null; // { rows: HTMLElement[], idx: number }
+
+function attachListNav(rows) {
+  clearActiveList();
+  if (!rows.length) return;
+  _activeList = { rows, idx: 0 };
+  rows[0].classList.add('list-active');
+}
+function moveActiveList(d) {
+  if (!_activeList) return;
+  const { rows } = _activeList;
+  const i = Math.max(0, Math.min(rows.length - 1, _activeList.idx + d));
+  if (i === _activeList.idx) return;
+  rows[_activeList.idx].classList.remove('list-active');
+  _activeList.idx = i;
+  rows[i].classList.add('list-active');
+  rows[i].scrollIntoView({ block: 'nearest' });
+}
+// Columnar lists (just /travels today) get ←/→ to jump between columns at
+// the same in-column index. Returns true if a jump happened, false if the
+// list isn't columnar — caller decides whether to preventDefault.
+function moveActiveListHoriz(d) {
+  if (!_activeList) return false;
+  const cur = _activeList.rows[_activeList.idx];
+  const col = cur.closest('.travels-col');
+  if (!col) return false;
+  const cols = [...col.parentElement.querySelectorAll('.travels-col')];
+  const target = cols[cols.indexOf(col) + d];
+  if (!target) return false;
+  const colRows = [...col.querySelectorAll('.travel-row')];
+  const inColIdx = colRows.indexOf(cur);
+  const targetRows = [...target.querySelectorAll('.travel-row')];
+  const targetRow = targetRows[Math.min(inColIdx, targetRows.length - 1)];
+  if (!targetRow) return false;
+  const newIdx = _activeList.rows.indexOf(targetRow);
+  if (newIdx < 0) return false;
+  cur.classList.remove('list-active');
+  _activeList.idx = newIdx;
+  targetRow.classList.add('list-active');
+  targetRow.scrollIntoView({ block: 'nearest' });
+  return true;
+}
+function activateActiveList() {
+  if (!_activeList) return false;
+  const row = _activeList.rows[_activeList.idx];
+  const link = row.querySelector('[data-open], [data-travels], [data-theme]');
+  if (link) link.click();
+  return true;
+}
+function clearActiveList() {
+  if (!_activeList) return false;
+  _activeList.rows.forEach((r) => r.classList.remove('list-active'));
+  _activeList = null;
+  return true;
+}
 
 // ── Command view renderers ───────────────────────────────────────
 // Free functions called by command handlers. Co-located with their
@@ -440,13 +566,14 @@ function renderTravelsList(ui) {
         `<div class="travel-row"><a class="travel-link" data-travels="${escapeHtml(t.name)}" href="?cmd=travels+${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a></div>`
     )
     .join('');
-  ui.block(
+  const wrap = ui.block(
     hint +
       `<div class="travels-grid">` +
       `<div class="travels-col"><div class="section-head">─── visited ───</div>${visitedRows}</div>` +
       `<div class="travels-col"><div class="section-head">─── wishlist ───</div>${wishRows}</div>` +
       `</div>`
   );
+  attachListNav([...wrap.querySelectorAll('.travel-row')]);
 }
 
 // ── markdown reader ──────────────────────────────────────────────
@@ -848,9 +975,10 @@ async function openReader(adapter, name) {
     entry,
     data
   );
+  const hasPhotos = !!document.querySelector('#reader-body [data-trav-photos]');
   document.getElementById('reader-nav').innerHTML = `
     <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(prev.name)}" href="#">← ${escapeHtml(prev.name)}</a>
-    <span class="muted kbd-hint">[← →] navigate · [esc] close</span>
+    <span class="muted kbd-hint">[← →] navigate · [esc] close${hasPhotos ? ' · [v] photos' : ''}</span>
     <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(next.name)}" href="#">${escapeHtml(next.name)} →</a>
   `;
 
@@ -941,11 +1069,11 @@ function renderTravelVisitedBody(fm, html) {
               const thumb = thumbSrcFor(p.src);
               const full = encodeURI(p.src);
               const cap = escapeHtml(p.caption || '');
-              return `<button class="trav-photos-thumb" type="button" data-trav-photos="${name}" data-idx="${i}" aria-label="photo ${i + 1}${cap ? `: ${cap}` : ''}"><img src="${encodeURI(thumb)}" loading="lazy" decoding="async" alt="" onerror="this.onerror=null;this.src='${full}'" /></button>`;
+              return `<button class="trav-photos-thumb" type="button" tabindex="-1" data-trav-photos="${name}" data-idx="${i}" aria-label="photo ${i + 1}${cap ? `: ${cap}` : ''}"><img src="${encodeURI(thumb)}" loading="lazy" decoding="async" alt="" onerror="this.onerror=null;this.src='${full}'" /></button>`;
             })
             .join('')}
         </div>
-        <button class="trav-photos-btn" data-trav-photos="${name}">
+        <button class="trav-photos-btn" tabindex="-1" data-trav-photos="${name}">
           <span class="trav-photos-label">[view all photos] ↗ <span class="muted">(${photos.length})</span></span>
         </button>
       </div>`
@@ -1210,6 +1338,66 @@ function shouldThrottleArrowNav(e) {
   return false;
 }
 
+// Reader scroll: rAF velocity loop, not OS key-repeat. Tap = brief glide
+// from a single accel/decay; hold = sustained smooth scroll that ramps in
+// and decays out. Direct scrollTop manipulation at frame rate, no native
+// `scroll-behavior: smooth` (which interferes with continuous input).
+const READER_SCROLL = {
+  accel: 2.2,    // px/frame² ramp-up while key held
+  decay: 0.85,   // velocity multiplier per frame after release
+  maxVel: 22,    // px/frame cap (~1320 px/s at 60fps)
+  minVel: 0.15,  // stop threshold
+};
+let _readerScrollDir = 0; // -1 up, 0 idle/decaying, +1 down
+let _readerScrollVel = 0;
+let _readerScrollRaf = null;
+function startReaderScroll(dir) {
+  _readerScrollDir = dir;
+  if (_readerScrollRaf == null) tickReaderScroll();
+}
+function stopReaderScroll(dir) {
+  // Only release if the released key matches the active direction (so
+  // tapping ↑ while holding ↓ doesn't kill the hold).
+  if (_readerScrollDir === dir) _readerScrollDir = 0;
+}
+function tickReaderScroll() {
+  const scroller = document.getElementById('reader-body')?.parentElement;
+  const reader = document.getElementById('reader');
+  if (!scroller || !reader || reader.hidden) {
+    _readerScrollRaf = null;
+    _readerScrollDir = 0;
+    _readerScrollVel = 0;
+    return;
+  }
+  if (_readerScrollDir !== 0) {
+    _readerScrollVel += _readerScrollDir * READER_SCROLL.accel;
+    if (_readerScrollVel > READER_SCROLL.maxVel) _readerScrollVel = READER_SCROLL.maxVel;
+    if (_readerScrollVel < -READER_SCROLL.maxVel) _readerScrollVel = -READER_SCROLL.maxVel;
+  } else {
+    _readerScrollVel *= READER_SCROLL.decay;
+    if (Math.abs(_readerScrollVel) < READER_SCROLL.minVel) {
+      _readerScrollVel = 0;
+      _readerScrollRaf = null;
+      return;
+    }
+  }
+  scroller.scrollTop += _readerScrollVel;
+  _readerScrollRaf = requestAnimationFrame(tickReaderScroll);
+}
+
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'ArrowDown') stopReaderScroll(1);
+  else if (e.key === 'ArrowUp') stopReaderScroll(-1);
+});
+// Tab-away / window blur won't fire keyup, so the rAF loop would keep its
+// direction set and resume scrolling when the page returns. Hard-stop the
+// loop on those events; tap an arrow again to restart.
+const cancelReaderScroll = () => {
+  _readerScrollDir = 0;
+};
+document.addEventListener('visibilitychange', cancelReaderScroll);
+window.addEventListener('blur', cancelReaderScroll);
+
 document.addEventListener('keydown', (e) => {
   const pv = document.getElementById('photoviewer');
   if (pv && !pv.hidden) {
@@ -1248,6 +1436,32 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     if (shouldThrottleArrowNav(e)) return;
     navigateReader(1);
+  }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (e.repeat) return; // OS auto-repeat ignored; rAF loop owns the velocity
+    startReaderScroll(e.key === 'ArrowDown' ? 1 : -1);
+  }
+  if (e.key === 'v' || e.key === 'V') {
+    // Open the photoviewer for the current entry (travel reader only —
+    // project reader has no `data-trav-photos` button to target).
+    const trigger = document.querySelector('#reader-body [data-trav-photos]');
+    if (trigger) {
+      e.preventDefault();
+      trigger.click();
+    }
+    return;
+  }
+  if (e.key === 'PageDown' || e.key === 'PageUp' || e.key === ' ') {
+    e.preventDefault();
+    const scroller = document.getElementById('reader-body')?.parentElement;
+    if (!scroller) return;
+    const dir = e.key === 'PageUp' || e.shiftKey ? -1 : 1;
+    const factor = e.repeat ? 0.4 : 0.9;
+    scroller.scrollBy({
+      top: dir * scroller.clientHeight * factor,
+      behavior: e.repeat ? 'auto' : 'smooth',
+    });
   }
 });
 document.addEventListener('click', (e) => {
@@ -1350,7 +1564,8 @@ async function renderProjectsList(ui) {
       `<div class="section-head">─── more ───</div>` +
         others.map(renderRow).join('')
     );
-  ui.block(hint + sections.join(''));
+  const wrap = ui.block(hint + sections.join(''));
+  attachListNav([...wrap.querySelectorAll('.proj-row')]);
 }
 
 function renderThemeList(ui) {
@@ -1365,14 +1580,16 @@ function renderThemeList(ui) {
       i === current ? `<span class="theme-active">(active)</span>` : '';
     return `<div class="theme-row"><div class="proj-tick">▸</div><div class="theme-body"><a class="proj-link theme-link" data-theme="${t.name}" href="?cmd=theme+${encodeURIComponent(t.name)}">${t.name}</a><span class="theme-swatches">${swatches}</span><span class="theme-desc">${escapeHtml(t.desc || '')}</span>${active}</div></div>`;
   }).join('');
-  ui.block(
+  const wrap = ui.block(
     `<div class="proj-hint"><span class="muted">click a theme, or type <span class="key">/theme &lt;name&gt;</span></span></div>${rows}`
   );
+  attachListNav([...wrap.querySelectorAll('.theme-row')]);
 }
 
 const commandHandlers = {
   clear(ui) {
     ui.main.innerHTML = '';
+    clearActiveList();
     // Reset the URL so a refresh doesn't re-run the last deep-linked command.
     if (location.search) history.replaceState({}, '', location.pathname);
   },

@@ -234,6 +234,16 @@ a:hover {
 .autocomplete .item.active {
   background: color-mix(in oklab, var(--orange) 15%, transparent);
 }
+/* keyboard-nav active row across renderable lists (projects, themes, travels).
+   Same tint as autocomplete .active for visual continuity; brighter tick so the
+   selection reads at a glance without restyling the whole row. */
+.list-active {
+  background: color-mix(in oklab, var(--orange) 15%, transparent);
+}
+.list-active .proj-tick,
+.list-active .fav-marker {
+  opacity: 1;
+}
 .autocomplete .item .cmd {
   color: var(--yellow);
   min-width: 110px;
