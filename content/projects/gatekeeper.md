@@ -14,7 +14,7 @@ release: https://github.com/cx18121/gatekeeper/releases/tag/v0.1.0
 
 A desktop app that enforces per-app daily time limits, by forcing you to request screen-time from a chatbot that acts as a gatekeeper, so that you can only access the app if you can give a very good reason to do so.
 
-![gatekeeper unlock request UI](images/Gatekeeper.webp "the unlock request flow: pick an app, state your reason, the model decides to accept/deny")
+![gatekeeper unlock request UI](hero "the unlock request flow: pick an app, state your reason, the model decides to accept/deny")
 
 ## why
 

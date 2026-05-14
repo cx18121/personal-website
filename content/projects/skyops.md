@@ -15,7 +15,7 @@ repo: https://github.com/erics118/skyops
 
 An AI-powered charter flight ops platform that parses booking requests from emails and automates flight quoting, routing, and pricing, and provides suggestions to improve plane management.
 
-![skyops operations dashboard](images/SkyOps.webp "operations overview: pipeline, fleet health, and live operations map")
+![skyops operations dashboard](hero "operations overview: pipeline, fleet health, and live operations map")
 
 ## why
 
