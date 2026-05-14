@@ -44,17 +44,17 @@ export const TRAVELS = {
     {
       name: 'patagonia',
       country: 'argentina / chile',
-      why: 'hike the o loop.',
+      why: 'hike the o loop',
     },
     {
       name: 'vietnam',
       country: 'vietnam',
-      why: 'motorbike around the country.',
+      why: 'motorbike around the entire country',
     },
     {
       name: 'guatemala',
       country: 'guatemala',
-      why: 'see volcanos erupt.',
+      why: 'see volcanos erupt',
     },
   ],
 };
