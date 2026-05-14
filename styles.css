@@ -220,6 +220,11 @@ a:hover {
   overscroll-behavior: contain;
   display: none;
   z-index: 100;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.autocomplete::-webkit-scrollbar {
+  display: none;
 }
 .autocomplete.show {
   display: block;

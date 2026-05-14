@@ -278,7 +278,7 @@ const ui = {
     const r = this.box.getBoundingClientRect();
     const vh = window.innerHeight;
     const margin = 12;
-    const cap = 320;
+    const cap = 260;
     this.ac.style.left = r.left + 'px';
     this.ac.style.width = r.width + 'px';
     // Allow dropdown to size to content first, capped, so we can read scrollHeight.
@@ -303,9 +303,9 @@ const ui = {
   },
   setAcActive(i) {
     this.acIdx = i;
-    this.ac
-      .querySelectorAll('.item')
-      .forEach((el, j) => el.classList.toggle('active', i === j));
+    const items = this.ac.querySelectorAll('.item');
+    items.forEach((el, j) => el.classList.toggle('active', i === j));
+    items[i]?.scrollIntoView({ block: 'nearest' });
   },
   onKey(e) {
     // Reader/photoviewer own the keyboard while open. The input keeps focus
@@ -329,12 +329,10 @@ const ui = {
     const listNav = inputEmpty && _activeList && !acOpen;
     if (e.key === 'ArrowDown' && acOpen) {
       e.preventDefault();
-      this.setAcActive((this.acIdx + 1) % this.acItems.length);
+      this.setAcActive(Math.min(this.acIdx + 1, this.acItems.length - 1));
     } else if (e.key === 'ArrowUp' && acOpen) {
       e.preventDefault();
-      this.setAcActive(
-        (this.acIdx - 1 + this.acItems.length) % this.acItems.length
-      );
+      this.setAcActive(Math.max(this.acIdx - 1, 0));
     } else if (e.key === 'ArrowDown' && listNav) {
       e.preventDefault();
       if (_activeList.idx < _activeList.rows.length - 1) moveActiveList(1);
@@ -1607,6 +1605,11 @@ const commandHandlers = {
   },
   contact(ui) {
     ui.block(CONTACT);
+  },
+  source(ui) {
+    ui.block(
+      `<a href="https://github.com/cx18121/personal-website" target="_blank" rel="noreferrer">github.com/cx18121/personal-website</a>`
+    );
   },
   skills(ui) {
     ui.block(

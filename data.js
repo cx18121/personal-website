@@ -227,14 +227,15 @@ linkedin  <a href="https://www.linkedin.com/in/charles-xue/" target="_blank" rel
 export const COMMANDS = [
   { cmd: '/about', desc: 'who I am' },
   { cmd: '/projects', desc: "what I've built" },
-  { cmd: '/open', desc: 'open a project' },
   { cmd: '/skills', desc: 'stack & tools' },
   { cmd: '/contact', desc: 'how to reach me' },
   { cmd: '/travels', desc: 'places visited & want to visit' },
   { cmd: '/favorites', desc: 'what i like' },
   { cmd: '/theme', desc: 'change color scheme' },
-  { cmd: '/clear', desc: 'clear the screen' },
   { cmd: '/help', desc: 'show all commands' },
+  { cmd: '/open', desc: 'open a project' },
+  { cmd: '/clear', desc: 'clear the screen' },
+  { cmd: '/source', desc: "this site's code" },
 ];
 
 export const MASCOTS = [
