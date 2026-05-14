@@ -552,8 +552,9 @@ function renderGalleryBlock(body, params) {
 }
 
 // Image-path resolver. Short paths (no slash, no http) in project markdown
-// expand to `images/{currentProject}/{path}`, with a `.png` default ext.
-// `_currentImageBase` is stamped by projectReader.loadEntry before parsing.
+// expand to `{imageBase}/{path}`, with a `.png` default ext. The base is
+// scoped to a single renderMarkdown() call below — never set from outside
+// this module. Safe because marked.parse is synchronous.
 let _currentImageBase = null;
 function resolveImagePath(href) {
   if (!href) return href;
@@ -611,6 +612,20 @@ function configureMarked() {
     },
   });
   _markedConfigured = true;
+}
+
+// Single entry point for parsing reader-body markdown. `imageBase` (e.g.
+// `images/foo`) makes bare image hrefs resolve to that directory; pass
+// nothing when relative image expansion isn't wanted (travel entries).
+function renderMarkdown(body, { imageBase = null } = {}) {
+  configureMarked();
+  if (typeof marked === 'undefined') return escapeHtml(body);
+  _currentImageBase = imageBase;
+  try {
+    return marked.parse(body);
+  } finally {
+    _currentImageBase = null;
+  }
 }
 
 function renderSidebar(fm) {
@@ -721,13 +736,7 @@ const projectReader = {
   async loadEntry(name) {
     const text = await loadProjectMd(name);
     const { fm, body } = parseFrontmatter(text);
-    _currentImageBase = `images/${fm.name || name}`;
-    let html;
-    try {
-      html = typeof marked !== 'undefined' ? marked.parse(body) : escapeHtml(body);
-    } finally {
-      _currentImageBase = null;
-    }
+    const html = renderMarkdown(body, { imageBase: `images/${fm.name || name}` });
     return { fm, html };
   },
   renderSidebar(name, data) {
@@ -802,8 +811,7 @@ const travelReader = {
       fm.country = fm.country || visited.country;
       fm.photos = normalizeTravelPhotos(fm.photos, fm.name || name);
       _travelFmCache.set(name, fm);
-      const html =
-        typeof marked !== 'undefined' ? marked.parse(body) : escapeHtml(body);
+      const html = renderMarkdown(body);
       return { fm, html, isVisited: true };
     }
     const wish = TRAVELS.wishlist.find((t) => t.name === name);
@@ -819,7 +827,6 @@ const travelReader = {
 };
 
 async function openReader(adapter, name) {
-  configureMarked();
   const list = adapter.list();
   const idx = list.findIndex((e) => e.name === name);
   if (idx < 0) return;
