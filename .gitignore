@@ -11,3 +11,7 @@ images/travels/
 # Local cache from `wrangler` (Cloudflare R2 CLI).
 .wrangler/
 .playwright-mcp/
+
+# Local dump of Discord visitor pings — contains IPs/ASNs/locations, don't commit.
+discord-log.txt
+discord-log.*.txt

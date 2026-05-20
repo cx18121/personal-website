@@ -1,10 +1,12 @@
 // Cloudflare Pages middleware. Runs on every request before the static
-// asset is served. Pings a Discord webhook with visitor metadata on HTML
-// page loads; skips static assets and obvious bots. The webhook fires via
-// waitUntil so it never blocks the response.
+// asset is served. For each non-bot HTML page load it:
+//   1. Pings a Discord webhook with visitor metadata (realtime feel).
+//   2. Appends a row to the D1 visit log (durable, queryable history).
+// Both writes go through waitUntil so they never block the response.
 //
-// DISCORD_WEBHOOK_URL is set as an encrypted env var via:
-//   wrangler pages secret put DISCORD_WEBHOOK_URL --project-name=personal-website
+// Bindings (see wrangler.toml):
+//   VISITOR_LOG          D1 database (table `visits`)
+//   DISCORD_WEBHOOK_URL  secret — set with `wrangler pages secret put`
 
 const SKIP_EXT = /\.(css|js|mjs|png|jpe?g|webp|svg|gif|ico|woff2?|ttf|otf|map|json|xml|txt|pdf)$/i;
 const BOT_UA = /bot|crawl|spider|slurp|duckduck|baidu|yandex|sogou|facebookexternal|twitter|linkedinbot|applebot|ahrefs|semrush|mj12|dotbot|headlesschrome|phantomjs|selenium|puppeteer|playwright|curl|wget|monitor|pingdom|uptime/i;
@@ -22,48 +24,96 @@ export async function onRequest(context) {
   if (
     request.method === 'GET' &&
     !SKIP_EXT.test(url.pathname) &&
-    !BOT_UA.test(ua) &&
-    env.DISCORD_WEBHOOK_URL
+    !BOT_UA.test(ua)
   ) {
-    waitUntil(report(request, env.DISCORD_WEBHOOK_URL));
+    const visit = buildVisit(request, url, ua);
+    if (env.DISCORD_WEBHOOK_URL) {
+      waitUntil(reportDiscord(env.DISCORD_WEBHOOK_URL, visit, url));
+    }
+    if (env.VISITOR_LOG) {
+      waitUntil(logToD1(env.VISITOR_LOG, visit));
+    }
   }
 
   return next();
 }
 
-async function report(request, webhookUrl) {
-  const url = new URL(request.url);
+function buildVisit(request, url, ua) {
   const cf = request.cf || {};
-  const ua = request.headers.get('user-agent') || '';
-  const referer = request.headers.get('referer') || '';
-
   const org = classifyOrg(cf.asOrganization, cf.asn);
   const device = parseDevice(ua);
-  const location = formatLocation(cf);
   const bot = detectBot(org.category, device);
+  const referer = request.headers.get('referer') || '';
 
-  const titlePath = `${url.pathname}${url.search}`;
-  const title = bot.flagged ? `[BOT?] ${titlePath}` : titlePath;
+  return {
+    ts: new Date().toISOString(),
+    path: url.pathname,
+    query: url.search || null,
+    referer: referer || null,
+    user_agent: ua || null,
+    country: cf.country || null,
+    region: cf.region || null,
+    city: cf.city || null,
+    colo: cf.colo || null,
+    asn: cf.asn || null,
+    org_label: org.label,
+    org_category: org.category,
+    org_color: org.color,
+    browser: device.browserKnown ? device.browser : null,
+    os: device.osKnown ? device.os : null,
+    device_label: device.label,
+    bot_flagged: bot.flagged,
+    bot_reason: bot.reason || null,
+  };
+}
+
+async function logToD1(db, v) {
+  try {
+    await db
+      .prepare(
+        `INSERT INTO visits (
+          ts, path, query, referer, user_agent,
+          country, region, city, colo, asn,
+          org_label, org_category, browser, os,
+          bot_flagged, bot_reason
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      )
+      .bind(
+        v.ts, v.path, v.query, v.referer, v.user_agent,
+        v.country, v.region, v.city, v.colo, v.asn,
+        v.org_label, v.org_category, v.browser, v.os,
+        v.bot_flagged ? 1 : 0, v.bot_reason,
+      )
+      .run();
+  } catch {
+    // Best-effort — never break the page if D1 is down.
+  }
+}
+
+async function reportDiscord(webhookUrl, v, url) {
+  const titlePath = `${v.path}${v.query || ''}`;
+  const title = v.bot_flagged ? `[BOT?] ${titlePath}` : titlePath;
+  const location = [v.city, v.region, v.country].filter(Boolean).join(', ') || 'unknown';
 
   const fields = [
-    { name: 'Org', value: `${org.label}\n_${org.category}_`, inline: true },
-    { name: 'Location', value: location || 'unknown', inline: true },
-    { name: 'Device', value: device.label, inline: true },
+    { name: 'Org', value: `${v.org_label}\n_${v.org_category}_`, inline: true },
+    { name: 'Location', value: location, inline: true },
+    { name: 'Device', value: v.device_label, inline: true },
   ];
-  if (referer) {
-    fields.push({ name: 'Came from', value: formatReferer(referer), inline: false });
+  if (v.referer) {
+    fields.push({ name: 'Came from', value: formatReferer(v.referer), inline: false });
   }
 
-  const footerParts = [`ASN ${cf.asn || '?'}`, cf.colo || 'cf'];
-  if (bot.flagged) footerParts.push(`flagged: ${bot.reason}`);
+  const footerParts = [`ASN ${v.asn || '?'}`, v.colo || 'cf'];
+  if (v.bot_flagged) footerParts.push(`flagged: ${v.bot_reason}`);
 
   const embed = {
     title,
     url: url.toString(),
-    color: bot.flagged ? 0x4f5660 : org.color,
+    color: v.bot_flagged ? 0x4f5660 : v.org_color,
     fields,
     footer: { text: footerParts.join(' · ') },
-    timestamp: new Date().toISOString(),
+    timestamp: v.ts,
   };
 
   try {
@@ -112,7 +162,7 @@ function classifyOrg(org, asn) {
 }
 
 function parseDevice(ua) {
-  if (!ua) return { label: 'unknown', browserKnown: false, osKnown: false };
+  if (!ua) return { label: 'unknown', browser: null, os: null, browserKnown: false, osKnown: false };
 
   let browser = 'Browser';
   let browserKnown = false;
@@ -131,7 +181,7 @@ function parseDevice(ua) {
   else if (/Windows NT/.test(ua)) { os = 'Windows'; osKnown = true; }
   else if (/Linux/.test(ua)) { os = 'Linux'; osKnown = true; }
 
-  return { label: `${browser} on ${os}`, browserKnown, osKnown };
+  return { label: `${browser} on ${os}`, browser, os, browserKnown, osKnown };
 }
 
 // Heuristic bot detection — runs AFTER the obvious BOT_UA filter that
@@ -146,11 +196,6 @@ function detectBot(orgCategory, device) {
   if (!device.browserKnown && orgCategory === 'Cloud / hosting')
     return { flagged: true, reason: 'cloud ASN + unknown browser' };
   return { flagged: false };
-}
-
-function formatLocation(cf) {
-  const parts = [cf.city, cf.region, cf.country].filter(Boolean);
-  return parts.length ? parts.join(', ') : '';
 }
 
 function formatReferer(ref) {

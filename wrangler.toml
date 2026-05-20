@@ -1,0 +1,23 @@
+# Cloudflare Pages configuration. Previously this project was configured
+# entirely via the dashboard; this file was added so the D1 binding for
+# visitor logging lives in source control. The DISCORD_WEBHOOK_URL secret
+# stays managed by `wrangler pages secret put`.
+
+name = "personal-website"
+pages_build_output_dir = "."
+compatibility_date = "2026-05-01"
+
+# D1 SQLite database holding the visit log. The middleware in
+# functions/_middleware.js INSERTs one row per non-bot page hit. Query
+# from CLI with:
+#   npx wrangler d1 execute personal-website-visitors --remote \
+#     --command "SELECT ts, path, org_label, city, country FROM visits ORDER BY ts DESC LIMIT 50"
+#
+# Setup (one-time):
+#   1. npx wrangler d1 create personal-website-visitors
+#      → paste the returned database_id below, replacing the placeholder
+#   2. npx wrangler d1 migrations apply personal-website-visitors --remote
+[[d1_databases]]
+binding = "VISITOR_LOG"
+database_name = "personal-website-visitors"
+database_id = "4e246af4-2818-462a-adbb-df20bf0e9c65"
