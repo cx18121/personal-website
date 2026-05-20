@@ -1,13 +1,13 @@
 name: deploy
 
-# Why this workflow exists:
-# The site is plain HTML/CSS/JS — no framework, no bundler, no build step —
-# but it still needs a workflow because version.json (the v{Y}.{M}.{N} tag
-# shown in the welcome panel) is generated from `git rev-list` at deploy
-# time and is gitignored, never in the repo. GitHub Pages "deploy from
-# branch" can't run that step, so Pages source is set to "GitHub Actions"
-# (Settings → Pages) and this workflow uploads the repo + the freshly
-# computed version.json as the Pages artifact on every push to main.
+# Site is served from Cloudflare Pages. This workflow regenerates the
+# git-derived version.json on every push to main and deploys to Pages via
+# wrangler. version.json is gitignored — it must be produced at deploy
+# time so the welcome panel shows the current commit.
+#
+# Required GitHub repo secrets:
+#   CLOUDFLARE_API_TOKEN — token with "Cloudflare Pages: Edit" permission
+#   CLOUDFLARE_ACCOUNT_ID — 88a6bc28031fa2fa2b929534b5f39fa7
 
 on:
   push:
@@ -16,15 +16,13 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,18 +42,9 @@ jobs:
           printf '{"ver":"%s","sha":"%s","date":"%s"}\n' "$VER" "$SHA" "$DATE" > version.json
           cat version.json
 
-      - uses: actions/configure-pages@v5
-
-      - uses: actions/upload-pages-artifact@v3
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
         with:
-          path: .
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy . --project-name=personal-website --branch=main --commit-dirty=true
