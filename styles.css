@@ -95,6 +95,13 @@ body {
   margin-bottom: 4px;
 }
 .welcome .mascot {
+  /* Cascadia Mono ships with Windows 11 / Windows Terminal and covers the
+     geometric glyphs (◕ ◔ ◐ ◑ ▽ ▾ ‿) at proper monospace width. Consolas
+     doesn't, so Windows would otherwise font-fallback those characters to
+     Segoe UI Symbol / a CJK font and render them double-width, breaking the
+     face alignment. macOS still wins on SF Mono / Menlo. */
+  font-family: 'SF Mono', 'Cascadia Mono', 'Cascadia Code', 'JetBrains Mono',
+    Menlo, Consolas, monospace;
   color: var(--orange);
   line-height: 1;
   white-space: pre;
