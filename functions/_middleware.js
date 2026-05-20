@@ -61,16 +61,6 @@ export async function onRequest(context) {
     if (env.VISITOR_LOG) {
       waitUntil(logToD1(env.VISITOR_LOG, visit));
     }
-    // TEMP DEBUG — remove once signal path verified.
-    console.log('signal-gate', {
-      hasUrl: !!env.DISCORD_SIGNAL_WEBHOOK_URL,
-      hasLog: !!env.VISITOR_LOG,
-      hasSalt: !!env.SESSION_SALT,
-      isSig: isSignal(visit),
-      orgCat: visit.org_category,
-      bot: visit.bot_flagged,
-      ip: !!request.headers.get('cf-connecting-ip'),
-    });
     if (
       env.DISCORD_SIGNAL_WEBHOOK_URL &&
       env.VISITOR_LOG &&
@@ -80,8 +70,7 @@ export async function onRequest(context) {
       const ip = request.headers.get('cf-connecting-ip') || '';
       if (ip) {
         waitUntil(
-          reportSignal(env.DISCORD_SIGNAL_WEBHOOK_URL, env.VISITOR_LOG, env.SESSION_SALT, ip, visit)
-            .catch((e) => console.log('signal-error', e?.message || String(e))),
+          reportSignal(env.DISCORD_SIGNAL_WEBHOOK_URL, env.VISITOR_LOG, env.SESSION_SALT, ip, visit),
         );
       }
     }
@@ -228,7 +217,6 @@ async function tryEditMessage(webhookUrl, db, sessionKey, session, v) {
 
 async function createSessionMessage(webhookUrl, db, sessionKey, v) {
   const content = `${formatHeader(v)}\n${formatVisitLine(v)}`;
-  console.log('signal-post-start', { sessionKey, contentLen: content.length });
   try {
     const res = await fetch(`${webhookUrl}?wait=true`, {
       method: 'POST',
@@ -239,14 +227,8 @@ async function createSessionMessage(webhookUrl, db, sessionKey, v) {
         allowed_mentions: { parse: [] },
       }),
     });
-    console.log('signal-post-res', { status: res.status, ok: res.ok });
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      console.log('signal-post-fail-body', body.slice(0, 300));
-      return;
-    }
+    if (!res.ok) return;
     const msg = await res.json();
-    console.log('signal-post-ok', { id: msg.id });
     if (!msg.id) return;
     await db
       .prepare(
