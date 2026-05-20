@@ -1,15 +1,35 @@
 // Cloudflare Pages middleware. Runs on every request before the static
 // asset is served. For each non-bot HTML page load it:
-//   1. Pings a Discord webhook with visitor metadata (realtime feel).
+//   1. Pings the firehose Discord webhook (every visit, raw stream).
 //   2. Appends a row to the D1 visit log (durable, queryable history).
-// Both writes go through waitUntil so they never block the response.
+//   3. If the visit looks like signal (real human from a corp/ISP/mobile
+//      ASN, not a scanner, not a probe path), also pings the signal
+//      webhook — which lives on a Discord forum channel so multi-page
+//      visits from the same person collapse into one thread.
+// All writes go through waitUntil so they never block the response.
 //
 // Bindings (see wrangler.toml):
-//   VISITOR_LOG          D1 database (table `visits`)
-//   DISCORD_WEBHOOK_URL  secret — set with `wrangler pages secret put`
+//   VISITOR_LOG                 D1 database (tables `visits`, `sessions`)
+//   DISCORD_WEBHOOK_URL         secret — firehose text channel
+//   DISCORD_SIGNAL_WEBHOOK_URL  secret — signal FORUM channel (optional)
+//   SESSION_SALT                secret — salt for IP→session_key hash
 
 const SKIP_EXT = /\.(css|js|mjs|png|jpe?g|webp|svg|gif|ico|woff2?|ttf|otf|map|json|xml|txt|pdf)$/i;
 const BOT_UA = /bot|crawl|spider|slurp|duckduck|baidu|yandex|sogou|facebookexternal|twitter|linkedinbot|applebot|ahrefs|semrush|mj12|dotbot|headlesschrome|phantomjs|selenium|puppeteer|playwright|curl|wget|monitor|pingdom|uptime/i;
+
+// Paths a static personal site never legitimately serves. Hitting any
+// of these is a scanner probing for CMS / config / cred leaks.
+const PROBE_PATH = /^\/(?:wp-|wordpress|xmlrpc|setup\/?$|admin\/?$|\.env|\.git|\.aws|\.ssh|phpmyadmin|cgi-bin|owa\/|ecp\/|autodiscover|hudson|jenkins|actuator|console\/|boaform|RouterAccess|HNAP1|hnap1|api\/|server-status|solr\/|cf_scripts\/|vendor\/phpunit|geoserver|drupal|joomla|magento)/i;
+
+// Orgs that show up as "Likely corporate" or similar but are actually
+// internet-wide scanners or commercial proxy/scraper providers. Filter
+// these out of the signal channel.
+const NOISE_ORG = /onyphe|qualys|tenable|rapid7|censys|shodan|shadowserver|netcraft|binaryedge|leakix|securitytrails|stretchoid|alphastrike|driftnet|recyber|internet measurement|cyberresilience|1337 services|hostroyale|racknerd|aventice|subnet digital|uab code200|bl networks|omegatech|31173 services|qux labs|datacamp limited|m247|leaseweb|cogent communications/i;
+
+// Session freshness window — visits from the same session_key within
+// this window get appended to an existing thread. After this they get
+// a new thread (probably a different reading session).
+const SESSION_WINDOW_MS = 30 * 60 * 1000;
 
 export async function onRequest(context) {
   const { request, env, next, waitUntil } = context;
@@ -27,11 +47,25 @@ export async function onRequest(context) {
     !BOT_UA.test(ua)
   ) {
     const visit = buildVisit(request, url, ua);
+
     if (env.DISCORD_WEBHOOK_URL) {
       waitUntil(reportDiscord(env.DISCORD_WEBHOOK_URL, visit, url));
     }
     if (env.VISITOR_LOG) {
       waitUntil(logToD1(env.VISITOR_LOG, visit));
+    }
+    if (
+      env.DISCORD_SIGNAL_WEBHOOK_URL &&
+      env.VISITOR_LOG &&
+      env.SESSION_SALT &&
+      isSignal(visit)
+    ) {
+      const ip = request.headers.get('cf-connecting-ip') || '';
+      if (ip) {
+        waitUntil(
+          reportSignal(env.DISCORD_SIGNAL_WEBHOOK_URL, env.VISITOR_LOG, env.SESSION_SALT, ip, visit, url),
+        );
+      }
     }
   }
 
@@ -67,6 +101,23 @@ function buildVisit(request, url, ua) {
   };
 }
 
+// Signal = "this looks like a real human from a real network, not a
+// scanner or proxy." Recruiter visits clear all these gates.
+function isSignal(v) {
+  if (v.bot_flagged) return false;
+  if (PROBE_PATH.test(v.path)) return false;
+  if (v.org_label && NOISE_ORG.test(v.org_label)) return false;
+  switch (v.org_category) {
+    case 'Likely corporate':
+    case 'SASE (corp behind security vendor)':
+    case 'Residential ISP':
+    case 'Mobile carrier':
+      return true;
+    default:
+      return false;
+  }
+}
+
 async function logToD1(db, v) {
   try {
     await db
@@ -91,6 +142,97 @@ async function logToD1(db, v) {
 }
 
 async function reportDiscord(webhookUrl, v, url) {
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        embeds: [buildEmbed(v, url)],
+        allowed_mentions: { parse: [] },
+      }),
+    });
+  } catch {
+    // Best-effort — never break the page if Discord is down.
+  }
+}
+
+// Signal channel must be a Discord FORUM channel — webhooks can only
+// create threads via `thread_name` on forum/media channels. In a forum:
+// first hit from a session creates a thread (forum post), subsequent
+// hits within SESSION_WINDOW_MS land as short replies in that thread.
+async function reportSignal(webhookUrl, db, salt, ip, v, url) {
+  const sessionKey = await hashSession(salt, ip);
+
+  let thread = null;
+  try {
+    thread = await db
+      .prepare('SELECT thread_id, last_seen FROM sessions WHERE session_key = ?')
+      .bind(sessionKey)
+      .first();
+  } catch {
+    // If the lookup fails we just create a new thread.
+  }
+
+  const fresh = thread && Date.now() - Date.parse(thread.last_seen) < SESSION_WINDOW_MS;
+
+  if (fresh) {
+    // Reply in existing thread with a short one-liner — the thread
+    // title already shows org + city, so we just need the new path.
+    const refererPart = v.referer ? `  ← ${formatReferer(v.referer)}` : '';
+    try {
+      await fetch(`${webhookUrl}?thread_id=${encodeURIComponent(thread.thread_id)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: `\`${v.path}${v.query || ''}\`${refererPart}`,
+          allowed_mentions: { parse: [] },
+        }),
+      });
+      await db
+        .prepare('UPDATE sessions SET last_seen = ?, hits = hits + 1 WHERE session_key = ?')
+        .bind(v.ts, sessionKey)
+        .run();
+    } catch {
+      // Swallow — signal pings are best-effort.
+    }
+    return;
+  }
+
+  // New thread: forum-post with thread_name + full embed as OP.
+  const threadName = buildThreadName(v);
+  try {
+    const res = await fetch(`${webhookUrl}?wait=true`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        thread_name: threadName,
+        embeds: [buildEmbed(v, url)],
+        allowed_mentions: { parse: [] },
+      }),
+    });
+    if (!res.ok) return;
+    const msg = await res.json();
+    // For forum-channel webhooks, the response's channel_id is the new thread.
+    const threadId = msg.channel_id;
+    if (!threadId) return;
+    await db
+      .prepare(
+        `INSERT INTO sessions (session_key, thread_id, first_seen, last_seen, hits)
+         VALUES (?, ?, ?, ?, 1)
+         ON CONFLICT(session_key) DO UPDATE SET
+           thread_id  = excluded.thread_id,
+           first_seen = excluded.first_seen,
+           last_seen  = excluded.last_seen,
+           hits       = 1`,
+      )
+      .bind(sessionKey, threadId, v.ts, v.ts)
+      .run();
+  } catch {
+    // Swallow.
+  }
+}
+
+function buildEmbed(v, url) {
   const titlePath = `${v.path}${v.query || ''}`;
   const title = v.bot_flagged ? `[BOT?] ${titlePath}` : titlePath;
   const location = [v.city, v.region, v.country].filter(Boolean).join(', ') || 'unknown';
@@ -107,7 +249,7 @@ async function reportDiscord(webhookUrl, v, url) {
   const footerParts = [`ASN ${v.asn || '?'}`, v.colo || 'cf'];
   if (v.bot_flagged) footerParts.push(`flagged: ${v.bot_reason}`);
 
-  const embed = {
+  return {
     title,
     url: url.toString(),
     color: v.bot_flagged ? 0x4f5660 : v.org_color,
@@ -115,16 +257,25 @@ async function reportDiscord(webhookUrl, v, url) {
     footer: { text: footerParts.join(' · ') },
     timestamp: v.ts,
   };
+}
 
-  try {
-    await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ embeds: [embed], allowed_mentions: { parse: [] } }),
-    });
-  } catch {
-    // Best-effort — never break the page if Discord is down.
-  }
+// Discord forum thread names are capped at 100 chars. Org + city is
+// the most useful at-a-glance signal.
+function buildThreadName(v) {
+  const place = v.city || v.region || v.country || '?';
+  const raw = `${v.org_label} · ${place}`;
+  return raw.length > 100 ? raw.slice(0, 97) + '...' : raw;
+}
+
+async function hashSession(salt, ip) {
+  const bytes = new TextEncoder().encode(`${salt}:${ip}`);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  const arr = new Uint8Array(digest);
+  // 8 bytes = 64 bits of session_key — plenty for collision safety at
+  // personal-site scale and short enough to log without ceremony.
+  let hex = '';
+  for (let i = 0; i < 8; i++) hex += arr[i].toString(16).padStart(2, '0');
+  return hex;
 }
 
 // ASN classification — color stripe on the embed at a glance signals
@@ -137,7 +288,7 @@ function classifyOrg(org, asn) {
   if (!org) return { label, category: 'Unknown', color: 0x808080 };
   const s = org.toLowerCase();
 
-  if (/t-mobile|verizon wireless|at&t mobility|sprint|cellco|cricket|metropcs/.test(s))
+  if (/t-mobile|verizon wireless|at&t mobility|sprint|cellco|cricket|metropcs|bharti airtel|reliance jio|vodafone idea|orange s\.a\.|telefonica|o2 czech|ee limited|vodafone gmbh/.test(s))
     return { label, category: 'Mobile carrier', color: 0xe0c060 };
 
   if (/comcast|spectrum|charter|cox|verizon fios|verizon online|centurylink|frontier|optimum|cablevision|xfinity|altice|rogers|bell canada|telus|shaw|virgin media|sky broadband|bt group|deutsche telekom|google fiber/.test(s))
