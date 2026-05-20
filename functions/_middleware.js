@@ -40,22 +40,29 @@ async function report(request, webhookUrl) {
   const org = classifyOrg(cf.asOrganization, cf.asn);
   const device = parseDevice(ua);
   const location = formatLocation(cf);
+  const bot = detectBot(org.category, device);
+
+  const titlePath = `${url.pathname}${url.search}`;
+  const title = bot.flagged ? `[BOT?] ${titlePath}` : titlePath;
 
   const fields = [
     { name: 'Org', value: `${org.label}\n_${org.category}_`, inline: true },
     { name: 'Location', value: location || 'unknown', inline: true },
-    { name: 'Device', value: device, inline: true },
+    { name: 'Device', value: device.label, inline: true },
   ];
   if (referer) {
     fields.push({ name: 'Came from', value: formatReferer(referer), inline: false });
   }
 
+  const footerParts = [`ASN ${cf.asn || '?'}`, cf.colo || 'cf'];
+  if (bot.flagged) footerParts.push(`flagged: ${bot.reason}`);
+
   const embed = {
-    title: `${url.pathname}${url.search}`,
+    title,
     url: url.toString(),
-    color: org.color,
+    color: bot.flagged ? 0x4f5660 : org.color,
     fields,
-    footer: { text: `ASN ${cf.asn || '?'} · ${cf.colo || 'cf'}` },
+    footer: { text: footerParts.join(' · ') },
     timestamp: new Date().toISOString(),
   };
 
@@ -105,23 +112,40 @@ function classifyOrg(org, asn) {
 }
 
 function parseDevice(ua) {
-  if (!ua) return 'unknown';
+  if (!ua) return { label: 'unknown', browserKnown: false, osKnown: false };
+
   let browser = 'Browser';
-  if (/Edg\//.test(ua)) browser = 'Edge';
-  else if (/OPR\//.test(ua) || /Opera\//.test(ua)) browser = 'Opera';
-  else if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) browser = 'Chrome';
-  else if (/Firefox\//.test(ua)) browser = 'Firefox';
-  else if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) browser = 'Safari';
+  let browserKnown = false;
+  if (/Edg\//.test(ua)) { browser = 'Edge'; browserKnown = true; }
+  else if (/OPR\//.test(ua) || /Opera\//.test(ua)) { browser = 'Opera'; browserKnown = true; }
+  else if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) { browser = 'Chrome'; browserKnown = true; }
+  else if (/Firefox\//.test(ua)) { browser = 'Firefox'; browserKnown = true; }
+  else if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) { browser = 'Safari'; browserKnown = true; }
 
   let os = 'OS';
-  if (/iPhone/.test(ua)) os = 'iPhone';
-  else if (/iPad/.test(ua)) os = 'iPad';
-  else if (/Android/.test(ua)) os = 'Android';
-  else if (/Macintosh|Mac OS X/.test(ua)) os = 'Mac';
-  else if (/Windows NT/.test(ua)) os = 'Windows';
-  else if (/Linux/.test(ua)) os = 'Linux';
+  let osKnown = false;
+  if (/iPhone/.test(ua)) { os = 'iPhone'; osKnown = true; }
+  else if (/iPad/.test(ua)) { os = 'iPad'; osKnown = true; }
+  else if (/Android/.test(ua)) { os = 'Android'; osKnown = true; }
+  else if (/Macintosh|Mac OS X/.test(ua)) { os = 'Mac'; osKnown = true; }
+  else if (/Windows NT/.test(ua)) { os = 'Windows'; osKnown = true; }
+  else if (/Linux/.test(ua)) { os = 'Linux'; osKnown = true; }
 
-  return `${browser} on ${os}`;
+  return { label: `${browser} on ${os}`, browserKnown, osKnown };
+}
+
+// Heuristic bot detection — runs AFTER the obvious BOT_UA filter that
+// catches honest crawlers. This catches the dishonest ones that fake a
+// browser UA but leak signal elsewhere: scraper traffic from CDN/cloud
+// ASNs, or UAs that look browser-shaped but match no known parser.
+function detectBot(orgCategory, device) {
+  if (orgCategory === 'CDN / edge')
+    return { flagged: true, reason: 'CDN/edge infrastructure (not a real client)' };
+  if (!device.browserKnown && !device.osKnown)
+    return { flagged: true, reason: 'unrecognized browser+OS (likely faked UA)' };
+  if (!device.browserKnown && orgCategory === 'Cloud / hosting')
+    return { flagged: true, reason: 'cloud ASN + unknown browser' };
+  return { flagged: false };
 }
 
 function formatLocation(cf) {
