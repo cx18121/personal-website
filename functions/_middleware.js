@@ -4,14 +4,15 @@
 //   2. Appends a row to the D1 visit log (durable, queryable history).
 //   3. If the visit looks like signal (real human from a corp/ISP/mobile
 //      ASN, not a scanner, not a probe path), also pings the signal
-//      webhook — which lives on a Discord forum channel so multi-page
-//      visits from the same person collapse into one thread.
+//      webhook. Multi-page visits from the same person collapse into a
+//      single message that gets edited (PATCHed) as they browse more
+//      pages — works in a normal text channel, no forum required.
 // All writes go through waitUntil so they never block the response.
 //
 // Bindings (see wrangler.toml):
 //   VISITOR_LOG                 D1 database (tables `visits`, `sessions`)
 //   DISCORD_WEBHOOK_URL         secret — firehose text channel
-//   DISCORD_SIGNAL_WEBHOOK_URL  secret — signal FORUM channel (optional)
+//   DISCORD_SIGNAL_WEBHOOK_URL  secret — signal text channel (optional)
 //   SESSION_SALT                secret — salt for IP→session_key hash
 
 const SKIP_EXT = /\.(css|js|mjs|png|jpe?g|webp|svg|gif|ico|woff2?|ttf|otf|map|json|xml|txt|pdf)$/i;
@@ -27,9 +28,15 @@ const PROBE_PATH = /^\/(?:wp-|wordpress|xmlrpc|setup\/?$|admin\/?$|\.env|\.git|\
 const NOISE_ORG = /onyphe|qualys|tenable|rapid7|censys|shodan|shadowserver|netcraft|binaryedge|leakix|securitytrails|stretchoid|alphastrike|driftnet|recyber|internet measurement|cyberresilience|1337 services|hostroyale|racknerd|aventice|subnet digital|uab code200|bl networks|omegatech|31173 services|qux labs|datacamp limited|m247|leaseweb|cogent communications/i;
 
 // Session freshness window — visits from the same session_key within
-// this window get appended to an existing thread. After this they get
-// a new thread (probably a different reading session).
+// this window get appended to the existing message. After this we
+// start a fresh message (probably a different reading session).
 const SESSION_WINDOW_MS = 30 * 60 * 1000;
+
+// Discord message content limit is 2000 chars. Keep the running visit
+// log under this with comfortable headroom for the header.
+const MAX_VISIT_LINES = 30;
+const MAX_CONTENT_CHARS = 1900;
+const SUPPRESS_EMBEDS_FLAG = 1 << 2;
 
 export async function onRequest(context) {
   const { request, env, next, waitUntil } = context;
@@ -63,7 +70,7 @@ export async function onRequest(context) {
       const ip = request.headers.get('cf-connecting-ip') || '';
       if (ip) {
         waitUntil(
-          reportSignal(env.DISCORD_SIGNAL_WEBHOOK_URL, env.VISITOR_LOG, env.SESSION_SALT, ip, visit, url),
+          reportSignal(env.DISCORD_SIGNAL_WEBHOOK_URL, env.VISITOR_LOG, env.SESSION_SALT, ip, visit),
         );
       }
     }
@@ -156,80 +163,139 @@ async function reportDiscord(webhookUrl, v, url) {
   }
 }
 
-// Signal channel must be a Discord FORUM channel — webhooks can only
-// create threads via `thread_name` on forum/media channels. In a forum:
-// first hit from a session creates a thread (forum post), subsequent
-// hits within SESSION_WINDOW_MS land as short replies in that thread.
-async function reportSignal(webhookUrl, db, salt, ip, v, url) {
+// Edit-in-place threading: each visitor session is one Discord message
+// that we PATCH with each new pageview, so a multi-page visit shows up
+// as one growing message instead of N separate notifications. Works in
+// a normal text channel — no forum required.
+async function reportSignal(webhookUrl, db, salt, ip, v) {
   const sessionKey = await hashSession(salt, ip);
+  const session = await loadSession(db, sessionKey);
+  const fresh = session && Date.now() - Date.parse(session.last_seen) < SESSION_WINDOW_MS;
 
-  let thread = null;
+  if (fresh) {
+    const edited = await tryEditMessage(webhookUrl, db, sessionKey, session, v);
+    if (edited) return;
+    // PATCH failed (404 → message was deleted manually, etc.) — fall
+    // through and post a fresh one.
+  }
+
+  await createSessionMessage(webhookUrl, db, sessionKey, v);
+}
+
+async function loadSession(db, sessionKey) {
   try {
-    thread = await db
-      .prepare('SELECT thread_id, last_seen FROM sessions WHERE session_key = ?')
+    return await db
+      .prepare('SELECT message_id, last_seen, content FROM sessions WHERE session_key = ?')
       .bind(sessionKey)
       .first();
   } catch {
-    // If the lookup fails we just create a new thread.
+    return null;
   }
+}
 
-  const fresh = thread && Date.now() - Date.parse(thread.last_seen) < SESSION_WINDOW_MS;
-
-  if (fresh) {
-    // Reply in existing thread with a short one-liner — the thread
-    // title already shows org + city, so we just need the new path.
-    const refererPart = v.referer ? `  ← ${formatReferer(v.referer)}` : '';
-    try {
-      await fetch(`${webhookUrl}?thread_id=${encodeURIComponent(thread.thread_id)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: `\`${v.path}${v.query || ''}\`${refererPart}`,
-          allowed_mentions: { parse: [] },
-        }),
-      });
-      await db
-        .prepare('UPDATE sessions SET last_seen = ?, hits = hits + 1 WHERE session_key = ?')
-        .bind(v.ts, sessionKey)
-        .run();
-    } catch {
-      // Swallow — signal pings are best-effort.
-    }
-    return;
+async function tryEditMessage(webhookUrl, db, sessionKey, session, v) {
+  const newContent = appendVisitLine(session.content, v);
+  try {
+    const res = await fetch(`${webhookUrl}/messages/${session.message_id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: newContent,
+        allowed_mentions: { parse: [] },
+      }),
+    });
+    if (!res.ok) return false;
+    await db
+      .prepare('UPDATE sessions SET last_seen = ?, hits = hits + 1, content = ? WHERE session_key = ?')
+      .bind(v.ts, newContent, sessionKey)
+      .run();
+    return true;
+  } catch {
+    return false;
   }
+}
 
-  // New thread: forum-post with thread_name + full embed as OP.
-  const threadName = buildThreadName(v);
+async function createSessionMessage(webhookUrl, db, sessionKey, v) {
+  const content = `${formatHeader(v)}\n${formatVisitLine(v)}`;
   try {
     const res = await fetch(`${webhookUrl}?wait=true`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        thread_name: threadName,
-        embeds: [buildEmbed(v, url)],
+        content,
+        flags: SUPPRESS_EMBEDS_FLAG,
         allowed_mentions: { parse: [] },
       }),
     });
     if (!res.ok) return;
     const msg = await res.json();
-    // For forum-channel webhooks, the response's channel_id is the new thread.
-    const threadId = msg.channel_id;
-    if (!threadId) return;
+    if (!msg.id) return;
     await db
       .prepare(
-        `INSERT INTO sessions (session_key, thread_id, first_seen, last_seen, hits)
-         VALUES (?, ?, ?, ?, 1)
+        `INSERT INTO sessions (session_key, message_id, first_seen, last_seen, hits, content)
+         VALUES (?, ?, ?, ?, 1, ?)
          ON CONFLICT(session_key) DO UPDATE SET
-           thread_id  = excluded.thread_id,
+           message_id = excluded.message_id,
            first_seen = excluded.first_seen,
            last_seen  = excluded.last_seen,
-           hits       = 1`,
+           hits       = 1,
+           content    = excluded.content`,
       )
-      .bind(sessionKey, threadId, v.ts, v.ts)
+      .bind(sessionKey, msg.id, v.ts, v.ts, content)
       .run();
   } catch {
     // Swallow.
   }
+}
+
+// Two-line header: org + device on line 1, location + ASN/colo on line 2.
+function formatHeader(v) {
+  const dot = headerDot(v);
+  const loc = [v.city, v.region, v.country].filter(Boolean).join(', ') || 'unknown';
+  return (
+    `${dot} **${v.org_label}** · _${v.org_category}_ · ${v.device_label}\n` +
+    `📍 ${loc} · ASN ${v.asn || '?'} · ${v.colo || 'cf'}`
+  );
+}
+
+function headerDot(v) {
+  switch (v.org_category) {
+    case 'Likely corporate': return '🟢';
+    case 'SASE (corp behind security vendor)': return '🟠';
+    case 'Residential ISP':
+    case 'Mobile carrier': return '🟡';
+    default: return '⚪';
+  }
+}
+
+function formatVisitLine(v) {
+  const refererPart = v.referer ? ` ← ${formatReferer(v.referer)}` : '';
+  const time = v.ts.slice(11, 16); // HH:MM in UTC
+  return `\`${v.path}${v.query || ''}\`${refererPart} · ${time}`;
+}
+
+// Header is fixed (first 2 lines). Append the new visit line, trim
+// older visit lines if we'd blow past Discord's 2000-char content cap.
+function appendVisitLine(oldContent, v) {
+  const lines = oldContent.split('\n');
+  const header = lines.slice(0, 2);
+  const visitLines = lines.slice(2).filter((l) => !l.startsWith('… '));
+  visitLines.push(formatVisitLine(v));
+
+  let kept = visitLines.slice(-MAX_VISIT_LINES);
+  let body = kept.join('\n');
+  let truncated = kept.length < visitLines.length;
+
+  while (header.join('\n').length + 1 + (truncated ? 20 : 0) + body.length > MAX_CONTENT_CHARS && kept.length > 1) {
+    kept = kept.slice(1);
+    body = kept.join('\n');
+    truncated = true;
+  }
+
+  const out = truncated
+    ? `${header.join('\n')}\n… earlier omitted …\n${body}`
+    : `${header.join('\n')}\n${body}`;
+  return out;
 }
 
 function buildEmbed(v, url) {
@@ -257,14 +323,6 @@ function buildEmbed(v, url) {
     footer: { text: footerParts.join(' · ') },
     timestamp: v.ts,
   };
-}
-
-// Discord forum thread names are capped at 100 chars. Org + city is
-// the most useful at-a-glance signal.
-function buildThreadName(v) {
-  const place = v.city || v.region || v.country || '?';
-  const raw = `${v.org_label} · ${place}`;
-  return raw.length > 100 ? raw.slice(0, 97) + '...' : raw;
 }
 
 async function hashSession(salt, ip) {
