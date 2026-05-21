@@ -864,7 +864,7 @@ const projectReader = {
     const html = renderMarkdown(body, { imageBase: `images/${fm.name || name}` });
     return { fm, html };
   },
-  renderSidebar(name, data) {
+  renderSidebar(_name, data) {
     return renderSidebar(data.fm);
   },
   renderBody(entry, data) {
@@ -942,7 +942,7 @@ const travelReader = {
     const wish = TRAVELS.wishlist.find((t) => t.name === name);
     return { entry: wish, isVisited: false };
   },
-  renderSidebar(name, data) {
+  renderSidebar(name, _data) {
     return renderTravelSidebar(name);
   },
   renderBody(entry, data) {
