@@ -4,7 +4,7 @@ country: china
 when: july 2024
 days: 13
 route: kunming → dali → lijiang → shangri-la -> yubeng
-learned: that amtrack is complete garbage compared to china's high speed rail
+learned: that Amtrak is complete garbage compared to china's high speed rail
 photos:
   - 1.jpg | high speed rail to dali
   - 2.jpg | suan cai yu and braised tofu
@@ -63,12 +63,12 @@ photos:
 
 Added on a trip to Yunnan after visiting family in China. Decided to go to Yunnan because its landscapes range from tropical forests to deep gorges and alpine peaks. It's also culturally diverse with 25 ethnic groups. 
 
-I began by taking the high speed rail from the capital, Kunming, to Dali, which was the ancient capital of a 2 chinese kingdoms. Dali is a very nice city located in between Cangshan (a mountain range), and Erhai (a lake). I rented a bike and went north along the lake to visit some of the nearby towns and temples, was a nice day trip. The local Dai cuisine is also really good, they incorpoporate a lot of unique local ingredients into the food.
+I began by taking the high speed rail from the capital, Kunming, to Dali, which was the ancient capital of 2 chinese kingdoms. Dali is a very nice city located in between Cangshan (a mountain range), and Erhai (a lake). I rented a bike and went north along the lake to visit some of the nearby towns and temples, was a nice day trip. The local Dai cuisine is also really good, they incorporate a lot of unique local ingredients into the food.
 
 After Dali, I went north to Lijiang, which is more in the mountains and has an "ancient" city with lots of "historic" structures. Note the quotation marks, china really loves doing reconstructions and renovations to make everything super commercialized and look like a movie set in order to attract tourists. Another pretty big attraction is dressing up in the local ethnic group's traditional clothes and then hiring a photographer to take shots of you as you walk around the "ancient" city. I think it's pretty stupid but to each their own. As you can probably tell, I wasn't the biggest fan of the old town of Lijiang, but the surroundings were really nice.
 
-From Lijiang, I took a bus to tiger leaping gorge, before going on a quick 2 day hike in the mountains on the side of the gorge. Then I went to the city of Shangri-la, which is actually a real place. The place Shangri-la was first created as a fictional place by the British author James Hilton in 1933, in his book Lost Horizon, to describe a utopia in the mountains. However, in 2001, the chinese govt renamed the city of Zhongdian to Shangri-la to try to increase tourism. Shangri-la (the real place) is the capital of Diqing Tibetan Autonomous Prefecture, so it's basically like visiting tibet but without actually being in tibet. There are tons of buddhist monasteries and shrine, since it's heavily influenced by Tibetan culture and a large portion of its population are Tibetan.
+From Lijiang, I took a bus to tiger leaping gorge, before going on a quick 2 day hike in the mountains on the side of the gorge. Then I went to the city of Shangri-la, which is actually a real place. The place Shangri-la was first created as a fictional place by the British author James Hilton in 1933, in his book Lost Horizon, to describe a utopia in the mountains. However, in 2001, the chinese govt renamed the city of Zhongdian to Shangri-la to try to increase tourism. Shangri-la (the real place) is the capital of Diqing Tibetan Autonomous Prefecture, so it's basically like visiting Tibet but without actually being in Tibet. There are tons of buddhist monasteries and shrines, since it's heavily influenced by Tibetan culture and a large portion of its population are Tibetan.
 
-From Shangri-la, I then went north to Deqin, and then did a 4 day trip to Yubeng, which is located at the base of Meili Xue Shan (aka Kawagarbo), the tallest mountain in Yunnan. It's one of the most sacred peaks for Tibetans so climbing the peak is banned, and there's also a pilgrimage route that cirumnavigates the mountain that many pilgrims do every year. Unfortunately, while I visited, the weather wasn't great, but I guess that's just a reason to come back.
+From Shangri-la, I then went north to Deqin, and then did a 4 day trip to Yubeng, which is located at the base of Meili Xue Shan (aka Kawagarbo), the tallest mountain in Yunnan. It's one of the most sacred peaks for Tibetans so climbing the peak is banned, and there's also a pilgrimage route that circumnavigates the mountain that many pilgrims do every year. Unfortunately, while I visited, the weather wasn't great, but I guess that's just a reason to come back.
 
 For this trip, I didn't go further north than Yubeng which is already pretty deep in the mountains, but I'd love to go back and go overland from Shangri-la to Chengdu in Sichuan, directly over the Tibetan plateau.

@@ -3,7 +3,7 @@ name: peru
 country: peru
 when: june-july 2025
 days: 18
-route: lima → huarez -> huayhuash circuit -> nevado pisco
+route: lima → huaraz -> huayhuash circuit -> nevado pisco
 learned: how to traverse a glacier
 photos:
   - 1.jpg  | on the bus ride from lima to huaraz
@@ -50,8 +50,8 @@ photos:
   - 42.jpg | octopus. all the seafood in lima is so good
 ---
 
-This was my second time in Peru, went to the central Peruvian Andes and did a lot of hiking and climbing. Huarez is such a great place to base yourself out of if you love the outdoors. There's not so much to do in the city itself but the surroundings are absolutely amazing.
+This was my second time in Peru, went to the central Peruvian Andes and did a lot of hiking and climbing. Huaraz is such a great place to base yourself out of if you love the outdoors. There's not so much to do in the city itself but the surroundings are absolutely amazing.
 
 The main event of the trip was doing the 8 day Huayhuash circuit hike which goes around the entire mountain range as the name implies. The scale of the mountains there is absolutely mind blowing. You can also see Siula Grande from the film Touching the Void. I'd highly highly recommend doing this hike at least once in your life, the only thing is that it's pretty high altitude so if you don't acclimatize properly, you'll most likely have some issues.
 
-After completing the Huayhuash circuit, I also summitted Nevado Pisco which is this almost 19,000ft tall mountain that traversing glaciers and ice climbing at high altitude. The final summit push required waking up at midnight and then climbing for almost 7 hours in the dark. Probably the most physically challenging thing I've ever done but it was definitely worth it, seeing sunrise from above the clouds was an experience for sure.
+After completing the Huayhuash circuit, I also summitted Nevado Pisco which is this almost 19,000ft tall mountain that required traversing glaciers and ice climbing at high altitude. The final summit push required waking up at midnight and then climbing for almost 7 hours in the dark. Probably the most physically challenging thing I've ever done but it was definitely worth it, seeing sunrise from above the clouds was an experience for sure.
