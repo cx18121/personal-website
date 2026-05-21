@@ -6,55 +6,79 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=open+podium</loc>
+    <loc>https://charliexue.com/about</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://charliexue.com/projects</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://charliexue.com/skills</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=open+sparrow</loc>
+    <loc>https://charliexue.com/contact</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=open+spectre</loc>
+    <loc>https://charliexue.com/travels</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=open+cve-intel</loc>
+    <loc>https://charliexue.com/favorites</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://charliexue.com/projects/podium</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=open+philly-vibe-map</loc>
+    <loc>https://charliexue.com/projects/sparrow</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=open+coursemap</loc>
+    <loc>https://charliexue.com/projects/spectre</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://charliexue.com/projects/cve-intel</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://charliexue.com/projects/philly-vibe-map</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://charliexue.com/projects/coursemap</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=open+auto-shorts</loc>
+    <loc>https://charliexue.com/projects/auto-shorts</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=open+gatekeeper</loc>
+    <loc>https://charliexue.com/projects/gatekeeper</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=open+skyops</loc>
+    <loc>https://charliexue.com/projects/skyops</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=open+vulnscan</loc>
+    <loc>https://charliexue.com/projects/vulnscan</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=open+algotrader-bridge</loc>
+    <loc>https://charliexue.com/projects/algotrader-bridge</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=travels+peru</loc>
+    <loc>https://charliexue.com/travels/peru</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://charliexue.com/?cmd=travels+yunnan</loc>
+    <loc>https://charliexue.com/travels/yunnan</loc>
     <priority>0.6</priority>
   </url>
 </urlset>

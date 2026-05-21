@@ -1,0 +1,9 @@
+# Cloudflare Pages SPA fallback. Every unknown path serves index.html so
+# client-side routing (app.js) can dispatch /projects, /travels/peru, etc.
+# This is the canonical SPA pattern from CF docs:
+#   https://developers.cloudflare.com/pages/configuration/redirects/#single-page-application-spa-rendering
+# `wrangler pages dev` warns "infinite loop detected" — that's a known
+# false positive (it sees `/index.html` matched by `/*`); production
+# handles it correctly. Trade-off: unknown paths now soft-404 (200 with
+# welcome screen) rather than hard-404. Acceptable for a personal site.
+/*  /index.html  200

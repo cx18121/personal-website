@@ -87,6 +87,36 @@ function applyTheme(idx) {
   } catch {}
 }
 
+// Path-based routing. The site has shareable URLs like /projects,
+// /travels/peru, /projects/spectre — Cloudflare Pages serves index.html
+// for every unknown path (see /_redirects) and we dispatch the matching
+// command on init.
+const STATIC_ROUTES = new Set([
+  '/about', '/projects', '/skills', '/contact', '/travels', '/favorites',
+]);
+function pathToCommand(pathname) {
+  const p = pathname.length > 1 && pathname.endsWith('/')
+    ? pathname.slice(0, -1) : pathname;
+  if (p === '' || p === '/') return null;
+  if (STATIC_ROUTES.has(p)) return p;
+  const m = p.match(/^\/(projects|travels)\/([^/]+)$/);
+  if (m) {
+    const cmd = m[1] === 'projects' ? 'open' : 'travels';
+    // decodeURIComponent throws on malformed sequences (e.g. /projects/%ZZ
+    // from a scanner probe). Fall through to null rather than crash init.
+    try {
+      return `/${cmd} ${decodeURIComponent(m[2])}`;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+function readerPath(kind, name) {
+  const prefix = kind === 'project' ? '/projects' : '/travels';
+  return `${prefix}/${encodeURIComponent(name)}`;
+}
+
 // Restore a previously-chosen theme on load. No-op (and classic stays) if
 // nothing is stored or the index is out of range. Runs at module top, before
 // ui.init(), so the right palette is on screen before any panel renders.
@@ -167,9 +197,8 @@ const ui = {
       this.input.value = '/';
       this.updateAutocomplete();
     });
-    const deep = new URLSearchParams(location.search).get('cmd');
-    if (deep)
-      setTimeout(() => this.run(deep.startsWith('/') ? deep : '/' + deep), 0);
+    const deep = pathToCommand(location.pathname);
+    if (deep) setTimeout(() => this.run(deep), 0);
     if (!matchMedia('(pointer: coarse)').matches) this.input.focus();
     // Tab-away blurs the input; nothing refocuses on return, so all the
     // keydown handlers (incl. list nav) silently die. Reclaim focus on
@@ -555,13 +584,13 @@ function renderTravelsList(ui) {
   const visitedRows = TRAVELS.visited
     .map(
       (t) =>
-        `<div class="travel-row"><a class="travel-link" data-travels="${escapeHtml(t.name)}" href="?cmd=travels+${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a><span class="travel-date">${escapeHtml(t.endMonth ? `${t.month}–${t.endMonth}` : t.month)} ${t.year}</span></div>`
+        `<div class="travel-row"><a class="travel-link" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a><span class="travel-date">${escapeHtml(t.endMonth ? `${t.month}–${t.endMonth}` : t.month)} ${t.year}</span></div>`
     )
     .join('');
   const wishRows = TRAVELS.wishlist
     .map(
       (t) =>
-        `<div class="travel-row"><a class="travel-link" data-travels="${escapeHtml(t.name)}" href="?cmd=travels+${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a></div>`
+        `<div class="travel-row"><a class="travel-link" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a></div>`
     )
     .join('');
   const wrap = ui.block(
@@ -829,10 +858,8 @@ let _currentReader = null;
 // (sidebar/arrow keys) replaces state to avoid polluting history.
 let _popstateInProgress = false;
 function pushReaderState(name, kind) {
-  const cmd = kind === 'project' ? 'open' : 'travels';
-  const search = `?cmd=${cmd}+${encodeURIComponent(name)}`;
-  const url = location.pathname + search;
-  if (history.state?.reader || location.search === search) {
+  const url = readerPath(kind, name);
+  if (history.state?.reader || location.pathname === url) {
     // Carry the prior `pushed` flag forward across sibling navigation.
     // Deep-link entry has no prior state, so pushed stays false.
     const pushed = !!history.state?.pushed;
@@ -1009,7 +1036,7 @@ function renderTravelSidebar(currentName) {
   const groupRow = (label) => `<div class="trav-group">${label}</div>`;
   const item = (t) => {
     const active = t.name === currentName ? ' active' : '';
-    return `<a class="trav-item${active}" data-travels="${escapeHtml(t.name)}" href="?cmd=travels+${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a>`;
+    return `<a class="trav-item${active}" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a>`;
   };
   return (
     groupRow('visited') +
@@ -1155,7 +1182,10 @@ function closeReader() {
     if (history.state.pushed) {
       history.back();
     } else {
-      history.replaceState({}, '', location.pathname);
+      // Deep-link entry: silently reset to root so the visitor stays on
+      // the site (rather than navigating away) and the URL bar doesn't
+      // keep showing /projects/spectre after the reader is closed.
+      history.replaceState({}, '', '/');
     }
   }
 }
@@ -1546,7 +1576,7 @@ async function renderProjectsList(ui) {
     const stack = Array.isArray(p.stack)
       ? p.stack.join(' · ')
       : escapeHtml(p.stack || '');
-    return `<div class="proj-row"><div class="proj-tick">▸</div><div class="proj-body"><div class="proj-head">${status}<a class="proj-link" data-open="${p.name}" href="?cmd=open+${encodeURIComponent(p.name)}">${p.name} →</a><span class="proj-tag">${escapeHtml(p.tagline || '')}</span></div><div class="proj-stack">${stack}</div></div></div>`;
+    return `<div class="proj-row"><div class="proj-tick">▸</div><div class="proj-body"><div class="proj-head">${status}<a class="proj-link" data-open="${p.name}" href="/projects/${encodeURIComponent(p.name)}">${p.name} →</a><span class="proj-tag">${escapeHtml(p.tagline || '')}</span></div><div class="proj-stack">${stack}</div></div></div>`;
   };
   const featured = projects.filter((p) => p.featured);
   const others = projects.filter((p) => !p.featured);
@@ -1589,7 +1619,9 @@ const commandHandlers = {
     ui.main.innerHTML = '';
     clearActiveList();
     // Reset the URL so a refresh doesn't re-run the last deep-linked command.
-    if (location.search) history.replaceState({}, '', location.pathname);
+    if (location.pathname !== '/' || location.search) {
+      history.replaceState({}, '', '/');
+    }
   },
   help(ui) {
     ui.block(
