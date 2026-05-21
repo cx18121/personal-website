@@ -150,49 +150,6 @@ export const FAVORITES = [
   },
 ];
 
-export const SKILLS = {
-  languages: [
-    'python',
-    'typescript',
-    'go',
-    'java',
-    'c++',
-    'javascript',
-    'sql',
-    'bash',
-    'r',
-  ],
-  'ai / ml': [
-    'pytorch',
-    'sentence-transformers',
-    'faiss',
-    'bertopic',
-    'lora',
-    'mediapipe',
-    'pgvector',
-  ],
-  frameworks: [
-    'fastapi',
-    'react',
-    'next.js',
-    'prisma',
-    'anthropic api',
-    'gradle',
-  ],
-  tools: [
-    'docker',
-    'aws',
-    'terraform',
-    'postgres',
-    'linux',
-    'git',
-    'vercel',
-    'modal',
-    'supabase',
-    'ghidra',
-  ],
-};
-
 // Welcome panel · "what's new" entries. Most recent first. Body can include
 // HTML (e.g. <span class="cmd">). Keep to 3-4 entries — this is a tease.
 export const WHATS_NEW = [
@@ -227,7 +184,6 @@ linkedin  <a href="https://www.linkedin.com/in/charles-xue/" target="_blank" rel
 export const COMMANDS = [
   { cmd: '/about', desc: 'who I am' },
   { cmd: '/projects', desc: "what I've built" },
-  { cmd: '/skills', desc: 'stack & tools' },
   { cmd: '/contact', desc: 'how to reach me' },
   { cmd: '/travels', desc: 'places visited & want to visit' },
   { cmd: '/favorites', desc: 'what i like' },

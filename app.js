@@ -2,7 +2,6 @@ import {
   PROJECTS,
   TRAVELS,
   FAVORITES,
-  SKILLS,
   ABOUT,
   CONTACT,
   COMMANDS,
@@ -92,7 +91,7 @@ function applyTheme(idx) {
 // for every unknown path (see /_redirects) and we dispatch the matching
 // command on init.
 const STATIC_ROUTES = new Set([
-  '/about', '/projects', '/skills', '/contact', '/travels', '/favorites',
+  '/about', '/projects', '/contact', '/travels', '/favorites',
 ]);
 function pathToCommand(pathname) {
   const p = pathname.length > 1 && pathname.endsWith('/')
@@ -307,7 +306,7 @@ const ui = {
     const r = this.box.getBoundingClientRect();
     const vh = window.innerHeight;
     const margin = 12;
-    const cap = 260;
+    const cap = 228;
     this.ac.style.left = r.left + 'px';
     this.ac.style.width = r.width + 'px';
     // Allow dropdown to size to content first, capped, so we can read scrollHeight.
@@ -1641,16 +1640,6 @@ const commandHandlers = {
   source(ui) {
     ui.block(
       `<a href="https://github.com/cx18121/personal-website" target="_blank" rel="noreferrer">github.com/cx18121/personal-website</a>`
-    );
-  },
-  skills(ui) {
-    ui.block(
-      Object.entries(SKILLS)
-        .map(
-          ([k, v]) =>
-            `  <span class="key">${k.padEnd(10)}</span> ${v.join(', ')}`
-        )
-        .join('\n')
     );
   },
   projects(ui) {

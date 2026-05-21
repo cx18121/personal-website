@@ -5,7 +5,7 @@ status: dormant
 stack:
   - typescript
   - next.js
-  - postgres
+  - postgresql
   - drizzle
   - anthropic api
   - canvas lms api
