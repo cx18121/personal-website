@@ -888,7 +888,7 @@ const projectReader = {
   async loadEntry(name) {
     const text = await loadProjectMd(name);
     const { fm, body } = parseFrontmatter(text);
-    const html = renderMarkdown(body, { imageBase: `images/${fm.name || name}` });
+    const html = renderMarkdown(body, { imageBase: `/images/${fm.name || name}` });
     return { fm, html };
   },
   renderSidebar(_name, data) {

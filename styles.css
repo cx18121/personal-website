@@ -220,7 +220,7 @@ a:hover {
   caret-color: var(--orange);
 }
 .promptbox input::placeholder {
-  color: var(--mute);
+  color: var(--dim);
 }
 .autocomplete {
   position: fixed;
