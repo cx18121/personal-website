@@ -10,32 +10,40 @@ photos:
   - 2.jpg  | above huaraz
   - 3.jpg  | lots of eggs
   - 4.jpg  | laguna 69
-  - 5.jpg  | laguna churup
-  - 6.jpg  | some birds
-  - 7.jpg  | some donkeys at sunrise
-  - 8.jpg  | along the huayhuash circuit
-  - 9.jpg  | pretty unique marsh
-  - 10.jpg | average camp along huayhuash
-  - 11.jpg | carhuacocha
-  - 12.jpg | camp at night
-  - 13.jpg | sunrise reflections
-  - 14.jpg | 3 lakes
-  - 15.jpg | a high pass
-  - 16.jpg | more mountains
-  - 17.jpg | an even higher pass
-  - 18.jpg | big dog
-  - 19.jpg | big mountain
-  - 20.jpg | jahuacocha
-  - 21.jpg | nightime views
-  - 22.jpg | sunrise at 5750m on nevado pisco
-  - 23.jpg | summit views
-  - 24.jpg | another team below us
-  - 25.jpg | looking at the opposing peak
-  - 26.jpg | looking back towards camp
-  - 27.jpg | "wilderness area"
-  - 28.jpg | ceviche back in lima
-  - 29.jpg | seafood rice, best thing i ate all trip
-  - 30.jpg | fire octopus dish
+  - 5.jpg  | Yungay / Province of Yungay · 4602m
+  - 6.jpg  | laguna churup
+  - 7.jpg  | some birds
+  - 8.jpg  | some donkeys at sunrise
+  - 9.jpg  | along the huayhuash circuit
+  - 10.jpg | pretty unique marsh
+  - 11.jpg | average camp along huayhuash
+  - 12.jpg | carhuacocha
+  - 13.jpg | camp at night
+  - 14.jpg | sunrise reflections
+  - 15.jpg | 3 lakes
+  - 16.jpg | a high pass
+  - 17.jpg | more mountains
+  - 18.jpg | an even higher pass
+  - 19.jpg | big dog
+  - 20.jpg | Pacllón / Province of Bolognesi · 4837m
+  - 21.jpg | big mountain
+  - 22.jpg | jahuacocha
+  - 23.jpg |
+  - 24.jpg | nightime views
+  - 25.jpg | sunrise at 5750m on nevado pisco
+  - 26.jpg | summit views
+  - 27.jpg | Caraz / Province of Huaylas · 5751m
+  - 28.jpg | Caraz / Province of Huaylas · 5751m
+  - 29.jpg | another team below us
+  - 30.jpg | looking at the opposing peak
+  - 31.jpg | looking back towards camp
+  - 32.jpg | "wilderness area"
+  - 33.jpg |
+  - 34.jpg |
+  - 35.jpg | Yungay / Province of Yungay · 4595m
+  - 36.jpg | ceviche back in lima
+  - 37.jpg | seafood rice, best thing i ate all trip
+  - 38.jpg | fire octopus dish
 ---
 
 Second time in peru, went to the central peruvian andes and did a lot of hiking. Huarez is such a cool place to base yourself out of if you love the outdoors. 

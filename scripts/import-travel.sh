@@ -110,7 +110,9 @@ fi
 declare -a CAPTIONS=()
 if [[ $GEOCODE -eq 1 ]]; then
   log "geocoding via nominatim (~${COUNT}s)…"
-  declare -A CACHE=()
+  # Flat-file cache (macOS ships bash 3.2 without associative arrays).
+  # Lines are "lat,lon|place"; lookups are a single grep.
+  CACHE=$(mktemp)
   ( cd "$DEST" && for i in $(seq 1 "$COUNT"); do
       f="${i}.jpg"
       lat=$(mdls -raw -name kMDItemLatitude  "$f" 2>/dev/null)
@@ -119,7 +121,8 @@ if [[ $GEOCODE -eq 1 ]]; then
       cap=""
       if [[ "$lat" != "(null)" && -n "$lat" ]]; then
         key=$(printf "%.2f,%.2f" "$lat" "$lon")
-        if [[ -z "${CACHE[$key]:-}" ]]; then
+        place=$(grep -F "${key}|" "$CACHE" | head -1 | cut -d'|' -f2-)
+        if [[ -z "$place" ]]; then
           sleep 1.1
           json=$(curl -s -A "personal-website/1.0" \
             "https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&accept-language=en")
@@ -133,14 +136,20 @@ try:
     print(' / '.join(parts[:2]) if parts else (d.get('display_name','').split(',')[0] or ''))
 except Exception: print('')
 ")
-          CACHE[$key]="$place"
+          echo "${key}|${place}" >> "$CACHE"
         fi
-        place="${CACHE[$key]}"
-        altInt=${alt%.*}
-        if [[ -n "$place" ]]; then cap="${place} · ${altInt}m"; fi
+        if [[ -n "$place" ]]; then
+          altInt=${alt%.*}
+          if [[ -n "$altInt" && "$altInt" != "(null)" ]]; then
+            cap="${place} · ${altInt}m"
+          else
+            cap="${place}"
+          fi
+        fi
       fi
       echo "$i|$cap"
     done ) > /tmp/import-travel-captions.$$
+  rm -f "$CACHE"
   while IFS='|' read -r i cap; do CAPTIONS[$i]="$cap"; done < /tmp/import-travel-captions.$$
   rm -f /tmp/import-travel-captions.$$
 fi
