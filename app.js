@@ -758,7 +758,7 @@ function configureMarked() {
         cap = title || alt;
         const resolved = resolveImagePath(href || '');
         return `<figure class="full-bleed">
-          <img src="${escapeHtml(resolved)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />
+          <img src="${escapeHtml(resolved)}" alt="${escapeHtml(alt)}" loading="eager" decoding="async" />
           ${cap ? `<figcaption>${escapeHtml(cap)}</figcaption>` : ''}
         </figure>`;
       },

@@ -704,12 +704,16 @@ a:hover {
 
 .reader-body figure.full-bleed {
   margin: 28px 0;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 480px;
 }
 /* Soft dim at rest to take the edge off light-themed screenshots against
    the dark page. Tuned mild so dark-themed screenshots don't get crushed.
    Hover restores; click opens the photoviewer at full brightness. */
 .reader-body figure.full-bleed img {
   width: 100%;
+  height: auto;
+  aspect-ratio: auto 16 / 9;
   display: block;
   border-radius: 10px;
   box-shadow:
