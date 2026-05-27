@@ -268,9 +268,17 @@ function headerDot(v) {
   }
 }
 
+// IANA zone for the visit-line clock; DST handled automatically by Intl.
+const DISPLAY_TZ = 'America/New_York';
+
 function formatVisitLine(v) {
   const refererPart = v.referer ? ` ← ${formatReferer(v.referer)}` : '';
-  const time = v.ts.slice(11, 16); // HH:MM in UTC
+  const time = new Date(v.ts).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: DISPLAY_TZ,
+  }); // HH:MM in DISPLAY_TZ
   return `\`${v.path}${v.query || ''}\`${refererPart} · ${time}`;
 }
 
