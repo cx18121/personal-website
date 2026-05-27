@@ -811,7 +811,7 @@ function renderSidebar(fm) {
 const _mdCache = new Map();
 async function loadProjectMd(name) {
   if (_mdCache.has(name)) return _mdCache.get(name);
-  const res = await fetch(`./content/projects/${encodeURIComponent(name)}.md`);
+  const res = await fetch(`/content/projects/${encodeURIComponent(name)}.md`);
   if (!res.ok) throw new Error(`not found (${res.status})`);
   const text = await res.text();
   _mdCache.set(name, text);
@@ -1024,7 +1024,7 @@ async function openReader(adapter, name) {
 const _travelMdCache = new Map();
 async function loadTravelMd(name) {
   if (_travelMdCache.has(name)) return _travelMdCache.get(name);
-  const res = await fetch(`./content/travels/${encodeURIComponent(name)}.md`);
+  const res = await fetch(`/content/travels/${encodeURIComponent(name)}.md`);
   if (!res.ok) throw new Error(`not found (${res.status})`);
   const text = await res.text();
   _travelMdCache.set(name, text);
@@ -1548,7 +1548,7 @@ if (modeEl) modeEl.textContent = LOCATION;
 // version.json is generated at deploy time by .github/workflows/deploy.yml.
 // Same-origin fetch — no GitHub API, no rate limit. Silent on failure so
 // local-file/`file://` previews fall back to the bare title.
-fetch('./version.json', { cache: 'no-cache' })
+fetch('/version.json', { cache: 'no-cache' })
   .then((r) => (r.ok ? r.json() : null))
   .then((v) => {
     if (!v?.ver) return;
