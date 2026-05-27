@@ -704,8 +704,6 @@ a:hover {
 
 .reader-body figure.full-bleed {
   margin: 28px 0;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 480px;
 }
 /* Soft dim at rest to take the edge off light-themed screenshots against
    the dark page. Tuned mild so dark-themed screenshots don't get crushed.
