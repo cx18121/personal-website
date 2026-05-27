@@ -705,7 +705,7 @@ function renderGalleryBlock(body, params) {
 }
 
 // Image-path resolver. Short paths (no slash, no http) in project markdown
-// expand to `{imageBase}/{path}`, with a `.png` default ext. The base is
+// expand to `{imageBase}/{path}`, with a `.webp` default ext. The base is
 // scoped to a single renderMarkdown() call below — never set from outside
 // this module. Safe because marked.parse is synchronous.
 let _currentImageBase = null;
@@ -713,7 +713,7 @@ function resolveImagePath(href) {
   if (!href) return href;
   if (/^(https?:|data:|\/)/.test(href) || href.includes('/')) return href;
   if (!_currentImageBase) return href;
-  const withExt = /\.[a-z0-9]+$/i.test(href) ? href : `${href}.png`;
+  const withExt = /\.[a-z0-9]+$/i.test(href) ? href : `${href}.webp`;
   return `${_currentImageBase}/${withExt}`;
 }
 

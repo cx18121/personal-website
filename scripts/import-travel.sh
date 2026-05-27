@@ -9,7 +9,8 @@
 #   2. move to images/travels/<name>/, renamed 1.jpg .. N.jpg
 #   3. sips -Z 1600 (long-edge resize, 85% q) on each
 #   4. generate 200px thumbs in images/travels/<name>/thumbs/
-#   5. emit a frontmatter `photos:` snippet to stdout
+#   5. convert originals + thumbs to WebP (cwebp) and drop the jpgs
+#   6. emit a frontmatter `photos:` snippet to stdout
 #
 # flags:
 #   --geocode    reverse-geocode each photo's EXIF GPS via OpenStreetMap
@@ -19,7 +20,7 @@
 #                inserting before the closing `---` of its frontmatter.
 #                creates a stub md if the file doesn't exist.
 #
-# requires: macOS (sips, mdls), curl, python3.  no other deps.
+# requires: macOS (sips, mdls), curl, python3, cwebp (brew install webp).
 
 set -euo pipefail
 
@@ -86,27 +87,9 @@ log "generating 200px thumbs…"
     sips -Z 200 -s formatOptions 75 "$f" --out "thumbs/$f" >/dev/null
   done )
 
-# ── 4b. upload originals + thumbs to Cloudflare R2 ──────────────────
-# Travel photos are gitignored and served from media.charliexue.com via the
-# `personal-website` R2 bucket. We push originals to `travels/<name>/<n>.jpg`
-# and thumbs to `travels/<name>/thumbs/<n>.jpg`, mirroring local layout.
-if command -v wrangler >/dev/null 2>&1; then
-  log "uploading to R2 (bucket: personal-website)…"
-  ( cd "$DEST" && for f in *.jpg thumbs/*.jpg; do
-      [[ -e "$f" ]] || continue
-      wrangler r2 object put "personal-website/travels/${NAME}/${f}" \
-        --file "$f" --remote >/dev/null 2>&1 \
-        && printf "." || printf "x"
-    done )
-  echo
-  log "R2 upload complete."
-else
-  log "WARNING: wrangler not installed — skipping R2 upload."
-  log "  install: npm install -g wrangler && wrangler login"
-  log "  then re-upload manually."
-fi
-
 # ── 5. (optional) geocode ───────────────────────────────────────────
+# Runs while the jpgs still exist — mdls reads EXIF GPS from them. WebP
+# conversion (step 4b below) happens afterward so EXIF survives the lookup.
 declare -a CAPTIONS=()
 if [[ $GEOCODE -eq 1 ]]; then
   log "geocoding via nominatim (~${COUNT}s)…"
@@ -154,13 +137,41 @@ except Exception: print('')
   rm -f /tmp/import-travel-captions.$$
 fi
 
+# ── 4b. convert originals + thumbs to WebP, drop the jpgs ───────────
+command -v cwebp >/dev/null 2>&1 || die "cwebp not found (brew install webp)"
+log "converting to WebP…"
+( cd "$DEST" && for f in *.jpg thumbs/*.jpg; do
+    [[ -e "$f" ]] || continue
+    cwebp -q 80 -quiet "$f" -o "${f%.jpg}.webp" && rm "$f"
+  done )
+
+# ── 4c. upload originals + thumbs to Cloudflare R2 ──────────────────
+# Travel photos are gitignored and served from media.charliexue.com via the
+# `personal-website` R2 bucket. We push originals to `travels/<name>/<n>.webp`
+# and thumbs to `travels/<name>/thumbs/<n>.webp`, mirroring local layout.
+if command -v wrangler >/dev/null 2>&1; then
+  log "uploading to R2 (bucket: personal-website)…"
+  ( cd "$DEST" && for f in *.webp thumbs/*.webp; do
+      [[ -e "$f" ]] || continue
+      wrangler r2 object put "personal-website/travels/${NAME}/${f}" \
+        --file "$f" --remote >/dev/null 2>&1 \
+        && printf "." || printf "x"
+    done )
+  echo
+  log "R2 upload complete."
+else
+  log "WARNING: wrangler not installed — skipping R2 upload."
+  log "  install: npm install -g wrangler && wrangler login"
+  log "  then re-upload manually."
+fi
+
 # ── 6. build snippet ────────────────────────────────────────────────
 SNIPPET="photos:"$'\n'
 for i in $(seq 1 "$COUNT"); do
   if [[ $GEOCODE -eq 1 && -n "${CAPTIONS[$i]:-}" ]]; then
-    SNIPPET+="  - ${i}.jpg | ${CAPTIONS[$i]}"$'\n'
+    SNIPPET+="  - ${i}.webp | ${CAPTIONS[$i]}"$'\n'
   else
-    SNIPPET+="  - ${i}.jpg"$'\n'
+    SNIPPET+="  - ${i}.webp"$'\n'
   fi
 done
 

@@ -6,48 +6,48 @@ days: 18
 route: lima → huaraz -> huayhuash circuit -> nevado pisco
 learned: how to traverse a glacier
 photos:
-  - 1.jpg  | on the bus ride from lima to huaraz
-  - 2.jpg  | huaraz streets
-  - 3.jpg  | warmup hike to wilcacocha to help acclimatize
-  - 4.jpg  | the strawberries were very good
-  - 5.jpg  | peru is known for its potato varieties
-  - 6.jpg  | so much fruit
-  - 7.jpg  | lots of eggs
-  - 8.jpg  | laguna 69
-  - 9.jpg  | a random cow
-  - 10.jpg | laguna churup
-  - 11.jpg | some birds
-  - 12.jpg | some donkeys at sunrise along the huayhuash circuit
-  - 13.jpg | morning clouds
-  - 14.jpg | pretty unique marsh
-  - 15.jpg | average camp along huayhuash
-  - 16.jpg | carhuacocha
-  - 17.jpg | camp at night
-  - 18.jpg | sunrise reflections
-  - 19.jpg | 3 lakes viewpoint
-  - 20.jpg | a high pass
-  - 21.jpg | more mountains
-  - 22.jpg | an even higher pass (high point of the huayhuash circuit)
-  - 23.jpg | big dog
-  - 24.jpg | more mountain views
-  - 25.jpg | big mountain
-  - 26.jpg | jahuacocha
-  - 27.jpg | daytime views
-  - 28.jpg | nightime views
-  - 29.jpg | sunrise at 5750m on nevado pisco
-  - 30.jpg | summit views
-  - 31.jpg | chopicalqui and huascaran (tallest mtn in peru!)
-  - 32.jpg | more summit views
-  - 33.jpg | another team below us
-  - 34.jpg | looking at the opposing peak
-  - 35.jpg | looking back towards camp
-  - 36.jpg | "wilderness area"
-  - 37.jpg | huandoy's 4 peaks
-  - 38.jpg | back to laguna 69 but from above
-  - 39.jpg | small birds
-  - 40.jpg | ceviche back in lima
-  - 41.jpg | seafood rice, best thing i ate all trip
-  - 42.jpg | octopus. all the seafood in lima is so good
+  - 1.webp  | on the bus ride from lima to huaraz
+  - 2.webp  | huaraz streets
+  - 3.webp  | warmup hike to wilcacocha to help acclimatize
+  - 4.webp  | the strawberries were very good
+  - 5.webp  | peru is known for its potato varieties
+  - 6.webp  | so much fruit
+  - 7.webp  | lots of eggs
+  - 8.webp  | laguna 69
+  - 9.webp  | a random cow
+  - 10.webp | laguna churup
+  - 11.webp | some birds
+  - 12.webp | some donkeys at sunrise along the huayhuash circuit
+  - 13.webp | morning clouds
+  - 14.webp | pretty unique marsh
+  - 15.webp | average camp along huayhuash
+  - 16.webp | carhuacocha
+  - 17.webp | camp at night
+  - 18.webp | sunrise reflections
+  - 19.webp | 3 lakes viewpoint
+  - 20.webp | a high pass
+  - 21.webp | more mountains
+  - 22.webp | an even higher pass (high point of the huayhuash circuit)
+  - 23.webp | big dog
+  - 24.webp | more mountain views
+  - 25.webp | big mountain
+  - 26.webp | jahuacocha
+  - 27.webp | daytime views
+  - 28.webp | nightime views
+  - 29.webp | sunrise at 5750m on nevado pisco
+  - 30.webp | summit views
+  - 31.webp | chopicalqui and huascaran (tallest mtn in peru!)
+  - 32.webp | more summit views
+  - 33.webp | another team below us
+  - 34.webp | looking at the opposing peak
+  - 35.webp | looking back towards camp
+  - 36.webp | "wilderness area"
+  - 37.webp | huandoy's 4 peaks
+  - 38.webp | back to laguna 69 but from above
+  - 39.webp | small birds
+  - 40.webp | ceviche back in lima
+  - 41.webp | seafood rice, best thing i ate all trip
+  - 42.webp | octopus. all the seafood in lima is so good
 ---
 
 This was my second time in Peru, went to the central Peruvian Andes and did a lot of hiking and climbing. Huaraz is such a great place to base yourself out of if you love the outdoors. There's not so much to do in the city itself but the surroundings are absolutely amazing.

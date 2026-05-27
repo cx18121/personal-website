@@ -6,59 +6,59 @@ days: 13
 route: kunming → dali → lijiang → shangri-la -> yubeng
 learned: that Amtrak is complete garbage compared to china's high speed rail
 photos:
-  - 1.jpg | high speed rail to dali
-  - 2.jpg | suan cai yu and braised tofu
-  - 3.jpg | biking along erhai
-  - 4.jpg | gateway to the 3 pagodas
-  - 5.jpg | the 3 pagodas
-  - 6.jpg | a buddhist shrine
-  - 7.jpg | wish plaques
-  - 8.jpg | chongsheng temple
-  - 9.jpg | cumin lamb
-  - 10.jpg | traditional dali sour and spicy fish (contains a fish from erhai and local sour papaya)
-  - 11.jpg | view from the top of the dali south gate tower
-  - 12.jpg | the jade belt cloud trail in the cangshan mountains
-  - 13.jpg | views from the trail
-  - 14.jpg | gantong temple
-  - 15.jpg | traditional steam pot chicken 
-  - 16.jpg | shuixing yanghua (a type of local river vegetable) 
-  - 17.jpg | stir-fried wild mushrooms (yunnan is known as the mushroom capital of china)
-  - 18.jpg | shui zhu rou pian
-  - 19.jpg | lijiang old town
-  - 20.jpg | wanggu tower in lion hill park
-  - 21.jpg | a ceremonial gate in the old town
-  - 22.jpg | in china, they try to make you pay to go to a viewpoint (when you can get the same view 50ft away for free)
-  - 23.jpg | a tiger about to leap across the gorge
-  - 24.jpg | mountains
-  - 25.jpg | view from where I stayed the night
-  - 26.jpg | woke up to pouring rain (you can see the newly formed waterfall on the opposing mountain)
-  - 27.jpg | a waterfall going straight over the trail
-  - 28.jpg | close-up of said waterfall
-  - 29.jpg | the trail along the mountain side
-  - 30.jpg | the trail was completely flooded in certain areas
-  - 31.jpg | entering shangri-la and the tibetan grasslands
-  - 32.jpg | yak hot pot
-  - 33.jpg | a tibetan buddhist monument
-  - 34.jpg | arriving at songzanlin monastery
-  - 35.jpg | the largest monastery in yunnan, there are about 700 monks who live there  
-  - 36.jpg | view from the monastery
-  - 37.jpg | view over shangri-la with lots of prayer flags
-  - 38.jpg | bootleg horseshoe bend
-  - 39.jpg | arriving in deqin
-  - 40.jpg | on the way to yubeng
-  - 41.jpg | view from upper yubeng towards meili xue shan
-  - 42.jpg | on the way to the glacial lake
-  - 43.jpg | arriving at the lake
-  - 44.jpg | tons of waterfalls
-  - 45.jpg | meili xue shan still in the clouds
-  - 46.jpg | a lone horse
-  - 47.jpg | the path to the sacred waterfall
-  - 48.jpg | tons of prayer flags
-  - 49.jpg | the sacred waterfall
-  - 50.jpg | the road out of yubeng
-  - 51.jpg | sichuan food back in kunming (fu ji fei pian)
-  - 52.jpg | shui zhu yu
-  - 53.jpg | garlic shrimp and vermicelli
+  - 1.webp | high speed rail to dali
+  - 2.webp | suan cai yu and braised tofu
+  - 3.webp | biking along erhai
+  - 4.webp | gateway to the 3 pagodas
+  - 5.webp | the 3 pagodas
+  - 6.webp | a buddhist shrine
+  - 7.webp | wish plaques
+  - 8.webp | chongsheng temple
+  - 9.webp | cumin lamb
+  - 10.webp | traditional dali sour and spicy fish (contains a fish from erhai and local sour papaya)
+  - 11.webp | view from the top of the dali south gate tower
+  - 12.webp | the jade belt cloud trail in the cangshan mountains
+  - 13.webp | views from the trail
+  - 14.webp | gantong temple
+  - 15.webp | traditional steam pot chicken 
+  - 16.webp | shuixing yanghua (a type of local river vegetable) 
+  - 17.webp | stir-fried wild mushrooms (yunnan is known as the mushroom capital of china)
+  - 18.webp | shui zhu rou pian
+  - 19.webp | lijiang old town
+  - 20.webp | wanggu tower in lion hill park
+  - 21.webp | a ceremonial gate in the old town
+  - 22.webp | in china, they try to make you pay to go to a viewpoint (when you can get the same view 50ft away for free)
+  - 23.webp | a tiger about to leap across the gorge
+  - 24.webp | mountains
+  - 25.webp | view from where I stayed the night
+  - 26.webp | woke up to pouring rain (you can see the newly formed waterfall on the opposing mountain)
+  - 27.webp | a waterfall going straight over the trail
+  - 28.webp | close-up of said waterfall
+  - 29.webp | the trail along the mountain side
+  - 30.webp | the trail was completely flooded in certain areas
+  - 31.webp | entering shangri-la and the tibetan grasslands
+  - 32.webp | yak hot pot
+  - 33.webp | a tibetan buddhist monument
+  - 34.webp | arriving at songzanlin monastery
+  - 35.webp | the largest monastery in yunnan, there are about 700 monks who live there  
+  - 36.webp | view from the monastery
+  - 37.webp | view over shangri-la with lots of prayer flags
+  - 38.webp | bootleg horseshoe bend
+  - 39.webp | arriving in deqin
+  - 40.webp | on the way to yubeng
+  - 41.webp | view from upper yubeng towards meili xue shan
+  - 42.webp | on the way to the glacial lake
+  - 43.webp | arriving at the lake
+  - 44.webp | tons of waterfalls
+  - 45.webp | meili xue shan still in the clouds
+  - 46.webp | a lone horse
+  - 47.webp | the path to the sacred waterfall
+  - 48.webp | tons of prayer flags
+  - 49.webp | the sacred waterfall
+  - 50.webp | the road out of yubeng
+  - 51.webp | sichuan food back in kunming (fu ji fei pian)
+  - 52.webp | shui zhu yu
+  - 53.webp | garlic shrimp and vermicelli
 ---
 
 Added on a trip to Yunnan after visiting family in China. Decided to go to Yunnan because its landscapes range from tropical forests to deep gorges and alpine peaks. It's also culturally diverse with 25 ethnic groups. 
