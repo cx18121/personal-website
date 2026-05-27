@@ -32,11 +32,10 @@ const NOISE_ORG = /onyphe|qualys|tenable|rapid7|censys|shodan|shadowserver|netcr
 // start a fresh message (probably a different reading session).
 const SESSION_WINDOW_MS = 30 * 60 * 1000;
 
-// Discord message content limit is 2000 chars. Keep the running visit
-// log under this with comfortable headroom for the header.
+// The session embed's description holds the running visit log. Discord
+// caps an embed description at 4096 chars; keep headroom and a line cap.
 const MAX_VISIT_LINES = 30;
-const MAX_CONTENT_CHARS = 1900;
-const SUPPRESS_EMBEDS_FLAG = 1 << 2;
+const MAX_DESC_CHARS = 3900;
 
 export async function onRequest(context) {
   const { request, env, next, waitUntil } = context;
@@ -194,20 +193,21 @@ async function loadSession(db, sessionKey) {
 }
 
 async function tryEditMessage(webhookUrl, db, sessionKey, session, v) {
-  const newContent = appendVisitLine(session.content, v);
+  // session.content holds just the accumulated visit list (the embed body).
+  const newList = appendVisitLine(session.content, v);
   try {
     const res = await fetch(`${webhookUrl}/messages/${session.message_id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        content: newContent,
+        embeds: [buildSignalEmbed(v, newList)],
         allowed_mentions: { parse: [] },
       }),
     });
     if (!res.ok) return false;
     await db
       .prepare('UPDATE sessions SET last_seen = ?, hits = hits + 1, content = ? WHERE session_key = ?')
-      .bind(v.ts, newContent, sessionKey)
+      .bind(v.ts, newList, sessionKey)
       .run();
     return true;
   } catch {
@@ -216,14 +216,13 @@ async function tryEditMessage(webhookUrl, db, sessionKey, session, v) {
 }
 
 async function createSessionMessage(webhookUrl, db, sessionKey, v) {
-  const content = `${formatHeader(v)}\n${formatVisitLine(v)}`;
+  const list = formatVisitLine(v);
   try {
     const res = await fetch(`${webhookUrl}?wait=true`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        content,
-        flags: SUPPRESS_EMBEDS_FLAG,
+        embeds: [buildSignalEmbed(v, list)],
         allowed_mentions: { parse: [] },
       }),
     });
@@ -241,21 +240,36 @@ async function createSessionMessage(webhookUrl, db, sessionKey, v) {
            hits       = 1,
            content    = excluded.content`,
       )
-      .bind(sessionKey, msg.id, v.ts, v.ts, content)
+      .bind(sessionKey, msg.id, v.ts, v.ts, list)
       .run();
   } catch {
     // Swallow.
   }
 }
 
-// Two-line header: org + device on line 1, location + ASN/colo on line 2.
-function formatHeader(v) {
+// Session embed: same field structure as the firehose embed, but the
+// description carries the running visit list and the timestamp tracks
+// the most recent pageview (Discord localizes it per viewer).
+function buildSignalEmbed(v, listBody) {
   const dot = headerDot(v);
-  const loc = [v.city, v.region, v.country].filter(Boolean).join(', ') || 'unknown';
-  return (
-    `${dot} **${v.org_label}** · _${v.org_category}_ · ${v.device_label}\n` +
-    `📍 ${loc} · ASN ${v.asn || '?'} · ${v.colo || 'cf'}`
-  );
+  const location = [v.city, v.region, v.country].filter(Boolean).join(', ') || 'unknown';
+  const title = v.bot_flagged ? `[BOT?] ${v.org_label}` : `${dot} ${v.org_label}`;
+
+  const footerParts = [`ASN ${v.asn || '?'}`, v.colo || 'cf'];
+  if (v.bot_flagged) footerParts.push(`flagged: ${v.bot_reason}`);
+
+  return {
+    title,
+    color: v.bot_flagged ? 0x4f5660 : v.org_color,
+    description: listBody,
+    fields: [
+      { name: 'Org', value: `${v.org_label}\n_${v.org_category}_`, inline: true },
+      { name: 'Location', value: location, inline: true },
+      { name: 'Device', value: v.device_label, inline: true },
+    ],
+    footer: { text: footerParts.join(' · ') },
+    timestamp: v.ts,
+  };
 }
 
 function headerDot(v) {
@@ -268,42 +282,30 @@ function headerDot(v) {
   }
 }
 
-// IANA zone for the visit-line clock; DST handled automatically by Intl.
-const DISPLAY_TZ = 'America/New_York';
-
 function formatVisitLine(v) {
   const refererPart = v.referer ? ` ← ${formatReferer(v.referer)}` : '';
-  const time = new Date(v.ts).toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: DISPLAY_TZ,
-  }); // HH:MM in DISPLAY_TZ
+  // Discord <t:epoch:t> renders a short time localized to each viewer's device.
+  const time = `<t:${Math.floor(Date.parse(v.ts) / 1000)}:t>`;
   return `\`${v.path}${v.query || ''}\`${refererPart} · ${time}`;
 }
 
-// Header is fixed (first 2 lines). Append the new visit line, trim
-// older visit lines if we'd blow past Discord's 2000-char content cap.
-function appendVisitLine(oldContent, v) {
-  const lines = oldContent.split('\n');
-  const header = lines.slice(0, 2);
-  const visitLines = lines.slice(2).filter((l) => !l.startsWith('… '));
+// Append the new visit line to the running list, trimming older lines if
+// we'd blow past the embed description cap.
+function appendVisitLine(oldList, v) {
+  const visitLines = oldList.split('\n').filter((l) => !l.startsWith('… '));
   visitLines.push(formatVisitLine(v));
 
   let kept = visitLines.slice(-MAX_VISIT_LINES);
   let body = kept.join('\n');
   let truncated = kept.length < visitLines.length;
 
-  while (header.join('\n').length + 1 + (truncated ? 20 : 0) + body.length > MAX_CONTENT_CHARS && kept.length > 1) {
+  while ((truncated ? 20 : 0) + body.length > MAX_DESC_CHARS && kept.length > 1) {
     kept = kept.slice(1);
     body = kept.join('\n');
     truncated = true;
   }
 
-  const out = truncated
-    ? `${header.join('\n')}\n… earlier omitted …\n${body}`
-    : `${header.join('\n')}\n${body}`;
-  return out;
+  return truncated ? `… earlier omitted …\n${body}` : body;
 }
 
 function buildEmbed(v, url) {
