@@ -1,0 +1,22 @@
+# Cloudflare Pages response headers. Applies to assets served from
+# charliexue.com (the Pages project). Travel photos live on R2 behind
+# media.charliexue.com and are cached separately — not covered here.
+
+# Project images are content-stable (a screenshot at a given path doesn't
+# change), so cache hard for fast repeat visits. CAVEAT: if you ever replace
+# an image at the SAME filename, returning visitors may see the old one for
+# up to a year — rename it or purge the Cloudflare cache when you do.
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Code and content are NOT content-hashed, so never let the browser serve a
+# stale copy after a deploy (this is what forced the hard-refresh before).
+# max-age=0 + must-revalidate → revalidate via ETag each load (cheap 304s).
+/app.js
+  Cache-Control: public, max-age=0, must-revalidate
+/styles.css
+  Cache-Control: public, max-age=0, must-revalidate
+/vendor/*
+  Cache-Control: public, max-age=86400
+/content/*
+  Cache-Control: public, max-age=0, must-revalidate
