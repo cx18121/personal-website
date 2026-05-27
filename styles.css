@@ -348,7 +348,15 @@ a:hover {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(2px);
+}
+/* The blur draws focus to the modal but is the most expensive paint on
+   machines without GPU acceleration. Drop it for users who've opted into
+   "Reduce transparency" (the standard low-GPU-effects signal); everyone
+   else keeps it. */
+@media (prefers-reduced-transparency: no-preference) {
+  .reader-backdrop {
+    backdrop-filter: blur(2px);
+  }
 }
 .reader-window {
   position: relative;
