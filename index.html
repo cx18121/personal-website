@@ -343,12 +343,9 @@
       </p>
     </section>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Self-hosted Newsreader (see @font-face in styles.css). Preload the
+         latin normal file — the body-text default — to cut first-paint wait. -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/newsreader-latin.woff2" crossorigin />
     <!-- app.js imports data.js; preload it so the two fetch in parallel
          instead of serially (app.js → discover import → data.js). -->
     <link rel="modulepreload" href="/data.js" />

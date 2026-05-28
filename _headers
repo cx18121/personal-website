@@ -9,6 +9,10 @@
 /images/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Fonts are versioned in the filename and never change — cache hard.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
 # Code and content are NOT content-hashed, so never let the browser serve a
 # stale copy after a deploy (this is what forced the hard-refresh before).
 # max-age=0 + must-revalidate → revalidate via ETag each load (cheap 304s).
