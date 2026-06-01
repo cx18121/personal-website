@@ -1535,7 +1535,7 @@ if (mascotEl) {
 // author-controlled, never user input.
 const whatsNewEl = document.getElementById('whats-new');
 if (whatsNewEl) {
-  whatsNewEl.innerHTML = WHATS_NEW.map(
+  whatsNewEl.innerHTML = WHATS_NEW.slice(0, 3).map(
     (e) =>
       `<div><span class="muted">${escapeHtml(e.date)}</span> ${e.body}</div>`
   ).join('');

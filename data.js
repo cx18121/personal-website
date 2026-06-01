@@ -151,8 +151,13 @@ export const FAVORITES = [
 ];
 
 // Welcome panel · "what's new" entries. Most recent first. Body can include
-// HTML (e.g. <span class="cmd">). Keep to 3-4 entries — this is a tease.
+// HTML (e.g. <span class="cmd">). Running log — keep appending; the welcome
+// panel renders only the 3 most recent (see WHATS_NEW.slice in app.js).
 export const WHATS_NEW = [
+  {
+    date: '2026-05',
+    body: 'Started as a SWE intern at Pango AI (YC S26)',
+  },
   {
     date: '2026-05',
     body: 'Redesigned this site as an interactive terminal',
