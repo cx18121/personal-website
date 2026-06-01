@@ -169,7 +169,7 @@ export const WHATS_NEW = [
 
 // Footer mode indicator — current location/context. Shown next to the moon
 // glyph. Update when you move.
-export const LOCATION = 'ithaca';
+export const LOCATION = 'princeton';
 
 export const ABOUT = `charlie xue
 cs & statistics @ cornell
