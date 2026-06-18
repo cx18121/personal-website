@@ -156,7 +156,7 @@ export const FAVORITES = [
 export const WHATS_NEW = [
   {
     date: '2026-05',
-    body: 'Started as a SWE intern at Pango AI (YC S26)',
+    body: 'Started as a SWE intern at Pango (YC S26)',
   },
   {
     date: '2026-05',
@@ -181,7 +181,7 @@ cs & statistics @ cornell
 
 I build full-stack AI applications and ML systems.
 Currently focused on building for early-stage startups.
-SWE Intern at Pango AI (YC S26).`;
+SWE Intern at Pango (YC S26).`;
 
 export const CONTACT = `email     <a href="mailto:cx267@cornell.edu">cx267@cornell.edu</a>
 github    <a href="https://github.com/cx18121" target="_blank" rel="noreferrer">github.com/cx18121</a>
