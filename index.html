@@ -343,13 +343,9 @@
       </p>
     </section>
 
-    <!-- Self-hosted Newsreader (see @font-face in styles.css). Preload the
-         latin normal file — the body-text default — to cut first-paint wait. -->
-    <link rel="preload" as="font" type="font/woff2" href="/fonts/newsreader-latin.woff2" crossorigin />
     <!-- app.js imports data.js; preload it so the two fetch in parallel
          instead of serially (app.js → discover import → data.js). -->
     <link rel="modulepreload" href="/data.js" />
-    <script src="/vendor/marked.min.js" defer></script>
     <script type="module" src="/app.js"></script>
   </body>
 </html>

@@ -1,12 +1,20 @@
 // Cloudflare Pages middleware. Runs on every request before the static
-// asset is served. For each non-bot HTML page load it:
-//   1. Pings the firehose Discord webhook (every visit, raw stream).
-//   2. Appends a row to the D1 visit log (durable, queryable history).
-//   3. If the visit looks like signal (real human from a corp/ISP/mobile
-//      ASN, not a scanner, not a probe path), also pings the signal
-//      webhook. Multi-page visits from the same person collapse into a
-//      single message that gets edited (PATCHed) as they browse more
-//      pages — works in a normal text channel, no forum required.
+// asset is served. Two independent streams:
+//
+//   Firehose — every real page load (not assets, not honest bots) pings
+//   the firehose webhook and appends a row to the D1 visit log. Raw,
+//   noisy, durable.
+//
+//   Signal — driven entirely by the page's own JS via the /b beacon, not
+//   by raw requests. The site fires /b?e=load once it executes (proof a
+//   real browser ran it — the only human signal that survives a visitor
+//   arriving through a cloud or corporate proxy) and /b?e=view each time a
+//   project/travel is opened (client-side routing hides those opens from
+//   the server). Each beacon appends to one running per-visitor message
+//   that gets PATCHed as they read on. So signal = "ran the JS," never an
+//   ASN guess; the view lines show exactly what they read. Org/ASN is kept
+//   only as a label, it gates nothing.
+//
 // All writes go through waitUntil so they never block the response.
 //
 // Bindings (see wrangler.toml):
@@ -15,12 +23,8 @@
 //   DISCORD_SIGNAL_WEBHOOK_URL  secret — signal text channel (optional)
 //   SESSION_SALT                secret — salt for IP→session_key hash
 
-const SKIP_EXT = /\.(css|js|mjs|png|jpe?g|webp|svg|gif|ico|woff2?|ttf|otf|map|json|xml|txt|pdf)$/i;
+const SKIP_EXT = /\.(css|js|mjs|md|png|jpe?g|webp|svg|gif|ico|woff2?|ttf|otf|map|json|xml|txt|pdf)$/i;
 const BOT_UA = /bot|crawl|spider|slurp|duckduck|baidu|yandex|sogou|facebookexternal|twitter|linkedinbot|applebot|ahrefs|semrush|mj12|dotbot|headlesschrome|phantomjs|selenium|puppeteer|playwright|curl|wget|monitor|pingdom|uptime/i;
-
-// Paths a static personal site never legitimately serves. Hitting any
-// of these is a scanner probing for CMS / config / cred leaks.
-const PROBE_PATH = /^\/(?:wp-|wordpress|xmlrpc|setup\/?$|admin\/?$|\.env|\.git|\.aws|\.ssh|phpmyadmin|cgi-bin|owa\/|ecp\/|autodiscover|hudson|jenkins|actuator|console\/|boaform|RouterAccess|HNAP1|hnap1|api\/|server-status|solr\/|cf_scripts\/|vendor\/phpunit|geoserver|drupal|joomla|magento)/i;
 
 // Orgs that show up as "Likely corporate" or similar but are actually
 // internet-wide scanners or commercial proxy/scraper providers. Filter
@@ -47,6 +51,15 @@ export async function onRequest(context) {
     return Response.redirect(url.toString(), 301);
   }
 
+  // Behavioral beacon from the page's JS (see handleBeacon). Drives the
+  // signal channel; never a logged pageview. Always answer 204.
+  if (url.pathname === '/b' && request.method === 'GET') {
+    if (env.DISCORD_SIGNAL_WEBHOOK_URL && env.VISITOR_LOG && env.SESSION_SALT) {
+      waitUntil(handleBeacon(context, url, ua));
+    }
+    return new Response(null, { status: 204 });
+  }
+
   if (
     request.method === 'GET' &&
     !SKIP_EXT.test(url.pathname) &&
@@ -59,19 +72,6 @@ export async function onRequest(context) {
     }
     if (env.VISITOR_LOG) {
       waitUntil(logToD1(env.VISITOR_LOG, visit));
-    }
-    if (
-      env.DISCORD_SIGNAL_WEBHOOK_URL &&
-      env.VISITOR_LOG &&
-      env.SESSION_SALT &&
-      isSignal(visit)
-    ) {
-      const ip = request.headers.get('cf-connecting-ip') || '';
-      if (ip) {
-        waitUntil(
-          reportSignal(env.DISCORD_SIGNAL_WEBHOOK_URL, env.VISITOR_LOG, env.SESSION_SALT, ip, visit),
-        );
-      }
     }
   }
 
@@ -107,20 +107,52 @@ function buildVisit(request, url, ua) {
   };
 }
 
-// Signal = "this looks like a real human from a real network, not a
-// scanner or proxy." Recruiter visits clear all these gates.
-function isSignal(v) {
-  if (v.bot_flagged) return false;
-  if (PROBE_PATH.test(v.path)) return false;
-  if (v.org_label && NOISE_ORG.test(v.org_label)) return false;
-  switch (v.org_category) {
-    case 'Likely corporate':
-    case 'SASE (corp behind security vendor)':
-    case 'Residential ISP':
-    case 'Mobile carrier':
-      return true;
+// The page's JS fires /b on load and on each project/travel open. A load
+// beacon proves a real browser executed the page (our only human signal
+// that survives a cloud/corp proxy); a view beacon names what they opened.
+// Honest bots (BOT_UA) and known JS-capable scanners (NOISE_ORG) are
+// dropped — everything else that runs the code counts as a real visitor.
+async function handleBeacon(context, url, ua) {
+  const { request, env } = context;
+  const ip = request.headers.get('cf-connecting-ip') || '';
+  if (!ip || BOT_UA.test(ua)) return;
+
+  const v = buildVisit(request, url, ua);
+  if (v.org_label && NOISE_ORG.test(v.org_label)) return;
+
+  // /b is public and unauthenticated, and these values land verbatim in a
+  // Discord embed. Validate hard: a backtick in `n` would break out of the
+  // code span (markdown/link injection); an unbounded value would bloat or
+  // 400 the embed. Reject anything that isn't a plain slug.
+  let label;
+  switch (url.searchParams.get('e')) {
+    case 'load':
+      label = `landed \`${refPath(request.headers.get('referer')) || '/'}\``;
+      break;
+    case 'view': {
+      const name = url.searchParams.get('n');
+      const kind = url.searchParams.get('k');
+      if (!name || !/^[a-z0-9 _-]{1,40}$/i.test(name)) return;
+      if (kind && !/^(project|travel)$/.test(kind)) return;
+      label = `viewed ${kind ? `${kind} ` : ''}\`${name}\``;
+      break;
+    }
     default:
-      return false;
+      return;
+  }
+
+  const sessionKey = await hashSession(env.SESSION_SALT, ip);
+  await recordEvent(env.DISCORD_SIGNAL_WEBHOOK_URL, env.VISITOR_LOG, sessionKey, v, eventLine(v, label));
+}
+
+function refPath(ref) {
+  try {
+    // pathname only (the URL parser percent-encodes backticks, so this can't
+    // break out of the code span); bounded so a forged Referer can't bloat
+    // the embed.
+    return new URL(ref).pathname.slice(0, 80);
+  } catch {
+    return null;
   }
 }
 
@@ -162,23 +194,58 @@ async function reportDiscord(webhookUrl, v, url) {
   }
 }
 
-// Edit-in-place threading: each visitor session is one Discord message
-// that we PATCH with each new pageview, so a multi-page visit shows up
-// as one growing message instead of N separate notifications. Works in
-// a normal text channel — no forum required.
-async function reportSignal(webhookUrl, db, salt, ip, v) {
-  const sessionKey = await hashSession(salt, ip);
-  const session = await loadSession(db, sessionKey);
-  const fresh = session && Date.now() - Date.parse(session.last_seen) < SESSION_WINDOW_MS;
-
-  if (fresh) {
-    const edited = await tryEditMessage(webhookUrl, db, sessionKey, session, v);
-    if (edited) return;
-    // PATCH failed (404 → message was deleted manually, etc.) — fall
-    // through and post a fresh one.
+// Edit-in-place threading: each visitor is one Discord message that we
+// PATCH as new beacons arrive, so a whole reading session shows up as one
+// growing message instead of N separate notifications. Works in a normal
+// text channel — no forum required.
+async function recordEvent(webhookUrl, db, sessionKey, v, line) {
+  // A deep-link entry fires the load + view beacons together. Without a lock
+  // both would see no session row and each POST its own Discord message
+  // (dupe + orphan). D1 is single-writer, so claim the create slot with one
+  // atomic statement: exactly one caller wins and posts the message; the
+  // rest fall through to edit it.
+  if (await claimNewSession(db, sessionKey, v.ts)) {
+    await createSessionMessage(webhookUrl, db, sessionKey, v, line);
+    return;
   }
 
-  await createSessionMessage(webhookUrl, db, sessionKey, v);
+  const session = await loadSession(db, sessionKey);
+  if (session && session.message_id) {
+    const edited = await tryEditMessage(webhookUrl, db, sessionKey, session, v, line);
+    if (edited) return;
+    // PATCH failed (message deleted manually, etc.) — drop this one line
+    // rather than risk a duplicate message.
+  }
+  // Else: lost the race before the winner wrote its message_id. Dropping the
+  // odd line beats a duplicate; the next beacon edits cleanly.
+}
+
+// Insert a placeholder row, or reset it if the prior session has gone stale
+// (>30 min). Returns true iff this caller should create the Discord message.
+// On a concurrent cold burst the first writer inserts (last_seen = now) and
+// the rest hit the conflict whose WHERE (stale-only) is false → 0 changes →
+// they edit instead.
+async function claimNewSession(db, sessionKey, ts) {
+  const cutoff = new Date(Date.now() - SESSION_WINDOW_MS).toISOString();
+  try {
+    const res = await db
+      .prepare(
+        `INSERT INTO sessions (session_key, message_id, first_seen, last_seen, hits, content)
+         VALUES (?, '', ?, ?, 0, '')
+         ON CONFLICT(session_key) DO UPDATE SET
+           message_id = '',
+           first_seen = excluded.first_seen,
+           last_seen  = excluded.last_seen,
+           hits       = 0,
+           content    = ''
+         WHERE sessions.last_seen < ?`,
+      )
+      .bind(sessionKey, ts, ts, cutoff)
+      .run();
+    return (res.meta?.changes ?? 0) > 0;
+  } catch {
+    return false;
+  }
 }
 
 async function loadSession(db, sessionKey) {
@@ -192,9 +259,9 @@ async function loadSession(db, sessionKey) {
   }
 }
 
-async function tryEditMessage(webhookUrl, db, sessionKey, session, v) {
-  // session.content holds just the accumulated visit list (the embed body).
-  const newList = appendVisitLine(session.content, v);
+async function tryEditMessage(webhookUrl, db, sessionKey, session, v, line) {
+  // session.content holds just the accumulated event list (the embed body).
+  const newList = appendVisitLine(session.content, line);
   try {
     const res = await fetch(`${webhookUrl}/messages/${session.message_id}`, {
       method: 'PATCH',
@@ -215,8 +282,12 @@ async function tryEditMessage(webhookUrl, db, sessionKey, session, v) {
   }
 }
 
-async function createSessionMessage(webhookUrl, db, sessionKey, v) {
-  const list = formatVisitLine(v);
+// Posts the message and fills in the row claimNewSession reserved. If the
+// POST fails, drop the placeholder so the next beacon can re-claim instead
+// of being stuck editing a row that has no message_id.
+async function createSessionMessage(webhookUrl, db, sessionKey, v, line) {
+  const list = line;
+  let posted = false;
   try {
     const res = await fetch(`${webhookUrl}?wait=true`, {
       method: 'POST',
@@ -226,48 +297,49 @@ async function createSessionMessage(webhookUrl, db, sessionKey, v) {
         allowed_mentions: { parse: [] },
       }),
     });
-    if (!res.ok) return;
-    const msg = await res.json();
-    if (!msg.id) return;
-    await db
-      .prepare(
-        `INSERT INTO sessions (session_key, message_id, first_seen, last_seen, hits, content)
-         VALUES (?, ?, ?, ?, 1, ?)
-         ON CONFLICT(session_key) DO UPDATE SET
-           message_id = excluded.message_id,
-           first_seen = excluded.first_seen,
-           last_seen  = excluded.last_seen,
-           hits       = 1,
-           content    = excluded.content`,
-      )
-      .bind(sessionKey, msg.id, v.ts, v.ts, list)
-      .run();
+    if (res.ok) {
+      const msg = await res.json();
+      if (msg.id) {
+        posted = true;
+        await db
+          .prepare('UPDATE sessions SET message_id = ?, last_seen = ?, hits = 1, content = ? WHERE session_key = ?')
+          .bind(msg.id, v.ts, list, sessionKey)
+          .run();
+      }
+    }
   } catch {
-    // Swallow.
+    // Swallow — cleanup below.
+  }
+  if (!posted) {
+    try {
+      await db
+        .prepare("DELETE FROM sessions WHERE session_key = ? AND message_id = ''")
+        .bind(sessionKey)
+        .run();
+    } catch {
+      // Best-effort.
+    }
   }
 }
 
 // Session embed: same field structure as the firehose embed, but the
-// description carries the running visit list and the timestamp tracks
-// the most recent pageview (Discord localizes it per viewer).
+// description carries the running event list and the timestamp tracks the
+// most recent beacon (Discord localizes it per viewer). No bot framing — a
+// beacon means the client executed our JS, so it's a real browser by
+// definition; org/ASN here is just a color-coded label.
 function buildSignalEmbed(v, listBody) {
-  const dot = headerDot(v);
   const location = [v.city, v.region, v.country].filter(Boolean).join(', ') || 'unknown';
-  const title = v.bot_flagged ? `[BOT?] ${v.org_label}` : `${dot} ${v.org_label}`;
-
-  const footerParts = [`ASN ${v.asn || '?'}`, v.colo || 'cf'];
-  if (v.bot_flagged) footerParts.push(`flagged: ${v.bot_reason}`);
 
   return {
-    title,
-    color: v.bot_flagged ? 0x4f5660 : v.org_color,
+    title: `${headerDot(v)} ${v.org_label}`,
+    color: v.org_color,
     description: listBody,
     fields: [
       { name: 'Org', value: `${v.org_label}\n_${v.org_category}_`, inline: true },
       { name: 'Location', value: location, inline: true },
       { name: 'Device', value: v.device_label, inline: true },
     ],
-    footer: { text: footerParts.join(' · ') },
+    footer: { text: `ASN ${v.asn || '?'} · ${v.colo || 'cf'}` },
     timestamp: v.ts,
   };
 }
@@ -282,18 +354,19 @@ function headerDot(v) {
   }
 }
 
-function formatVisitLine(v) {
-  const refererPart = v.referer ? ` ← ${formatReferer(v.referer)}` : '';
-  // Discord <t:epoch:t> renders a short time localized to each viewer's device.
+// One line in the running per-visitor list: a label ("landed `/`",
+// "viewed `spectre`") plus a Discord <t:epoch:t> short time, localized to
+// each viewer's device.
+function eventLine(v, label) {
   const time = `<t:${Math.floor(Date.parse(v.ts) / 1000)}:t>`;
-  return `\`${v.path}${v.query || ''}\`${refererPart} · ${time}`;
+  return `${label} · ${time}`;
 }
 
-// Append the new visit line to the running list, trimming older lines if
-// we'd blow past the embed description cap.
-function appendVisitLine(oldList, v) {
+// Append a new line to the running list, trimming older lines if we'd blow
+// past the embed description cap.
+function appendVisitLine(oldList, line) {
   const visitLines = oldList.split('\n').filter((l) => !l.startsWith('… '));
-  visitLines.push(formatVisitLine(v));
+  visitLines.push(line);
 
   let kept = visitLines.slice(-MAX_VISIT_LINES);
   let body = kept.join('\n');

@@ -217,7 +217,9 @@ const ui = {
     }
     // Warm the project index in the background so /projects and the
     // /open autocomplete don't pay a fetch round-trip on first use.
-    getProjectIndex().catch(() => {});
+    const warmIndex = () => getProjectIndex().catch(() => {});
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(warmIndex);
+    else setTimeout(warmIndex, 1000);
   },
   print(html) {
     const div = document.createElement('div');
@@ -717,6 +719,20 @@ function resolveImagePath(href) {
   return `${_currentImageBase}/${withExt}`;
 }
 
+let _markedPromise = null;
+function loadMarked() {
+  if (typeof marked !== 'undefined') return Promise.resolve();
+  if (_markedPromise) return _markedPromise;
+  _markedPromise = new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = '/vendor/marked.min.js';
+    s.onload = resolve;
+    s.onerror = resolve;
+    document.head.appendChild(s);
+  });
+  return _markedPromise;
+}
+
 let _markedConfigured = false;
 function configureMarked() {
   if (_markedConfigured) return;
@@ -985,6 +1001,7 @@ async function openReader(adapter, name) {
   const prev = list[(idx - 1 + list.length) % list.length];
   const next = list[(idx + 1) % list.length];
 
+  await loadMarked();
   const data = await adapter.loadEntry(name);
 
   document.getElementById('reader-cmd').textContent =
@@ -1007,6 +1024,9 @@ async function openReader(adapter, name) {
   `;
 
   _currentReader = { adapter, name };
+  // Tell the server which entry was opened — client-side routing means this
+  // open fires no other request it can see.
+  beacon({ e: 'view', k: adapter.kind, n: name });
   const reader = document.getElementById('reader');
   reader.hidden = false;
   document.body.style.overflow = 'hidden';
@@ -1557,6 +1577,18 @@ fetch('/version.json', { cache: 'no-cache' })
   })
   .catch(() => {});
 
+// Same-origin behavioral beacon. The middleware uses these to drive the
+// visitor signal channel: one on load (proof a real browser executed the
+// page — the only signal that survives a visitor arriving via a cloud or
+// corporate proxy) and one per project/travel opened (client-side routing
+// hides opens from the server). keepalive so a beacon fired as the tab
+// closes still lands; failures are silent.
+function beacon(params) {
+  try {
+    fetch(`/b?${new URLSearchParams(params)}`, { keepalive: true, cache: 'no-store' }).catch(() => {});
+  } catch {}
+}
+
 // ── Command Registry ─────────────────────────────────────────────
 // Each slash command is one entry: a function (ui, args) -> void.
 // `ui.run()` dispatches via lookup instead of an if/else chain. Adding a
@@ -1712,6 +1744,7 @@ const commandHandlers = {
 };
 
 ui.init();
+beacon({ e: 'load' });
 
 function updateClock() {
   const t = new Intl.DateTimeFormat('en-US', {
