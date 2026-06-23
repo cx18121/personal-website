@@ -12,6 +12,9 @@ images/travels/
 .wrangler/
 .playwright-mcp/
 
+# Local dev secrets for `wrangler pages dev` — never commit.
+.dev.vars
+
 # Local dump of Discord visitor pings — contains IPs/ASNs/locations, don't commit.
 discord-log.txt
 discord-log.*.txt

@@ -1583,10 +1583,24 @@ fetch('/version.json', { cache: 'no-cache' })
 // corporate proxy) and one per project/travel opened (client-side routing
 // hides opens from the server). keepalive so a beacon fired as the tab
 // closes still lands; failures are silent.
+//
+// Beacons are chained, not fired in parallel: on a deep-link entry the load
+// and view beacons would otherwise hit the server concurrently and race to
+// create the session message (one would lose and drop its line). Serializing
+// guarantees load's request lands — creating the message — before view's
+// request is sent, so view always edits cleanly.
+let _beaconChain = Promise.resolve();
 function beacon(params) {
-  try {
-    fetch(`/b?${new URLSearchParams(params)}`, { keepalive: true, cache: 'no-store' }).catch(() => {});
-  } catch {}
+  _beaconChain = _beaconChain.then(() => {
+    try {
+      // Timeout so one hung request can't stall every later beacon behind it.
+      return fetch(`/b?${new URLSearchParams(params)}`, {
+        keepalive: true,
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000),
+      }).catch(() => {});
+    } catch {}
+  });
 }
 
 // ── Command Registry ─────────────────────────────────────────────

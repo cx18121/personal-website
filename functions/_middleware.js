@@ -57,7 +57,7 @@ export async function onRequest(context) {
     if (env.DISCORD_SIGNAL_WEBHOOK_URL && env.VISITOR_LOG && env.SESSION_SALT) {
       waitUntil(handleBeacon(context, url, ua));
     }
-    return new Response(null, { status: 204 });
+    return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
   }
 
   if (
@@ -300,11 +300,11 @@ async function createSessionMessage(webhookUrl, db, sessionKey, v, line) {
     if (res.ok) {
       const msg = await res.json();
       if (msg.id) {
-        posted = true;
         await db
           .prepare('UPDATE sessions SET message_id = ?, last_seen = ?, hits = 1, content = ? WHERE session_key = ?')
           .bind(msg.id, v.ts, list, sessionKey)
           .run();
+        posted = true;
       }
     }
   } catch {

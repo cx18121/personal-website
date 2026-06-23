@@ -18,9 +18,20 @@
 # max-age=0 + must-revalidate → revalidate via ETag each load (cheap 304s).
 /app.js
   Cache-Control: public, max-age=0, must-revalidate
+/data.js
+  Cache-Control: public, max-age=0, must-revalidate
 /styles.css
   Cache-Control: public, max-age=0, must-revalidate
 /vendor/*
   Cache-Control: public, max-age=86400
 /content/*
   Cache-Control: public, max-age=0, must-revalidate
+
+# Baseline hardening on every response. Not a full CSP (the page uses inline
+# GA/JSON-LD and a couple of inline style/onerror attributes that a strict
+# script/style policy would need cleaned up first) — just the headers that
+# carry no such risk.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
