@@ -1762,7 +1762,7 @@ beacon({ e: 'load' });
 
 function updateClock() {
   const t = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
+    timeZone: 'America/Los_Angeles',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
