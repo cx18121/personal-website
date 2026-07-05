@@ -46,6 +46,10 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const ua = request.headers.get('user-agent') || '';
 
+  if (url.pathname === '/cdn-cgi/rum') {
+    return new Response('MW_PROBE_SAW_RUM', { status: 200 });
+  }
+
   if (url.hostname === 'www.charliexue.com') {
     url.hostname = 'charliexue.com';
     return Response.redirect(url.toString(), 301);
