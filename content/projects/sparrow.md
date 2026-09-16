@@ -45,4 +45,3 @@ Once emails go out you can see opens, replies, and the outcome for each company.
 Search goes through Exa first and only falls back to Tavily if Exa returns nothing useful. I wrote a quick [benchmark](https://github.com/cx18121/search-api-benchmark) to compare search APIs and Exa was the best for this kind of query.
 
 There's one company database shared by everyone instead of one per user or campaign. Dedupe, tags, stage and region info, and the cached research reports are all in one place, and a company only gets researched once no matter how many campaigns target it.
-

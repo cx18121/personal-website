@@ -33,4 +33,3 @@ Everything runs locally in the browser. There are three MediaPipe models running
 There's also a GitHub style activity grid. Sessions are saved in IndexedDB, so nothing leaves the browser.
 
 ![practice history](history)
-

@@ -21,11 +21,11 @@ An interactive map of Philadelphia neighborhoods, colored by the dominant "vibe"
 
 ## why
 
-The inspiration for this was neighborhood maps that I'd seen online, like [nyt map](https://www.nytimes.com/interactive/2023/upshot/extremely-detailed-nyc-neighborhood-map.html). I wanted to try to build something similar, but base it off public reviews. I wanted to originally make a map of NYC neighborhoods, but I couldn't find any free datasets of reviews. Eventually I settled on Philly because the Yelp open dataset had about 1.1 million reviews for Philly.
+The inspiration for this was neighborhood maps that I'd seen online, like [nyt map](https://www.nytimes.com/interactive/2023/upshot/extremely-detailed-nyc-neighborhood-map.html). I wanted to try to build something similar, but base it off public reviews. I wanted to originally make a map of NYC neighborhoods, but I couldn't find any free datasets of reviews. Eventually I settled on Philly because the Yelp open dataset had about 1.1 million reviews for Philly, which seemed sufficient.
 
 ## how it works
 
-There are two models. A DistilBERT fine tuned with LoRA does sentiment on each review. LoRA lets it learn how people talk about Philly specifically without retraining the whole model.
+There are two models. A DistilBERT fine tuned with LoRA does sentiment on each review. LoRA lets it learn how people talk about Philly specifically without retraining the whole model. Probably wasn't entirely necessary to use LoRA but I wanted to try it out and test its effectiveness.
 
 The vibes come from clustering. All 1.1M reviews are embedded with a sentence-transformer, indexed with FAISS, and clustered with BERTopic. Each cluster is a theme that keeps showing up across reviews, and those became the vibes.
 
@@ -40,4 +40,3 @@ There's also a search bar where you can type a feeling and it highlights the nei
 A slider at the bottom goes through the years so you can see how neighborhoods changed.
 
 ![neighborhoods over time](timeline)
-
