@@ -62,9 +62,9 @@ export const TRAVELS = {
 export const LOCATION = 'ithaca';
 
 export const ABOUT = `<span class="name">charlie xue</span>
-cs & statistics @ cornell
+cs & stats @ cornell
 
-I build full-stack AI applications and ML systems. Currently focused on building for early-stage startups. SWE at Pango (YC S26).`;
+I love building full-stack AI applications and ML systems. Currently working as a SWE at Pango (YC S26).`;
 
 export const CONTACT = `email     <button type="button" class="copy" data-copy="cx267@cornell.edu">cx267@cornell.edu</button><span class="copy-status muted" aria-live="polite"></span>
 github    <a href="https://github.com/cx18121" target="_blank" rel="noreferrer">github.com/cx18121</a>
