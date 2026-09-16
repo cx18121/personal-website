@@ -15,7 +15,7 @@ live: https://philly-vibe-map.vercel.app
 repo: https://github.com/cx18121/philly-vibe-map
 ---
 
-An interactive map of Philadelphia neighborhoods, colored by the dominant "vibe" derived from NLP analysis of ~1.1 million Yelp reviews. A temporal slider lets you go through time to watch neighborhoods change character year over year.
+An interactive map of Philadelphia neighborhoods, colored by the dominant "vibe" derived from NLP analysis of ~1.1 million Yelp reviews. A slider lets you go through the years and watch neighborhoods change.
 
 ![philadelphia vibe map](hero)
 

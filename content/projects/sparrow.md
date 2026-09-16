@@ -36,7 +36,7 @@ When you generate a draft, Sparrow first builds a research report on the company
 
 ![reviewing drafts](drafts)
 
-Once emails go out you can see opens, replies, and what happened with each company.
+Once emails go out you can see opens, replies, and the outcome for each company.
 
 ![campaign performance](campaign)
 

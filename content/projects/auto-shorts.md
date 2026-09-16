@@ -23,7 +23,7 @@ I saw that ai-generated brainrot content was getting crazy amounts of views on y
 
 ## how it works
 
-It scrapes Reddit through the public .json endpoints and X with Playwright using a logged in session, and everything goes into a backlog. Posts in the backlog get reviewed and the picked ones go through the pipeline.
+It scrapes Reddit through the public .json endpoints and X with Playwright using a logged in session, and everything goes into a backlog. Posts in the backlog are reviewed by hand before anything gets generated.
 
 For Reddit posts, Claude rewrites the post into a script that fits in a short and doesn't sound weird when it's read out loud. Tweets don't need a script, it just reads the tweet. ElevenLabs does the voice and gives back timestamps for each word, which is how the subtitles stay synced. Then FFmpeg renders a 1080x1920 video. Reddit stories get gameplay footage in the background, tweets get a screenshot of the tweet rendered with Playwright.
 

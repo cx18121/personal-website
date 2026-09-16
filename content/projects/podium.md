@@ -12,7 +12,7 @@ live: https://podium-speech-practice.vercel.app/
 repo: https://github.com/cx18121/podium
 ---
 
-A presentation practice tool that runs in the browser. It records your webcam and mic, then scores your delivery on eye contact, filler words, pacing, and a few other things, all with on-device models.
+A presentation practice tool that runs in the browser. It records your webcam and mic, then scores your delivery on eye contact, filler words, pacing, and a few other metrics, all with on-device models.
 
 ![podium practice](hero)
 
@@ -30,7 +30,7 @@ Everything runs locally in the browser. There are three MediaPipe models running
 
 ![the breakdown after a session](review)
 
-There's also a GitHub style activity grid of your sessions. Sessions are saved in IndexedDB, so nothing leaves the browser.
+There's also a GitHub style activity grid. Sessions are saved in IndexedDB, so nothing leaves the browser.
 
 ![practice history](history)
 

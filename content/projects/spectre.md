@@ -27,7 +27,7 @@ Each phone runs MediaPipe in the browser to get pose keypoints and sends them ov
 
 ![round results](ko)
 
-The commentator is Claude doing live play by play. It gets triggered on big moments like hits and knockouts, and ElevenLabs does the voice.
+The commentator is Claude doing live play-by-play, voiced by ElevenLabs and triggered on hits and knockouts.
 
 ![live commentary](commentary)
 
