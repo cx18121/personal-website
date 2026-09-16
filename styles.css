@@ -225,6 +225,16 @@ a {
 a:hover {
   text-decoration: underline;
 }
+/* Copy-to-clipboard button rendered as a link (e.g. email in /contact). */
+.copy {
+  all: unset;
+  color: var(--cyan);
+  cursor: pointer;
+  user-select: text;
+}
+.copy:hover {
+  text-decoration: underline;
+}
 
 .promptouter {
   padding: 8px 16px 4px;

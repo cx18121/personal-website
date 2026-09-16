@@ -183,7 +183,7 @@ I build full-stack AI applications and ML systems.
 Currently focused on building for early-stage startups.
 SWE at Pango (YC S26).`;
 
-export const CONTACT = `email     <a href="mailto:cx267@cornell.edu">cx267@cornell.edu</a>
+export const CONTACT = `email     <button type="button" class="copy" data-copy="cx267@cornell.edu">cx267@cornell.edu</button><span class="copy-status muted" aria-live="polite"></span>
 github    <a href="https://github.com/cx18121" target="_blank" rel="noreferrer">github.com/cx18121</a>
 linkedin  <a href="https://www.linkedin.com/in/charles-xue/" target="_blank" rel="noreferrer">linkedin.com/in/charles-xue</a>`;
 

@@ -21,6 +21,27 @@ function escapeHtml(s) {
   );
 }
 
+// Copies `data-copy` text and flashes a status in the adjacent `.copy-status`.
+async function copyToClipboard(el) {
+  const status = el.nextElementSibling;
+  const show = (msg, cls) => {
+    if (!status?.classList.contains('copy-status')) return;
+    status.textContent = `  ${msg}`;
+    status.classList.toggle('warn', cls === 'warn');
+    clearTimeout(status._t);
+    status._t = setTimeout(() => {
+      status.textContent = '';
+      status.classList.remove('warn');
+    }, 1600);
+  };
+  try {
+    await navigator.clipboard.writeText(el.dataset.copy);
+    show('copied');
+  } catch {
+    show('select and copy manually', 'warn');
+  }
+}
+
 // Levenshtein-based "did you mean" suggestion across known commands + project names.
 function levenshtein(a, b) {
   const m = a.length,
@@ -179,7 +200,10 @@ const ui = {
       if (themer) {
         e.preventDefault();
         this.run('/theme ' + themer.dataset.theme);
+        return;
       }
+      const copier = e.target.closest('[data-copy]');
+      if (copier) copyToClipboard(copier);
     });
     window.addEventListener('resize', () => {
       if (this.ac.classList.contains('show')) this.positionAc();
