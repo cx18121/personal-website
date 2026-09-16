@@ -97,6 +97,7 @@ function applyTheme(t) {
   r.setProperty('--dim', t.dim);
   r.setProperty('--mute', t.mute);
   r.setProperty('--red', t.red);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t.bg);
   try {
     localStorage.setItem('theme', t.name);
   } catch {}
@@ -462,7 +463,7 @@ const ui = {
     this.echo('/projects');
     await renderProjectsList(this, { featuredOnly: true }).catch((err) => {
       this.block(
-        `<span class="warn">couldn't load projects: ${escapeHtml(err.message)}</span>`
+        `<span class="warn">couldn't load projects (${escapeHtml(err.message)}).</span> refresh to try again.`
       );
     });
     this.echo('/contact');
@@ -584,7 +585,7 @@ function clearActiveList() {
 function renderProjectOpen(ui, p) {
   openReader(projectReader, p.name).catch((err) => {
     ui.block(
-      `<span class="warn">couldn't load ${escapeHtml(p.name)}: ${escapeHtml(err.message)}</span>`
+      `<span class="warn">couldn't load ${escapeHtml(p.name)} (${escapeHtml(err.message)}).</span> refresh to try again.`
     );
   });
 }
@@ -698,6 +699,30 @@ function configureMarked() {
     },
   });
   _markedConfigured = true;
+}
+
+// Typographic punctuation for rendered prose. Runs over text nodes only,
+// skipping code, so hrefs and identifiers are never touched. Straight
+// quotes in a serif body are the most visible sign of unedited text.
+function smartenText(t) {
+  return t
+    .replace(/(\w)'(\w)/g, '$1\u2019$2')                 // it's, don't
+    .replace(/(^|[\s(\[\u2014])'/g, '$1\u2018')            // opening single
+    .replace(/'/g, '\u2019')                                // closing single
+    .replace(/(^|[\s(\[\u2014])"/g, '$1\u201c')            // opening double
+    .replace(/"/g, '\u201d')                                // closing double
+    .replace(/\.\.\./g, '\u2026')
+    .replace(/(\d[km]?)\s(k|m|ft|days?|million|CVEs|ticks|views|reviews|neighborhoods)\b/g, '$1\u00a0$2');
+}
+function smartenTextNodes(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) =>
+      n.parentElement.closest('code, pre') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+  });
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const s = smartenText(n.nodeValue);
+    if (s !== n.nodeValue) n.nodeValue = s;
+  }
 }
 
 // Single entry point for parsing reader-body markdown. `imageBase` (e.g.
@@ -933,13 +958,12 @@ async function openReader(adapter, name) {
     name,
     data
   );
-  document.getElementById('reader-body').innerHTML = adapter.renderBody(
-    entry,
-    data
-  );
+  const bodyEl = document.getElementById('reader-body');
+  bodyEl.innerHTML = adapter.renderBody(entry, data);
+  smartenTextNodes(bodyEl);
   document.getElementById('reader-nav').innerHTML = `
-    <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(prev.name)}" href="#">← ${escapeHtml(prev.name)}</a>
-    <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(next.name)}" href="#">${escapeHtml(next.name)} →</a>
+    <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(prev.name)}" href="${readerPath(adapter.kind, prev.name)}">← ${escapeHtml(prev.name)}</a>
+    <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(next.name)}" href="${readerPath(adapter.kind, next.name)}">${escapeHtml(next.name)} →</a>
   `;
 
   _currentReader = { adapter, name };
@@ -1595,7 +1619,7 @@ const commandHandlers = {
   projects(ui) {
     renderProjectsList(ui).catch((err) => {
       ui.block(
-        `<span class="warn">couldn't load projects: ${escapeHtml(err.message)}</span>`
+        `<span class="warn">couldn't load projects (${escapeHtml(err.message)}).</span> refresh to try again.`
       );
     });
   },
@@ -1615,7 +1639,7 @@ const commandHandlers = {
     }
     openReader(travelReader, target).catch((err) => {
       ui.block(
-        `<span class="warn">couldn't load ${escapeHtml(target)}: ${escapeHtml(err.message)}</span>`
+        `<span class="warn">couldn't load ${escapeHtml(target)} (${escapeHtml(err.message)}).</span> refresh to try again.`
       );
     });
   },

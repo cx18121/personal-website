@@ -72,7 +72,7 @@ linkedin  <a href="https://www.linkedin.com/in/charles-xue/" target="_blank" rel
 
 export const COMMANDS = [
   { cmd: '/about', desc: 'who I am' },
-  { cmd: '/projects', desc: "what I've built" },
+  { cmd: '/projects', desc: 'what I’ve built' },
   { cmd: '/contact', desc: 'how to reach me' },
   { cmd: '/travels', desc: 'places visited & want to visit' },
   { cmd: '/theme', desc: 'change color scheme' },

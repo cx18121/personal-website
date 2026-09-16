@@ -16,8 +16,9 @@
     </script>
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
     />
+    <meta name="theme-color" content="#1a1b26" />
     <title>Charlie Xue</title>
     <meta
       name="description"
@@ -95,12 +96,13 @@
       type="font/woff2"
       crossorigin
     />
+    <link rel="dns-prefetch" href="https://media.charliexue.com" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <div class="scrollarea" id="scrollarea">
       <div class="topline">
-        <a class="cwd" href="/">charliexue.com</a>
+        <a class="cwd" href="/" translate="no">charliexue.com</a>
       </div>
 
       <div class="main" id="main"></div>
@@ -110,6 +112,8 @@
           <span class="chev">›</span>
           <input
             id="input"
+            name="command"
+            enterkeyhint="go"
             autocomplete="off"
             autocapitalize="off"
             autocorrect="off"

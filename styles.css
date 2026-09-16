@@ -49,7 +49,7 @@
   --serif: 'Newsreader', Georgia, serif;
 
   /* type scale */
-  --fs-xs: 11px;
+  --fs-xs: 12px;
   --fs-sm: 12px;
   --fs-md: 14px;
   --fs-h3: 15px;
@@ -68,6 +68,7 @@
 
   --gutter: 18px;    /* terminal surface horizontal padding */
   --measure: 640px;  /* terminal column width, ~72ch at 14px mono */
+  --prose: 56ch;     /* reader body text cap, ~74 chars in Newsreader */
   --pane-pad: 32px;  /* reader + photoviewer inner gutter */
 
   --r-sm: 4px;
@@ -92,6 +93,8 @@
 }
 html {
   color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
 }
 html,
 body {
@@ -128,10 +131,22 @@ a {
   text-decoration: underline;
   text-decoration-color: var(--mute);
   text-underline-offset: 3px;
+  padding-block: var(--s1);
+  touch-action: manipulation;
   transition: text-decoration-color var(--t-fast) ease-out;
 }
-a:hover {
-  text-decoration-color: currentColor;
+button {
+  touch-action: manipulation;
+}
+/* Glyph buttons are controls, not content. */
+.reader-close,
+.photoviewer-arrow,
+.photoviewer-thumb,
+.trav-photos-thumb,
+.trav-photos-btn {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 .muted {
   color: var(--dim);
@@ -175,9 +190,6 @@ a:hover {
 .main .comment a {
   color: var(--dim);
 }
-.main .comment a:hover {
-  color: var(--fg);
-}
 /* Output block. The rule sits under the echo's chevron column and the
    text starts at 2ch, on the same x as the command after "› ". */
 .main .block {
@@ -199,10 +211,9 @@ a:hover {
   text-decoration: underline;
   text-decoration-color: var(--mute);
   text-underline-offset: 3px;
+  padding-block: var(--s1);
+  touch-action: manipulation;
   transition: text-decoration-color var(--t-fast) ease-out;
-}
-.copy:hover {
-  text-decoration-color: currentColor;
 }
 .copy-status {
   opacity: 0;
@@ -215,7 +226,7 @@ a:hover {
 .section-head {
   color: var(--dim);
   font-weight: 600;
-  margin: var(--s3) 0 var(--s1);
+  margin: var(--s6) 0 var(--s1);
 }
 .section-head:first-child {
   margin-top: 0;
@@ -394,9 +405,6 @@ a:hover {
   color: var(--dim);
   text-decoration: none;
 }
-.footer .repo:hover {
-  color: var(--fg);
-}
 .footer .time {
   font-variant-numeric: tabular-nums;
 }
@@ -527,10 +535,6 @@ a:hover {
     background-color var(--t-fast) ease-out,
     transform 100ms ease-out;
 }
-.reader-close:hover {
-  color: var(--fg);
-  background: var(--hi);
-}
 
 .reader-grid {
   display: grid;
@@ -538,6 +542,7 @@ a:hover {
   gap: var(--s8);
   padding: var(--s6) var(--pane-pad) var(--s8);
   overflow-y: auto;
+  overscroll-behavior: contain;
   min-height: 0;
   flex: 1;
 }
@@ -567,12 +572,13 @@ a:hover {
 .reader-side .val .item {
   display: block;
 }
+.reader-side a.item,
+.reader-side .trav-item {
+  padding-block: 2px;
+}
 .reader-side .trav-item {
   text-decoration: none;
   color: var(--dim);
-}
-.reader-side .trav-item:hover {
-  color: var(--fg);
 }
 .reader-side .trav-item.active {
   color: var(--fg);
@@ -585,6 +591,16 @@ a:hover {
   line-height: 1.75;
   min-width: 0;
   text-wrap: pretty;
+}
+/* Text holds a reading measure; figures keep the full column. */
+.reader-body p,
+.reader-body ul,
+.reader-body h1,
+.reader-body h2,
+.reader-body h3,
+.reader-body .proj-tagline,
+.reader-body .trav-fields {
+  max-width: var(--prose);
 }
 .reader-body p {
   margin: 0 0 1em;
@@ -609,6 +625,7 @@ a:hover {
 .reader-body h3 {
   font-family: var(--mono);
   font-weight: 600;
+  line-height: 1.25;
   margin: var(--s8) 0 var(--s3);
   text-wrap: balance;
 }
@@ -697,10 +714,6 @@ a:hover {
   border-radius: var(--r-sm);
   transition: background-color var(--t-fast) ease-out;
 }
-.reader-nav .nav-link:hover {
-  background: var(--hi);
-  color: var(--fg);
-}
 
 /* ── travel reader body ─────────────────────────────────────────── */
 .reader-body .trav-fields {
@@ -764,9 +777,6 @@ a:hover {
   filter: saturate(0.95) brightness(0.92);
   transition: filter var(--t-fast) ease-out;
 }
-.reader-body .trav-photos-thumb:hover img {
-  filter: none;
-}
 .reader-body .trav-photos-btn {
   font: inherit;
   font-family: var(--mono);
@@ -780,9 +790,6 @@ a:hover {
   transition:
     border-color var(--t-fast) ease-out,
     transform 100ms ease-out;
-}
-.reader-body .trav-photos-btn:hover {
-  border-color: var(--dim);
 }
 
 /* ── photo viewer ───────────────────────────────────────────────── */
@@ -829,9 +836,6 @@ a:hover {
     color var(--t-fast) ease-out,
     transform 100ms ease-out;
 }
-.photoviewer-arrow:hover {
-  color: var(--fg);
-}
 .photoviewer-arrow.l {
   left: var(--s2);
 }
@@ -858,7 +862,7 @@ a:hover {
   padding: var(--s3) var(--pane-pad) var(--s4);
   border-top: 1px solid var(--mute);
   overflow-x: auto;
-  overscroll-behavior-inline: contain;
+  overscroll-behavior: contain;
   scrollbar-width: none;
 }
 .photoviewer-thumbs::-webkit-scrollbar {
@@ -886,12 +890,46 @@ a:hover {
   object-fit: cover;
   display: block;
 }
-.photoviewer-thumb:hover {
-  opacity: 0.9;
-}
 .photoviewer-thumb.active {
   opacity: 1;
   border-color: var(--accent);
+}
+
+/* ── hover (pointer devices only; touch keeps :active) ─────────── */
+@media (hover: hover) and (pointer: fine) {
+  a:hover,
+  .copy:hover {
+    text-decoration-color: currentColor;
+  }
+  .main .comment a:hover {
+    color: var(--fg);
+  }
+  .footer .repo:hover {
+    color: var(--fg);
+  }
+  .reader-close:hover {
+    color: var(--fg);
+    background: var(--hi);
+  }
+  .reader-side .trav-item:hover {
+    color: var(--fg);
+  }
+  .reader-nav .nav-link:hover {
+    background: var(--hi);
+    color: var(--fg);
+  }
+  .reader-body .trav-photos-thumb:hover img {
+    filter: none;
+  }
+  .reader-body .trav-photos-btn:hover {
+    border-color: var(--dim);
+  }
+  .photoviewer-arrow:hover {
+    color: var(--fg);
+  }
+  .photoviewer-thumb:hover {
+    opacity: 0.9;
+  }
 }
 
 /* ── press feedback ─────────────────────────────────────────────── */
