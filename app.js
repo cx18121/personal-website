@@ -1,13 +1,10 @@
 import {
   PROJECTS,
   TRAVELS,
-  FAVORITES,
   ABOUT,
   CONTACT,
   COMMANDS,
-  MASCOTS,
   THEMES,
-  WHATS_NEW,
   LOCATION,
 } from './data.js';
 
@@ -86,13 +83,12 @@ function closestCommand(name) {
   return null;
 }
 
-function applyTheme(idx) {
-  document.body.dataset.theme = idx;
-  const t = THEMES[idx];
+function applyTheme(t) {
+  document.body.dataset.theme = t.name;
   const r = document.documentElement.style;
   r.setProperty('--bg', t.bg);
   r.setProperty('--fg', t.fg);
-  r.setProperty('--orange', t.orange);
+  r.setProperty('--accent', t.accent);
   r.setProperty('--dim', t.dim);
   r.setProperty('--mute', t.mute);
   r.setProperty('--yellow', t.yellow);
@@ -100,10 +96,8 @@ function applyTheme(idx) {
   r.setProperty('--cyan', t.cyan);
   r.setProperty('--pink', t.pink);
   r.setProperty('--red', t.red);
-  const indicator = document.getElementById('theme-name');
-  if (indicator) indicator.textContent = t.name;
   try {
-    localStorage.setItem('theme', String(idx));
+    localStorage.setItem('theme', t.name);
   } catch {}
 }
 
@@ -112,7 +106,7 @@ function applyTheme(idx) {
 // for every unknown path (see /_redirects) and we dispatch the matching
 // command on init.
 const STATIC_ROUTES = new Set([
-  '/about', '/projects', '/contact', '/travels', '/favorites',
+  '/about', '/projects', '/contact', '/travels', '/theme',
 ]);
 function pathToCommand(pathname) {
   const p = pathname.length > 1 && pathname.endsWith('/')
@@ -137,15 +131,13 @@ function readerPath(kind, name) {
   return `${prefix}/${encodeURIComponent(name)}`;
 }
 
-// Restore a previously-chosen theme on load. No-op (and classic stays) if
-// nothing is stored or the index is out of range. Runs at module top, before
+// Restore a previously-chosen theme on load. No-op (and the default stays) if
+// nothing is stored or the name is unknown. Runs at module top, before
 // ui.init(), so the right palette is on screen before any panel renders.
 (function restoreTheme() {
   try {
-    const stored = parseInt(localStorage.getItem('theme'), 10);
-    if (Number.isInteger(stored) && stored >= 0 && stored < THEMES.length) {
-      applyTheme(stored);
-    }
+    const t = THEMES.find((x) => x.name === localStorage.getItem('theme'));
+    if (t) applyTheme(t);
   } catch {}
 })();
 
@@ -203,7 +195,15 @@ const ui = {
         return;
       }
       const copier = e.target.closest('[data-copy]');
-      if (copier) copyToClipboard(copier);
+      if (copier) {
+        copyToClipboard(copier);
+        return;
+      }
+      const runner = e.target.closest('a[data-run]');
+      if (runner) {
+        e.preventDefault();
+        this.run(runner.dataset.run);
+      }
     });
     window.addEventListener('resize', () => {
       if (this.ac.classList.contains('show')) this.positionAc();
@@ -220,8 +220,15 @@ const ui = {
       this.input.value = '/';
       this.updateAutocomplete();
     });
+    // Reader deep links (/projects/x, /travels/x) open a modal, so the page
+    // behind it should still be the landing screen. List routes (/projects,
+    // /travels, ...) asked for one view and get only that.
     const deep = pathToCommand(location.pathname);
-    if (deep) setTimeout(() => this.run(deep), 0);
+    const opensReader = /^\/(open|travels) \S/.test(deep || '');
+    setTimeout(async () => {
+      if (!deep || opensReader) await this.landing();
+      if (deep) this.run(deep);
+    }, 0);
     if (!matchMedia('(pointer: coarse)').matches) this.input.focus();
     // Tab-away blurs the input; nothing refocuses on return, so all the
     // keydown handlers (incl. list nav) silently die. Reclaim focus on
@@ -445,6 +452,30 @@ const ui = {
       // first; blurring strands subsequent keypresses (incl. list-nav ↑↓).
     }
   },
+  // Landing screen: the shell has already run the commands a first-time
+  // visitor would type. Nothing enters history, so ↑ still starts empty.
+  async landing() {
+    this.echo('/about');
+    commandHandlers.about(this);
+    this.echo('/projects');
+    await renderProjectsList(this, { featuredOnly: true }).catch((err) => {
+      this.block(
+        `<span class="warn">couldn't load projects: ${escapeHtml(err.message)}</span>`
+      );
+    });
+    this.echo('/contact');
+    commandHandlers.contact(this);
+    this.print(
+      `<div class="comment"># more: <a data-run="/travels" href="/travels">/travels</a> · <a data-run="/theme" href="/theme">/theme</a></div>`
+    );
+    clearActiveList();
+    // print() smooth-scrolls to the bottom; a landing page should open at
+    // the top. `.scrollarea` scrolls on desktop, the window on mobile.
+    requestAnimationFrame(() => {
+      document.getElementById('scrollarea').scrollTo({ top: 0, behavior: 'instant' });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+  },
   run(raw) {
     const cmd = (raw || '').trim();
     this.echo(raw || '');
@@ -476,7 +507,7 @@ const ui = {
       );
     } else {
       this.block(
-        `<span class="warn">${escapeHtml(name)}: command not found</span>. try <span class="key">/help</span>.`
+        `<span class="warn">${escapeHtml(name)}: command not found</span>. type <span class="key">/</span> to see commands.`
       );
     }
   },
@@ -556,56 +587,7 @@ function renderProjectOpen(ui, p) {
   });
 }
 
-// Per-tag section labels for /favorites. Most pluralize cleanly with -s;
-// "food" is uncountable so it stays singular. Add new tags here.
-const FAV_TAG_LABELS = {
-  book: 'books',
-  film: 'films',
-  places: 'places',
-  food: 'food',
-  team: 'teams',
-  restaurant: 'restaurants',
-};
-
-function renderFavoritesList(ui) {
-  // Group by tag, preserving first-seen order across groups and item order
-  // within each group. So data.js controls which category appears first.
-  const order = [];
-  const groups = {};
-  for (const f of FAVORITES) {
-    const tag = (f.tag || '').toLowerCase();
-    if (!groups[tag]) {
-      groups[tag] = [];
-      order.push(tag);
-    }
-    groups[tag].push(f);
-  }
-
-  const sections = order
-    .map((tag) => {
-      const label = FAV_TAG_LABELS[tag] || tag;
-      const head = `<div class="fav-section-head" data-tag="${escapeHtml(tag)}">─── ${escapeHtml(label)} ───</div>`;
-      const rows = groups[tag]
-        .map((f) => {
-          const by = f.by
-            ? ` <span class="fav-by">— ${escapeHtml(f.by)}</span>`
-            : '';
-          const blurb = f.blurb
-            ? `<div class="fav-blurb"><span class="fav-blurb-conn">#</span><span>${escapeHtml(f.blurb)}</span></div>`
-            : '';
-          return `<div class="fav-row"><span class="fav-marker">▸</span><span class="fav-title">${escapeHtml(f.name)}</span>${by}${blurb}</div>`;
-        })
-        .join('');
-      return `<div class="fav-section">${head}${rows}</div>`;
-    })
-    .join('');
-
-  const hint = `<div class="proj-hint"><span class="muted">my personal list.</span></div>`;
-  ui.block(`${hint}<div class="fav-list">${sections}</div>`);
-}
-
 function renderTravelsList(ui) {
-  const hint = `<div class="proj-hint"><span class="muted">click any place to open, or type <span class="key">/travels &lt;place&gt;</span></span></div>`;
   const visitedRows = TRAVELS.visited
     .map(
       (t) =>
@@ -619,8 +601,7 @@ function renderTravelsList(ui) {
     )
     .join('');
   const wrap = ui.block(
-    hint +
-      `<div class="travels-grid">` +
+    `<div class="travels-grid">` +
       `<div class="travels-col"><div class="section-head">─── visited ───</div>${visitedRows}</div>` +
       `<div class="travels-col"><div class="section-head">─── wishlist ───</div>${wishRows}</div>` +
       `</div>`
@@ -674,12 +655,12 @@ function parseFenceParams(infoString) {
 
 function renderTerminalBlock(body, params) {
   const title = params.title || 'terminal';
-  // Minimal token coloring: lines beginning with `$ ` get an orange prompt.
+  // Minimal token coloring: lines beginning with `$ ` get an accent-colored prompt.
   const lines = body
     .split('\n')
     .map((line) => {
       if (line.startsWith('$ ')) {
-        return `<span style="color:var(--orange)">$</span> <span style="color:var(--yellow)">${escapeHtml(line.slice(2))}</span>`;
+        return `<span style="color:var(--accent)">$</span> <span style="color:var(--yellow)">${escapeHtml(line.slice(2))}</span>`;
       }
       return escapeHtml(line);
     })
@@ -823,9 +804,6 @@ function renderMarkdown(body, { imageBase = null } = {}) {
 
 function renderSidebar(fm) {
   const rows = [];
-  rows.push(
-    `<div class="row"><div class="label">name</div><div class="val">${escapeHtml(fm.name || '')}</div></div>`
-  );
   if (fm.shipped)
     rows.push(
       `<div class="row"><div class="label">shipped</div><div class="val">${escapeHtml(fm.shipped)}</div></div>`
@@ -913,7 +891,7 @@ function pushReaderState(name, kind) {
 // Each adapter knows how to: enumerate its entries, fetch one, render
 // sidebar HTML, render body HTML. The opener stays generic.
 //
-// Adapter shape: { kind, cmdPrefix, dataAttr, list(), loadEntry(name),
+// Adapter shape: { kind, dataAttr, list(), loadEntry(name),
 //                  renderSidebar(name, data), renderBody(entry, data) }
 //
 // Two adapters live: projectReader, travelReader. Adding a third
@@ -921,7 +899,6 @@ function pushReaderState(name, kind) {
 
 const projectReader = {
   kind: 'project',
-  cmdPrefix: '/open',
   dataAttr: 'data-open',
   list: () => PROJECTS,
   async loadEntry(name) {
@@ -978,11 +955,10 @@ function attachProjectPhotoHandlers(projectName) {
 
 // Project-flavored photoviewer open. Same overlay as the travel viewer; we
 // just construct _photoState directly from the figure list and stamp the
-// titlebar to read `/open <project>` instead of `/travels <name>`.
+// titlebar to read the project name instead of the travel name.
 function openProjectPhotoViewer(photos, idx, projectName) {
   _photoState = { photos, idx, travelName: null, when: '' };
-  document.getElementById('photoviewer-cmd').textContent =
-    `/open ${projectName}`;
+  document.getElementById('photoviewer-cmd').textContent = projectName;
   renderThumbs();
   renderPhoto();
   document.getElementById('photoviewer').hidden = false;
@@ -990,7 +966,6 @@ function openProjectPhotoViewer(photos, idx, projectName) {
 
 const travelReader = {
   kind: 'travel',
-  cmdPrefix: '/travels',
   dataAttr: 'data-travels',
   list: () => [...TRAVELS.visited, ...TRAVELS.wishlist],
   async loadEntry(name) {
@@ -1028,10 +1003,9 @@ async function openReader(adapter, name) {
   await loadMarked();
   const data = await adapter.loadEntry(name);
 
-  document.getElementById('reader-cmd').textContent =
-    `${adapter.cmdPrefix} ${name}`;
+  document.getElementById('reader-cmd').textContent = name;
   document.getElementById('reader-count').textContent =
-    `${idx + 1} of ${list.length}`;
+    `${idx + 1} / ${list.length}`;
   document.getElementById('reader-side').innerHTML = adapter.renderSidebar(
     name,
     data
@@ -1040,10 +1014,8 @@ async function openReader(adapter, name) {
     entry,
     data
   );
-  const hasPhotos = !!document.querySelector('#reader-body [data-trav-photos]');
   document.getElementById('reader-nav').innerHTML = `
     <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(prev.name)}" href="#">← ${escapeHtml(prev.name)}</a>
-    <span class="muted kbd-hint">[← →] navigate · [esc] close${hasPhotos ? ' · [v] photos' : ''}</span>
     <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(next.name)}" href="#">${escapeHtml(next.name)} →</a>
   `;
 
@@ -1257,8 +1229,7 @@ function openPhotoViewer(travelName, startIdx = 0) {
   if (!fm || !fm.photos || !fm.photos.length) return;
   const idx = Math.min(Math.max(0, startIdx | 0), fm.photos.length - 1);
   _photoState = { photos: fm.photos, idx, travelName, when: fm.when || '' };
-  document.getElementById('photoviewer-cmd').textContent =
-    `/travels ${travelName}`;
+  document.getElementById('photoviewer-cmd').textContent = travelName;
   renderThumbs();
   renderPhoto();
   const pv = document.getElementById('photoviewer');
@@ -1566,40 +1537,9 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Mascot rotates by day-of-month — same mascot all day, a different one
-// tomorrow. Stops the random per-refresh flicker.
-const mascotEl = document.querySelector('.mascot');
-if (mascotEl) {
-  const day = new Date().getDate();
-  mascotEl.textContent = MASCOTS[day % MASCOTS.length];
-}
-
-// Welcome · "what's new" entries from data.js. Body can contain HTML
-// (project name spans etc), so it's injected via innerHTML — entries are
-// author-controlled, never user input.
-const whatsNewEl = document.getElementById('whats-new');
-if (whatsNewEl) {
-  whatsNewEl.innerHTML = WHATS_NEW.slice(0, 3).map(
-    (e) =>
-      `<div><span class="muted">${escapeHtml(e.date)}</span> ${e.body}</div>`
-  ).join('');
-}
-
 // Footer · current location ("mode") from data.js.
 const modeEl = document.getElementById('mode');
 if (modeEl) modeEl.textContent = LOCATION;
-
-// version.json is generated at deploy time by .github/workflows/deploy.yml.
-// Same-origin fetch — no GitHub API, no rate limit. Silent on failure so
-// local-file/`file://` previews fall back to the bare title.
-fetch('/version.json', { cache: 'no-cache' })
-  .then((r) => (r.ok ? r.json() : null))
-  .then((v) => {
-    if (!v?.ver) return;
-    const titleEl = document.querySelector('.welcome .title');
-    if (titleEl) titleEl.textContent = `─ charlie.xue ${v.ver} ─`;
-  })
-  .catch(() => {});
 
 // Same-origin behavioral beacon. The middleware uses these to drive the
 // visitor signal channel: one on load (proof a real browser executed the
@@ -1632,53 +1572,62 @@ function beacon(params) {
 // `ui.run()` dispatches via lookup instead of an if/else chain. Adding a
 // new command is one new entry; behavior and data live together.
 //
-// The `COMMANDS` array in data.js still drives /help and autocomplete
+// The `COMMANDS` array in data.js still drives autocomplete
 // (those need cmd+desc, not behavior). Keeping the two related but
 // separate: catalog vs. dispatch table.
 
-async function renderProjectsList(ui) {
+// `featuredOnly` is the landing digest: featured rows plus a one-line link
+// to the full list, so the prompt stays near the fold on first load.
+async function renderProjectsList(ui, { featuredOnly = false } = {}) {
   const projects = await getProjectIndex();
   const renderRow = (p) => {
     const status =
       p.status === 'wip' ? `<span class="warn">[wip]</span> ` : '';
-    // Stack is a YAML list in frontmatter; join with " · " for the list view.
+    // Stack is a YAML list in frontmatter. The list view shows the first
+    // five and a "+n"; the reader sidebar shows the full stack.
+    const stackList = Array.isArray(p.stack) ? p.stack : [];
+    const shown = stackList.slice(0, 5).map(escapeHtml).join(' · ');
+    const rest = stackList.length - 5;
     const stack = Array.isArray(p.stack)
-      ? p.stack.join(' · ')
+      ? shown + (rest > 0 ? ` <span class="proj-stack-more">+${rest}</span>` : '')
       : escapeHtml(p.stack || '');
     return `<div class="proj-row"><div class="proj-tick">▸</div><div class="proj-body"><div class="proj-head">${status}<a class="proj-link" data-open="${p.name}" href="/projects/${encodeURIComponent(p.name)}">${p.name} →</a><span class="proj-tag">${escapeHtml(p.tagline || '')}</span></div><div class="proj-stack">${stack}</div></div></div>`;
   };
   const featured = projects.filter((p) => p.featured);
   const others = projects.filter((p) => !p.featured);
-  const hint = `<div class="proj-hint"><span class="muted">click any project to open, or type <span class="key">/open &lt;name&gt;</span></span></div>`;
   const sections = [];
   if (featured.length)
     sections.push(
-      `<div class="section-head">─── featured ───</div>` +
+      (featuredOnly ? '' : `<div class="section-head">─── featured ───</div>`) +
         featured.map(renderRow).join('')
     );
-  if (others.length)
+  if (others.length && featuredOnly)
+    sections.push(
+      `<div class="proj-more"><a class="key" data-run="/projects" href="/projects">+${others.length} more →</a></div>`
+    );
+  else if (others.length)
     sections.push(
       `<div class="section-head">─── more ───</div>` +
         others.map(renderRow).join('')
     );
-  const wrap = ui.block(hint + sections.join(''));
+  const wrap = ui.block(sections.join(''));
   attachListNav([...wrap.querySelectorAll('.proj-row')]);
 }
 
 function renderThemeList(ui) {
-  const current = parseInt(document.body.dataset.theme || '0');
-  const rows = THEMES.map((t, i) => {
-    const swatches = [t.orange, t.yellow, t.violet, t.cyan, t.pink, t.red]
+  const current = document.body.dataset.theme || THEMES[0].name;
+  const rows = THEMES.map((t) => {
+    const swatches = [t.accent, t.yellow, t.violet, t.cyan, t.pink, t.red]
       .map(
         (c) => `<span class="theme-swatch" style="background:${c}"></span>`
       )
       .join('');
     const active =
-      i === current ? `<span class="theme-active">(active)</span>` : '';
-    return `<div class="theme-row"><div class="proj-tick">▸</div><div class="theme-body"><a class="proj-link theme-link" data-theme="${t.name}" href="?cmd=theme+${encodeURIComponent(t.name)}">${t.name}</a><span class="theme-swatches">${swatches}</span><span class="theme-desc">${escapeHtml(t.desc || '')}</span>${active}</div></div>`;
+      t.name === current ? `<span class="theme-active">active</span>` : '';
+    return `<div class="theme-row"><div class="proj-tick">▸</div><div class="theme-body"><a class="proj-link theme-link" data-theme="${t.name}" href="?cmd=theme+${encodeURIComponent(t.name)}">${t.name}</a><span class="theme-swatches">${swatches}</span>${active}</div></div>`;
   }).join('');
   const wrap = ui.block(
-    `<div class="proj-hint"><span class="muted">click a theme, or type <span class="key">/theme &lt;name&gt;</span></span></div>${rows}`
+    rows
   );
   attachListNav([...wrap.querySelectorAll('.theme-row')]);
 }
@@ -1692,25 +1641,11 @@ const commandHandlers = {
       history.replaceState({}, '', '/');
     }
   },
-  help(ui) {
-    ui.block(
-      COMMANDS.map(
-        (c) =>
-          `  <span class="key">${c.cmd.padEnd(12)}</span> <span class="muted">${c.desc}</span>`
-      ).join('\n') +
-        `\n\n  <span class="muted">keys: ↑↓ history · tab complete · esc cancel</span>`
-    );
-  },
   about(ui) {
     ui.block(ABOUT);
   },
   contact(ui) {
     ui.block(CONTACT);
-  },
-  source(ui) {
-    ui.block(
-      `<a href="https://github.com/cx18121/personal-website" target="_blank" rel="noreferrer">github.com/cx18121/personal-website</a>`
-    );
   },
   projects(ui) {
     renderProjectsList(ui).catch((err) => {
@@ -1718,9 +1653,6 @@ const commandHandlers = {
         `<span class="warn">couldn't load projects: ${escapeHtml(err.message)}</span>`
       );
     });
-  },
-  favorites(ui) {
-    renderFavoritesList(ui);
   },
   travels(ui, args) {
     if (args.length === 0) {
@@ -1767,16 +1699,16 @@ const commandHandlers = {
       return;
     }
     const target = args[0];
-    const idx = THEMES.findIndex((t) => t.name === target);
-    if (idx < 0) {
+    const t = THEMES.find((x) => x.name === target);
+    if (!t) {
       ui.block(
         `<span class="warn">theme "${escapeHtml(target)}" not found</span>. try <span class="key">/theme</span> to list.`
       );
       return;
     }
-    applyTheme(idx);
+    applyTheme(t);
     ui.block(
-      `<span class="muted">theme:</span> <span class="key">${THEMES[idx].name}</span>`
+      `<span class="muted">theme:</span> <span class="key">${t.name}</span>`
     );
   },
 };
@@ -1786,7 +1718,7 @@ beacon({ e: 'load' });
 
 function updateClock() {
   const t = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Los_Angeles',
+    timeZone: 'America/New_York',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,

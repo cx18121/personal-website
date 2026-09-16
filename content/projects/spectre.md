@@ -2,17 +2,14 @@
 name: spectre
 tagline: fight anyone from anywhere in real-time
 status: live
-featured: true
 shipped: 2026-05
 stack:
   - rust
   - typescript
   - react
-  - vite
   - mediapipe
   - websockets
   - docker
-  - railway
 repo: https://github.com/cx18121/spectre
 ---
 

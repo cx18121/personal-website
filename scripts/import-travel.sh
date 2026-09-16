@@ -139,10 +139,12 @@ fi
 
 # ── 4b. convert originals + thumbs to WebP, drop the jpgs ───────────
 command -v cwebp >/dev/null 2>&1 || die "cwebp not found (brew install webp)"
+# sips keeps the EXIF orientation tag instead of rotating pixels, so the
+# WebP must carry that tag too or portrait phone shots render sideways.
 log "converting to WebP…"
 ( cd "$DEST" && for f in *.jpg thumbs/*.jpg; do
     [[ -e "$f" ]] || continue
-    cwebp -q 80 -quiet "$f" -o "${f%.jpg}.webp" && rm "$f"
+    cwebp -q 80 -quiet -metadata exif "$f" -o "${f%.jpg}.webp" && rm "$f"
   done )
 
 # ── 4c. upload originals + thumbs to Cloudflare R2 ──────────────────

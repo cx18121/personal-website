@@ -2,17 +2,13 @@
 name: sparrow
 tagline: cold email startups automatically
 status: live
-featured: true
 stack:
   - typescript
-  - vite
   - react
   - prisma
   - postgresql
   - supabase
   - anthropic api
-  - exa
-  - apollo
 live: https://usesparrow.dev
 repo: https://github.com/cx18121/sparrow
 ---

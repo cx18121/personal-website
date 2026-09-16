@@ -1,9 +1,7 @@
 name: deploy
 
-# Site is served from Cloudflare Pages. This workflow regenerates the
-# git-derived version.json on every push to main and deploys to Pages via
-# wrangler. version.json is gitignored — it must be produced at deploy
-# time so the welcome panel shows the current commit.
+# Site is served from Cloudflare Pages. This workflow deploys to Pages via
+# wrangler on every push to main.
 #
 # Required GitHub repo secrets:
 #   CLOUDFLARE_API_TOKEN — token with "Cloudflare Pages: Edit" permission
@@ -26,21 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Generate version.json
-        run: |
-          MONTH_START=$(date -u +%Y-%m-01)
-          COUNT=$(git rev-list --count --since="$MONTH_START" HEAD)
-          YEAR=$(date -u +%Y)
-          MONTH=$(date -u +%-m)
-          MAJOR=$((YEAR - 2026))
-          VER="v${MAJOR}.${MONTH}.${COUNT}"
-          SHA=$(git rev-parse --short HEAD)
-          DATE=$(git log -1 --format=%cI)
-          printf '{"ver":"%s","sha":"%s","date":"%s"}\n' "$VER" "$SHA" "$DATE" > version.json
-          cat version.json
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4

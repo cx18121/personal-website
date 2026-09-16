@@ -93,47 +93,7 @@
   <body>
     <div class="scrollarea" id="scrollarea">
       <div class="topline">
-        <a class="cwd" href="/">personal-website</a>
-        <span class="branch">main</span><span class="dirty">*</span>
-      </div>
-      <div class="echoline">
-        <span class="chev">›</span> <span class="cmd">charlie</span>
-      </div>
-
-      <div class="welcomewrap">
-        <div class="welcome">
-          <div class="title">─ charlie.xue ─</div>
-          <div class="left">
-            <div class="greet">Welcome to my site!</div>
-            <div class="mascot" aria-hidden="true">
-              ▄▄▄▄▄▄▄<br />
-              █ ◕ ◕ █<br />
-              █ ▽ █<br />
-              ▀▀▀▀▀▀▀
-            </div>
-            <div class="meta">
-              cs &amp; statistics @ cornell<br />
-              <span class="dim">building ai-powered systems</span><br />
-              <span class="dim">~/personal-website</span>
-            </div>
-          </div>
-          <div class="divider"></div>
-          <div class="right">
-            <h3>Tips for getting started</h3>
-            <div class="body">
-              <div>
-                Type <span class="cmd">/help</span> to see all commands.
-              </div>
-              <div>
-                Try <span class="cmd">/projects</span> to see what I've built,
-                or <span class="cmd">/about</span> to learn more about me.
-              </div>
-            </div>
-            <div class="hr"></div>
-            <h3>What's new</h3>
-            <div class="body" id="whats-new"></div>
-          </div>
-        </div>
+        <a class="cwd" href="/">charliexue.com</a>
       </div>
 
       <div class="main" id="main"></div>
@@ -148,25 +108,18 @@
             autocorrect="off"
             spellcheck="false"
             aria-label="Command input, type slash for available commands"
-            placeholder="try /help, or type / for commands"
+            placeholder="type / for commands"
           />
         </div>
       </div>
 
       <div class="footer">
         <div class="statusrow">
-          <span class="handle">charliexue.com</span>
-          <span class="sep">│</span>
-          <span class="repo">personal-website</span>
+          <a class="repo" href="https://github.com/cx18121/personal-website" target="_blank" rel="noreferrer">source</a>
           <span class="clock-block">
             <span class="moon">◐</span> <span class="mode" id="mode">ithaca</span> ·
             <span class="time" id="clock">—</span>
           </span>
-        </div>
-        <div class="perms">
-          <span class="arrows">»</span> theme:
-          <span class="on" id="theme-name">classic</span>
-          <span class="hint">(type /theme to change)</span>
         </div>
       </div>
     </div>
@@ -178,16 +131,9 @@
       <div class="reader-backdrop"></div>
       <div class="reader-window photoviewer-window">
         <div class="reader-titlebar">
-          <span class="left"
-            ><span class="chev">›</span>
-            <span class="cmd" id="photoviewer-cmd">/travels</span> ·
-            photos</span
-          >
+          <span class="title" id="photoviewer-cmd">travels</span>
           <span class="right">
-            <span class="muted"
-              ><span id="photoviewer-count">1 / 1</span
-              ><span class="kbd-hint"> · ← → navigate · [esc] close</span></span
-            >
+            <span class="muted" id="photoviewer-count">1 / 1</span>
             <button
               class="reader-close"
               id="photoviewer-close"
@@ -227,12 +173,9 @@
       <div class="reader-backdrop"></div>
       <div class="reader-window">
         <div class="reader-titlebar">
-          <span class="left"
-            ><span class="chev">›</span>
-            <span class="cmd" id="reader-cmd">/open</span></span
-          >
+          <span class="title" id="reader-cmd">—</span>
           <span class="right">
-            <span class="muted" id="reader-count">— of —</span>
+            <span class="muted" id="reader-count">— / —</span>
             <button
               class="reader-close"
               id="reader-close"
@@ -254,92 +197,58 @@
     <section class="sr-only" aria-label="content">
       <h1>Charlie Xue — CS &amp; Statistics @ Cornell</h1>
       <p>
-        Charlie Xue is a CS &amp; Statistics student at Cornell University who
-        builds full-stack AI applications and ML systems, currently focused on
-        building for early-stage startups. Contact: cx267@cornell.edu · GitHub:
-        github.com/cx18121 · LinkedIn: linkedin.com/in/charles-xue.
+        Charlie Xue is a CS &amp; Statistics student at Cornell University and a
+        software engineer at Pango (YC S26). He builds full-stack AI
+        applications and ML systems, currently focused on early-stage startups.
+        Contact: cx267@cornell.edu · GitHub: github.com/cx18121 · LinkedIn:
+        linkedin.com/in/charles-xue.
       </p>
       <h2>About</h2>
       <p>
         I build full-stack AI applications and ML systems. Currently focused on
-        building for early-stage startups.
+        building for early-stage startups. SWE at Pango (YC S26).
       </p>
       <h2>Projects</h2>
       <article>
-        <h3>Podium</h3>
-        <p>
-          An ML-powered speech practice app that uses MediaPipe and Whisper to
-          analyze webcam and audio inputs, delivering real-time feedback on
-          delivery, posture, and pronunciation. Stack: TypeScript, React,
-          MediaPipe, Whisper.wasm, IndexedDB.
-        </p>
+        <h3>Sparrow</h3>
+        <p>A campaign-based cold-outreach tool built for students reaching out to startups. Sources contacts from VC portfolio databases, generates an AI-personalized email per recipient grounded in a per-company research report, and sends through the user's own Gmail. Stack: TypeScript, React, Prisma, PostgreSQL, Supabase, Anthropic API.</p>
       </article>
       <article>
-        <h3>Philly Vibe Map</h3>
-        <p>
-          Interactive map of Philadelphia neighborhoods colored by dominant
-          vibe, derived from NLP analysis of 1.1M Yelp reviews, with a temporal
-          slider showing character shifts year-over-year. Stack: Python,
-          TypeScript, React, FastAPI, BERTopic, sentence-transformers, MapLibre
-          GL.
-        </p>
+        <h3>Spectre</h3>
+        <p>A real-time 1v1 fighting game played with your phone as a motion controller. The camera tracks punches and kicks via pose estimation and you watch your silhouette fight. Stack: Rust, TypeScript, React, MediaPipe, WebSockets, Docker.</p>
       </article>
       <article>
         <h3>CVE Intel</h3>
-        <p>
-          Natural language search and analysis engine for CVE data, using
-          pgvector semantic search and Claude AI to query and synthesize
-          vulnerability intelligence. Stack: Python, TypeScript, Next.js,
-          FastAPI, PostgreSQL, pgvector, Anthropic API.
-        </p>
+        <p>A natural-language search and analysis engine over the CVE database. Ask a question in plain English and get back semantically relevant CVEs with a briefing and citations. Stack: Python, TypeScript, Next.js, FastAPI, PostgreSQL, pgvector, AWS Lambda, Terraform, Anthropic API.</p>
       </article>
       <article>
-        <h3>CourseMap</h3>
-        <p>
-          Syncs Canvas assignments and school calendar events into Google
-          Calendar, automatically organized by course and event type using
-          Claude for AI-assisted classification. Stack: TypeScript, Next.js,
-          PostgreSQL, Drizzle ORM, Anthropic API, Google Calendar API.
-        </p>
+        <h3>Podium</h3>
+        <p>A browser-based presentation practice tool. Records webcam and microphone input, then scores delivery on eye contact, filler words, and pacing using on-device ML and CV models. Stack: TypeScript, React, MediaPipe, Whisper.wasm, IndexedDB.</p>
+      </article>
+      <article>
+        <h3>Philly Vibe Map</h3>
+        <p>An interactive map of Philadelphia neighborhoods colored by the dominant vibe derived from NLP analysis of 1.1 million Yelp reviews, with a temporal slider showing change year over year. Stack: Python, TypeScript, React, FastAPI, BERTopic, DistilBERT, sentence-transformers, MapLibre GL.</p>
       </article>
       <article>
         <h3>Auto Shorts</h3>
-        <p>
-          Automated pipeline that scrapes Reddit posts and tweets, narrates them
-          via ElevenLabs TTS, and assembles and publishes YouTube Shorts and
-          Instagram Reels with subtitle overlays. Stack: Python, Anthropic API,
-          ElevenLabs, FFmpeg, YouTube API, Instagram Graph API.
-        </p>
+        <p>A CLI pipeline that produces short-form videos end to end: scrapes and scores content from Reddit and X, generates scripts and video, and uploads to YouTube Shorts and Instagram Reels. Stack: Python, FFmpeg, Playwright, SQLite, Anthropic API, ElevenLabs, YouTube API, Instagram Graph API.</p>
       </article>
       <article>
-        <h3>VulnScan</h3>
-        <p>
-          CLI tool that analyzes Python source files for security
-          vulnerabilities using AST analysis, with AI-powered fix suggestions
-          via the Claude API. Stack: Python, Anthropic API.
-        </p>
+        <h3>AlgoTrader Bridge</h3>
+        <p>A trading bridge that receives TradingView webhook signals and routes them to Interactive Brokers TWS for execution, with a live dashboard of trading activity. Stack: Python, FastAPI, SQLite, SQLAlchemy, IBKR TWS API, Docker.</p>
       </article>
       <article>
         <h3>SkyOps</h3>
-        <p>
-          AI-powered air charter platform that parses booking requests from
-          emails and automates flight quoting, routing, and pricing. Stack:
-          TypeScript, React, Next.js, Anthropic API, PostgreSQL.
-        </p>
+        <p>An AI-powered charter flight operations platform that parses booking requests from email and automates quoting, routing, and pricing. Stack: TypeScript, React, Next.js, Anthropic API, PostgreSQL.</p>
       </article>
       <article>
-        <h3>Gatekeeper</h3>
-        <p>
-          Desktop application that enforces time-based restrictions on
-          applications, supporting per-app daily usage limits, automatic
-          monitoring of running processes, and real-time system notifications.
-          Stack: JavaScript, Electron, Node.js, Gemini API.
-        </p>
+        <h3>VulnScan</h3>
+        <p>A CLI tool that analyzes Python source for security vulnerabilities using AST traversal, with AI-powered fix suggestions via the Claude API. Stack: Python, Click, Anthropic API.</p>
       </article>
       <h2>Contact</h2>
       <p>
-        Email: cx267@cornell.edu. GitHub: github.com/cx18121. LinkedIn:
-        linkedin.com/in/charles-xue.
+        Email cx267@cornell.edu · GitHub github.com/cx18121 · LinkedIn
+        linkedin.com/in/charles-xue
       </p>
     </section>
 

@@ -2,11 +2,9 @@
 name: podium
 tagline: on-device speech practice app
 status: live
-featured: true
 stack:
   - typescript
   - react
-  - vite
   - mediapipe
   - whisper.wasm
   - indexeddb
