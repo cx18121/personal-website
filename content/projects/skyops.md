@@ -19,12 +19,13 @@ A charter flight ops tool. It reads booking requests out of emails, builds the q
 
 ## why
 
-Built for the NYU startup week hackathon. We talked to a few charter operators and the pattern was the same everywhere: requests come in by email, someone retypes them into a spreadsheet, quotes get built by hand, and planes fly back empty because nobody is looking at the whole fleet at once. We wanted one screen that did all of that.
+Built for the NYU startup week hackathon. We looked into how charter flight operators work and a surprising amount of it still runs on people reading emails and doing things by hand. Requests get typed up manually, routing is done by hand, and planes end up flying back empty a lot because nobody has a full view of the fleet at once. We wanted to put all of that in one place.
 
 ## how it works
 
-When a request email comes in, Claude pulls out the trip details: route, dates, passenger count, aircraft preference, client, and anything unusual. You check the fields and fix anything it got wrong before it goes to quoting.
+When a request comes in over email, the system pulls out the trip details, so the route, dates, how many passengers, what kind of aircraft they want, who the client is, and any special requests. You can look over what it extracted and fix anything before it moves on to quoting.
 
-The quote is built from aircraft category, distance, fuel, FBO fees, repositioning, catering, permits, margin, and tax, with every line shown so the operator can see where the number came from.
+The quote gets built from the aircraft category, route distance, fuel, FBO fees, repositioning, catering, permits, margin, and tax. Every line item is shown so the operator can see exactly how the price was put together.
 
-The dashboard shows open quotes, confirmed trips, utilization per aircraft, and which planes are idle, and suggests repositioning or maintenance windows when there's a gap.
+The dashboard tracks everything over time. Open quotes, confirmed trips, how much each aircraft is getting used, which ones are sitting idle, demand forecasts, and suggestions for when to reposition a plane or schedule maintenance.
+

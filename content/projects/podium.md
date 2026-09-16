@@ -22,14 +22,15 @@ I wanted to get better at speaking into a camera, since I realized that while sp
 
 ## how it works
 
-Before starting, you set up the camera and mic, pick a topic, and choose a duration.
+Before you start you set up your camera and mic, pick a topic, and choose how long you want to talk for.
 
 ![session setup](setup)
 
-Video and audio stay in the browser. Three MediaPipe models run in a Web Worker at the same time, one each for gaze, gestures, and facial expressiveness. The Web Speech API and Whisper transcribe the audio, which is how it catches pacing, pauses, and filler words (with enough context to tell "like" the filler from "like" the verb). Six metrics total, weighted into one score at the end.
+Everything runs locally in the browser. There are three MediaPipe models running at the same time in a Web Worker, one for where you're looking, one for hand gestures, and one for how expressive your face is. The audio goes through the Web Speech API and Whisper to get a transcript, and from that I can figure out pacing, pauses, and filler words. The filler word detection looks at the surrounding words so it doesn't flag every single "like". At the end all six metrics get weighted into one score.
 
 ![the breakdown after a session](review)
 
-There's a GitHub-style activity grid too. Sessions are saved in IndexedDB, so nothing leaves the browser.
+There's also a GitHub style activity grid so you can see how often you've actually been practicing. Sessions are saved in IndexedDB so nothing ever leaves your browser.
 
 ![practice history](history)
+

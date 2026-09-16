@@ -17,4 +17,5 @@ built to test some stuff out
 
 ## how it works
 
-Each file is parsed into an AST and checked for the usual suspects: pickle on untrusted input, SQL built by string concatenation, hardcoded secrets, MD5 and SHA1, subprocess with shell=True. Findings get a severity and a file and line. Each one is sent to Claude with the surrounding code for a suggested fix, which you apply yourself. It doesn't patch anything automatically.
+Each file gets parsed into an AST and I walk through it looking for the usual stuff: unsafe deserialization, SQL queries built with string concatenation, hardcoded secrets, weak hashing, and subprocess calls with shell=True. Each finding gets a severity and the file and line it was found at. Then it sends the finding plus the code around it to Claude and asks for a fix. You look at the suggestion and apply it yourself, it doesn't change your code for you.
+
