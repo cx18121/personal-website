@@ -186,7 +186,11 @@ button {
   text-decoration: underline;
   text-decoration-color: var(--mute);
   text-underline-offset: 3px;
+  /* Chrome lays a <button> out as an atomic inline-block even at
+     display: inline, so unlike <a> its vertical padding would grow the
+     line box. Cancel it with a matching negative margin, keep the hit area. */
   padding-block: var(--s1);
+  margin-block: calc(-1 * var(--s1));
   touch-action: manipulation;
   transition: text-decoration-color var(--t-fast) ease-out;
 }
