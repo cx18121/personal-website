@@ -166,16 +166,24 @@ const ui = {
       this.box.classList.remove('focused');
       setTimeout(() => this.hideAc(), 120);
     });
-    // Keep input focused when clicking dead space — preventDefault on mousedown
-    // stops the blur from firing, which avoids the focus-border flash.
+    // Clicking dead space returns focus to the prompt, but only after the
+    // mouse is released with nothing selected, so drag-to-select on the
+    // output still works. `selecting` holds the prompt's focused look
+    // through the drag so the border doesn't flash.
+    const passthrough =
+      'a, input, textarea, button, .autocomplete, [data-open], [data-travels], .reader, .photoviewer';
+    let pendingRefocus = false;
     document.body.addEventListener('mousedown', (e) => {
-      if (
-        e.target.closest(
-          'a, input, textarea, button, .autocomplete, [data-open], [data-travels], .reader, .photoviewer'
-        )
-      )
-        return;
-      if (document.activeElement === this.input) e.preventDefault();
+      if (e.button !== 0 || e.target.closest(passthrough)) return;
+      pendingRefocus = true;
+      if (document.activeElement === this.input) this.box.classList.add('selecting');
+    });
+    document.addEventListener('mouseup', (e) => {
+      this.box.classList.remove('selecting');
+      if (!pendingRefocus) return;
+      pendingRefocus = false;
+      if (e.target.closest?.(passthrough)) return;
+      if (getSelection().isCollapsed) this.input.focus();
     });
     document.body.addEventListener('click', (e) => {
       const opener = e.target.closest('[data-open]');
@@ -271,7 +279,9 @@ const ui = {
     this.print(`<div class="echo"><span class="chev">›</span> ${escapeHtml(cmd)}</div>`);
   },
   block(html) {
-    return this.print(`<div class="block">${html}</div>`);
+    const el = this.print(`<div class="block">${html}</div>`);
+    smartenTextNodes(el);
+    return el;
   },
   updateAutocomplete() {
     const v = this.input.value;
