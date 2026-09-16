@@ -79,6 +79,8 @@ export const COMMANDS = [
   { cmd: '/clear', desc: 'clear the screen' },
 ];
 
+// Each theme is six tones. Only the accent carries hue; it is the theme's
+// signature color, chosen so the three rows in /theme read as different.
 export const THEMES = [
   {
     name: 'tokyo-night',
@@ -93,19 +95,10 @@ export const THEMES = [
     name: 'one-dark',
     bg: '#282c34',
     fg: '#abb2bf',
-    accent: '#61afef',
+    accent: '#56b6c2',
     dim: '#9398a6',
     mute: '#3e4451',
     red: '#e06c75',
-  },
-  {
-    name: 'solarized',
-    bg: '#002b36',
-    fg: '#93a1a1',
-    accent: '#268bd2',
-    dim: '#839496',
-    mute: '#475a62',
-    red: '#dc322f',
   },
   {
     name: 'catppuccin',

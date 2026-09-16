@@ -1620,7 +1620,7 @@ async function renderProjectsList(ui, { featuredOnly = false } = {}) {
 function renderThemeList(ui) {
   const current = document.body.dataset.theme || THEMES[0].name;
   const rows = THEMES.map((t) => {
-    const swatches = [t.bg, t.fg, t.dim, t.accent]
+    const swatches = [t.bg, t.fg, t.accent]
       .map(
         (c) => `<span class="theme-swatch" style="background:${c}"></span>`
       )
