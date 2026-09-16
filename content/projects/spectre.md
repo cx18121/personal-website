@@ -23,7 +23,7 @@ This was originally built for the spring 2026 Cornell Claude Hackathon. We built
 
 ## how it works
 
-Each phone runs MediaPipe in the browser to get your pose keypoints and sends them over WebSocket to a Rust engine. The engine takes the keypoints and figures out the actual game, so whether a punch landed, HP, when a round ends, and sends that out to the Arena, which is a separate page that draws both players as silhouettes. Since it's separate you can throw it up on a TV or a laptop and everyone can watch.
+Each phone runs MediaPipe in the browser to get pose keypoints and sends them over WebSocket to a Rust engine. The engine turns the keypoints into game state (hit detection, HP, round transitions) and sends that to the Arena, a separate page that draws both players as silhouettes. Since it's separate, it can run on a TV or laptop for people to watch.
 
 ![round results](ko)
 
@@ -33,7 +33,7 @@ The commentator is Claude doing live play by play. It gets triggered on big mome
 
 ## decisions
 
-The first version had a Python server. For v1.0 I rewrote it in Rust because I wanted hit detection to be deterministic and I needed lower latency than I was getting out of Python.
+The first version had a Python server. For v1.0 I rewrote it in Rust because hit detection needed to be deterministic and the Python version had too much latency.
 
-The engine, the phone controller, and the Arena are all separate apps, and the only thing they share is a set of message types. Keeping them apart like that is what let me use Rust for the engine and TypeScript for everything else without it getting messy.
+The engine, the phone controller, and the Arena are separate apps that only communicate through a shared set of message types. The engine is Rust and everything else is TypeScript.
 

@@ -24,7 +24,7 @@ Originally built and ideated with Cornell GenAI. My friend and I were unemployed
 
 ## how it works
 
-Everything is organized around campaigns. A campaign is basically an audience of startups pulled from a shared pool. The pool comes from VC portfolios (YC, a16z, Sequoia, Lightspeed, IVP, and a bunch more) plus Exa search to find companies that aren't on any portfolio list. You can filter by things like tags, stage, investor, region, YC batch, and whether they look like they're hiring, then grab a batch of companies you haven't emailed yet.
+Everything is organized around campaigns. A campaign is an audience of startups pulled from a shared pool. The pool comes from VC portfolios (YC, a16z, Sequoia, Lightspeed, IVP, and others) plus Exa search for companies that aren't on any portfolio list. You can filter by tags, stage, investor, region, YC batch, and hiring signals, then pull a batch of companies you haven't emailed yet.
 
 ![picking a campaign audience](audience)
 
@@ -32,7 +32,7 @@ For each company you save, Sparrow looks up email addresses through Apollo.
 
 ![saved company leads](leads)
 
-When you generate a draft, Sparrow first puts together a research report on the company using Exa. That gets cached so each company only gets researched once. Then Claude reads your resume and the report, picks the one thing that connects them best, and writes the email around that. You always get to read and edit the draft before it sends through your own Gmail via OAuth.
+When you generate a draft, Sparrow first builds a research report on the company using Exa. The report is cached so each company is only researched once. Claude then reads your resume and the report, picks the one thing that connects them best, and writes the email around it. Drafts are reviewed and edited before sending through your own Gmail via OAuth.
 
 ![reviewing drafts](drafts)
 
@@ -42,7 +42,7 @@ Once emails go out you can see opens, replies, and what happened with each compa
 
 ## decisions
 
-Search goes through Exa first and only falls back to Tavily if Exa comes back with nothing useful. I put together a quick [benchmark](https://github.com/cx18121/search-api-benchmark) to compare search APIs for this and Exa was the best for this kind of query.
+Search goes through Exa first and only falls back to Tavily if Exa returns nothing useful. I wrote a quick [benchmark](https://github.com/cx18121/search-api-benchmark) to compare search APIs and Exa was the best for this kind of query.
 
-There's one company database that everyone shares instead of one per user or campaign. That way dedupe, tags, stage and region info, and the cached research reports are all in one place, and a company only gets researched once no matter how many campaigns end up targeting it.
+There's one company database shared by everyone instead of one per user or campaign. Dedupe, tags, stage and region info, and the cached research reports are all in one place, and a company only gets researched once no matter how many campaigns target it.
 

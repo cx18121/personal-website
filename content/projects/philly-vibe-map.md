@@ -25,11 +25,11 @@ The inspiration for this was neighborhood maps that I'd seen online, like [nyt m
 
 ## how it works
 
-There are two models doing different jobs. The first is DistilBERT fine tuned with LoRA to do sentiment on each review. I went with LoRA because I wanted it to pick up on how people talk about Philly specifically without having to retrain the whole model.
+There are two models. A DistilBERT fine tuned with LoRA does sentiment on each review. LoRA lets it learn how people talk about Philly specifically without retraining the whole model.
 
-The second part is the "vibes" themselves. I embed all 1.1M reviews with a sentence-transformer, put them in FAISS, and cluster them with BERTopic. The clusters that come out are basically themes that keep showing up across reviews, and those became the vibes.
+The vibes come from clustering. All 1.1M reviews are embedded with a sentence-transformer, indexed with FAISS, and clustered with BERTopic. Each cluster is a theme that keeps showing up across reviews, and those became the vibes.
 
-Then everything gets rolled up by neighborhood. There are 157 of them, and each one ends up with a score on six vibe dimensions, which is what decides its color on the map.
+Sentiment and cluster results are then aggregated across the 157 neighborhoods. Each neighborhood gets a score on six vibe dimensions, and that decides its color on the map.
 
 ![neighborhood vibe breakdown](detail)
 
@@ -37,7 +37,7 @@ There's also a search bar where you can type a feeling and it highlights the nei
 
 ![searching by feeling](search)
 
-And there's a slider at the bottom to go through the years and watch neighborhoods change.
+A slider at the bottom goes through the years so you can see how neighborhoods changed.
 
 ![neighborhoods over time](timeline)
 

@@ -26,11 +26,11 @@ Before you start you set up your camera and mic, pick a topic, and choose how lo
 
 ![session setup](setup)
 
-Everything runs locally in the browser. There are three MediaPipe models running at the same time in a Web Worker, one for where you're looking, one for hand gestures, and one for how expressive your face is. The audio goes through the Web Speech API and Whisper to get a transcript, and from that I can figure out pacing, pauses, and filler words. The filler word detection looks at the surrounding words so it doesn't flag every single "like". At the end all six metrics get weighted into one score.
+Everything runs locally in the browser. There are three MediaPipe models running at the same time in a Web Worker, one for where you're looking, one for hand gestures, and one for how expressive your face is. The audio goes through the Web Speech API and Whisper for a transcript, which is used to measure pacing, pauses, and filler words. Filler word detection looks at the surrounding words so it doesn't flag every "like". At the end all six metrics are weighted into one score.
 
 ![the breakdown after a session](review)
 
-There's also a GitHub style activity grid so you can see how often you've actually been practicing. Sessions are saved in IndexedDB so nothing ever leaves your browser.
+There's also a GitHub style activity grid of your sessions. Sessions are saved in IndexedDB, so nothing leaves the browser.
 
 ![practice history](history)
 
