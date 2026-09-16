@@ -87,10 +87,6 @@ export const THEMES = [
     accent: '#7aa2f7',
     dim: '#8a96c2',
     mute: '#414868',
-    yellow: '#e0af68',
-    violet: '#bb9af7',
-    cyan: '#7dcfff',
-    pink: '#f7768e',
     red: '#f7768e',
   },
   {
@@ -100,10 +96,6 @@ export const THEMES = [
     accent: '#61afef',
     dim: '#9398a6',
     mute: '#3e4451',
-    yellow: '#e5c07b',
-    violet: '#c678dd',
-    cyan: '#56b6c2',
-    pink: '#e06c75',
     red: '#e06c75',
   },
   {
@@ -113,10 +105,6 @@ export const THEMES = [
     accent: '#268bd2',
     dim: '#839496',
     mute: '#475a62',
-    yellow: '#b58900',
-    violet: '#6c71c4',
-    cyan: '#2aa198',
-    pink: '#d33682',
     red: '#dc322f',
   },
   {
@@ -126,10 +114,6 @@ export const THEMES = [
     accent: '#cba6f7',
     dim: '#a6adc8',
     mute: '#45475a',
-    yellow: '#f9e2af',
-    violet: '#cba6f7',
-    cyan: '#74c7ec',
-    pink: '#f5c2e7',
     red: '#f38ba8',
   },
 ];

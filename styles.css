@@ -43,10 +43,6 @@
   --fg: #c0caf5;
   --dim: #8a96c2;
   --mute: #414868;
-  --violet: #bb9af7;
-  --cyan: #7dcfff;
-  --pink: #f7768e;
-  --yellow: #e0af68;
   --red: #f7768e;
 
   --mono: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
@@ -55,7 +51,7 @@
   /* type scale */
   --fs-xs: 11px;
   --fs-sm: 12px;
-  --fs-md: 13px;
+  --fs-md: 14px;
   --fs-h3: 15px;
   --fs-lg: 16px;
   --fs-h2: 18px;
@@ -71,6 +67,7 @@
   --s8: 32px;
 
   --gutter: 18px;    /* terminal surface horizontal padding */
+  --measure: 640px;  /* terminal column width, ~72ch at 14px mono */
   --pane-pad: 32px;  /* reader + photoviewer inner gutter */
 
   --r-sm: 4px;
@@ -79,6 +76,7 @@
 
   --t-fast: 120ms;
   --t-overlay: 160ms;
+  --t-theme: 200ms;
 
   --row-y: 6px;      /* vertical padding of selectable rows + ac items */
 
@@ -92,6 +90,9 @@
 * {
   box-sizing: border-box;
 }
+html {
+  color-scheme: dark;
+}
 html,
 body {
   margin: 0;
@@ -102,8 +103,15 @@ body {
   color: var(--fg);
   font-family: var(--mono);
   font-size: var(--fs-md);
-  line-height: 1.5;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  /* /theme swaps the palette; ease the brightness change. */
+  transition:
+    background-color var(--t-theme) ease-out,
+    color var(--t-theme) ease-out;
+}
+::selection {
+  background: color-mix(in oklab, var(--accent) 30%, transparent);
 }
 body {
   display: flex;
@@ -116,11 +124,14 @@ body {
 }
 
 a {
-  color: var(--yellow);
-  text-decoration: none;
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--mute);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--t-fast) ease-out;
 }
 a:hover {
-  text-decoration: underline;
+  text-decoration-color: currentColor;
 }
 .muted {
   color: var(--dim);
@@ -129,7 +140,7 @@ a:hover {
   color: var(--red);
 }
 .key {
-  color: var(--yellow);
+  color: var(--fg);
 }
 
 /* ── terminal surface ───────────────────────────────────────────── */
@@ -137,19 +148,25 @@ a:hover {
   padding: var(--s2) var(--gutter) var(--s1);
 }
 .topline .cwd {
-  color: var(--fg);
+  text-decoration: none;
 }
 
 .main {
   padding: 0 var(--gutter);
   white-space: pre-wrap;
 }
+.topline,
+.main,
+.promptouter,
+.footer {
+  max-width: calc(var(--measure) + 2 * var(--gutter));
+}
 .main .echo {
-  color: var(--accent);
+  color: var(--dim);
   margin-top: var(--s3);
 }
-.main .echo .slash {
-  color: var(--yellow);
+.main .echo .chev {
+  color: var(--accent);
 }
 .main .comment {
   color: var(--dim);
@@ -157,11 +174,9 @@ a:hover {
 }
 .main .comment a {
   color: var(--dim);
-  text-decoration: underline;
-  text-decoration-color: var(--mute);
 }
 .main .comment a:hover {
-  color: var(--yellow);
+  color: var(--fg);
 }
 /* Output block. The rule sits under the echo's chevron column and the
    text starts at 2ch, on the same x as the command after "› ". */
@@ -169,8 +184,8 @@ a:hover {
   margin: var(--s1) 0 var(--s2);
   padding-left: calc(2ch - 1px);
   border-left: 1px solid var(--mute);
-  line-height: 1.55;
   text-wrap: pretty;
+  transition: border-color var(--t-theme) ease-out;
 }
 .main .block .name {
   font-weight: 700;
@@ -178,16 +193,27 @@ a:hover {
 /* Copy-to-clipboard button rendered as a link (e.g. email in /contact). */
 .copy {
   all: unset;
-  color: var(--yellow);
+  color: var(--fg);
   cursor: pointer;
   user-select: text;
+  text-decoration: underline;
+  text-decoration-color: var(--mute);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--t-fast) ease-out;
 }
 .copy:hover {
-  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+.copy-status {
+  opacity: 0;
+  transition: opacity var(--t-fast) ease-out;
+}
+.copy-status.show {
+  opacity: 1;
 }
 
 .section-head {
-  color: var(--accent);
+  color: var(--dim);
   font-weight: 600;
   margin: var(--s3) 0 var(--s1);
 }
@@ -229,7 +255,7 @@ a:hover {
   margin-top: 2px;
 }
 .proj-stack-more {
-  color: var(--mute);
+  color: var(--dim);
 }
 .proj-more {
   margin-top: var(--s2);
@@ -238,15 +264,7 @@ a:hover {
 .proj-link,
 .travel-link {
   cursor: pointer;
-  color: var(--yellow);
-  text-decoration: underline;
-  text-decoration-color: var(--mute);
-  text-underline-offset: 3px;
-  transition: text-decoration-color var(--t-fast) ease-out;
-}
-.proj-link:hover,
-.travel-link:hover {
-  text-decoration-color: currentColor;
+  font-weight: 600;
 }
 
 .theme-body {
@@ -268,6 +286,7 @@ a:hover {
   height: 10px;
   border-radius: 50%;
   display: inline-block;
+  box-shadow: var(--img-edge);
 }
 .theme-active {
   color: var(--dim);
@@ -336,24 +355,25 @@ a:hover {
   display: none;
 }
 .autocomplete.show {
-  display: block;
+  display: grid;
+  grid-template-columns: max-content 1fr;
 }
 /* Left padding = prompt padding + border + "› " so the command column
-   sits on the same x as the typed text below it. */
+   sits on the same x as the typed text below it. Rows share the parent's
+   columns (subgrid) so descriptions align across every row. */
 .autocomplete .item {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  column-gap: var(--s4);
+  align-items: baseline;
   padding: var(--row-y) var(--s4) var(--row-y) calc(var(--s4) + 1px + 2ch);
   cursor: pointer;
-  display: flex;
-  gap: var(--s4);
-  align-items: baseline;
 }
 .autocomplete .item.active {
   background: var(--hi);
 }
-.autocomplete .item .cmd {
-  color: var(--yellow);
-  min-width: 14ch;
-}
+
 .autocomplete .item .desc {
   color: var(--dim);
   font-size: var(--fs-sm);
@@ -372,6 +392,7 @@ a:hover {
 }
 .footer .repo {
   color: var(--dim);
+  text-decoration: none;
 }
 .footer .repo:hover {
   color: var(--fg);
@@ -453,10 +474,11 @@ a:hover {
   display: flex;
   flex-direction: column;
   background: var(--bg);
-  border: 1px solid var(--mute);
   border-radius: var(--r-lg);
   overflow: hidden;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 0.08),
+    0 24px 80px rgba(0, 0, 0, 0.6);
 }
 .photoviewer-window {
   max-width: 1600px;
@@ -485,24 +507,25 @@ a:hover {
   align-items: center;
   gap: var(--s3);
 }
-/* X button. The 28px box overhangs the gutter by its own padding so the
-   glyph's right edge sits on the content edge. Mobile grows it to 44px. */
+/* X button. The 36px box overhangs the titlebar by its own padding so
+   the glyph's right edge sits on the content edge. Mobile grows it to 44px. */
 .reader-close {
   all: unset;
   cursor: pointer;
   color: var(--dim);
   font-size: var(--fs-h2);
   line-height: 1;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: -2px calc(-1 * var(--s2)) -2px 0;
+  margin: -6px calc(-1 * var(--s3)) -6px 0;
   border-radius: var(--r-sm);
   transition:
     color var(--t-fast) ease-out,
-    background-color var(--t-fast) ease-out;
+    background-color var(--t-fast) ease-out,
+    transform 100ms ease-out;
 }
 .reader-close:hover {
   color: var(--fg);
@@ -544,14 +567,16 @@ a:hover {
 .reader-side .val .item {
   display: block;
 }
-.reader-side a {
-  color: var(--cyan);
-}
 .reader-side .trav-item {
+  text-decoration: none;
+  color: var(--dim);
+}
+.reader-side .trav-item:hover {
   color: var(--fg);
 }
 .reader-side .trav-item.active {
-  color: var(--yellow);
+  color: var(--fg);
+  font-weight: 600;
 }
 
 .reader-body {
@@ -565,7 +590,8 @@ a:hover {
   margin: 0 0 1em;
 }
 .reader-body a {
-  color: var(--cyan);
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 1px;
 }
 .reader-body ul {
   margin: 0 0 1em;
@@ -625,7 +651,7 @@ a:hover {
   counter-increment: decision;
   content: 'D' counter(decision, decimal-leading-zero);
   font-family: var(--mono);
-  color: var(--accent);
+  color: var(--dim);
   font-weight: 600;
   font-size: var(--fs-xs);
   padding-top: 6px;
@@ -697,14 +723,15 @@ a:hover {
   font-size: var(--fs-sm);
 }
 .reader-nav .nav-link {
-  color: var(--cyan);
+  color: var(--dim);
+  text-decoration: none;
   padding: var(--s1) var(--s2);
   border-radius: var(--r-sm);
   transition: background-color var(--t-fast) ease-out;
 }
 .reader-nav .nav-link:hover {
   background: var(--hi);
-  text-decoration: none;
+  color: var(--fg);
 }
 
 /* ── travel reader body ─────────────────────────────────────────── */
@@ -714,7 +741,7 @@ a:hover {
   gap: var(--s1) var(--s4);
   margin: var(--s6) 0 0;
   font-family: var(--mono);
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
   max-width: 60ch;
 }
 .reader-body .trav-fields dt {
@@ -776,16 +803,18 @@ a:hover {
   font: inherit;
   font-family: var(--mono);
   font-size: var(--fs-sm);
-  color: var(--cyan);
+  color: var(--fg);
   background: transparent;
   border: 1px solid var(--mute);
   border-radius: var(--r-md);
   padding: var(--s2) var(--s3);
   cursor: pointer;
-  transition: border-color var(--t-fast) ease-out;
+  transition:
+    border-color var(--t-fast) ease-out,
+    transform 100ms ease-out;
 }
 .reader-body .trav-photos-btn:hover {
-  border-color: var(--cyan);
+  border-color: var(--dim);
 }
 
 /* ── photo viewer ───────────────────────────────────────────────── */
@@ -805,6 +834,17 @@ a:hover {
   max-height: 100%;
   object-fit: contain;
   border-radius: var(--r-sm);
+  box-shadow: var(--img-edge);
+  transition:
+    opacity var(--t-fast) ease-out,
+    transform var(--t-overlay) ease-out;
+}
+.photoviewer-photo.loading {
+  opacity: 0.5;
+}
+/* Finger down: the photo tracks 1:1, no transition fighting the drag. */
+.photoviewer-photo.dragging {
+  transition: opacity var(--t-fast) ease-out;
 }
 .photoviewer-arrow {
   position: absolute;
@@ -817,7 +857,9 @@ a:hover {
   cursor: pointer;
   padding: var(--s3) var(--s4);
   font-family: inherit;
-  transition: color var(--t-fast) ease-out;
+  transition:
+    color var(--t-fast) ease-out,
+    transform 100ms ease-out;
 }
 .photoviewer-arrow:hover {
   color: var(--fg);
@@ -865,7 +907,8 @@ a:hover {
   cursor: pointer;
   transition:
     opacity var(--t-fast) ease-out,
-    border-color var(--t-fast) ease-out;
+    border-color var(--t-fast) ease-out,
+    transform 100ms ease-out;
   padding: 0;
   overflow: hidden;
 }
@@ -881,6 +924,17 @@ a:hover {
 .photoviewer-thumb.active {
   opacity: 1;
   border-color: var(--accent);
+}
+
+/* ── press feedback ─────────────────────────────────────────────── */
+.reader-close:active,
+.photoviewer-arrow:active,
+.photoviewer-thumb:active,
+.trav-photos-btn:active {
+  transform: scale(0.96);
+}
+.photoviewer-arrow:active {
+  transform: translateY(-50%) scale(0.96);
 }
 
 /* ── focus-visible (keyboard nav) ───────────────────────────────── */
@@ -999,7 +1053,7 @@ button:focus-visible {
   .reader-close {
     width: 44px;
     height: 44px;
-    margin: 0;
+    margin: -4px 0;
     font-size: var(--fs-xl);
   }
   .reader-grid {

@@ -9,6 +9,7 @@ stack:
   - postgresql
   - supabase
   - anthropic api
+aspect: 1770 / 1125
 live: https://usesparrow.dev
 repo: https://github.com/cx18121/sparrow
 ---

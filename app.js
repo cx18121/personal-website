@@ -8,6 +8,13 @@ import {
   LOCATION,
 } from './data.js';
 
+const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
+// Scroll behavior for JS-driven scrolls; CSS scroll-behavior doesn't
+// reach scrollTo()/scrollIntoView() options.
+function scrollBehavior() {
+  return REDUCE_MOTION.matches ? 'instant' : 'smooth';
+}
+
 function escapeHtml(s) {
   return String(s).replace(
     /[&<>"']/g,
@@ -25,11 +32,9 @@ async function copyToClipboard(el) {
     if (!status?.classList.contains('copy-status')) return;
     status.textContent = `  ${msg}`;
     status.classList.toggle('warn', cls === 'warn');
+    status.classList.add('show');
     clearTimeout(status._t);
-    status._t = setTimeout(() => {
-      status.textContent = '';
-      status.classList.remove('warn');
-    }, 1600);
+    status._t = setTimeout(() => status.classList.remove('show'), 1600);
   };
   try {
     await navigator.clipboard.writeText(el.dataset.copy);
@@ -91,10 +96,6 @@ function applyTheme(t) {
   r.setProperty('--accent', t.accent);
   r.setProperty('--dim', t.dim);
   r.setProperty('--mute', t.mute);
-  r.setProperty('--yellow', t.yellow);
-  r.setProperty('--violet', t.violet);
-  r.setProperty('--cyan', t.cyan);
-  r.setProperty('--pink', t.pink);
   r.setProperty('--red', t.red);
   try {
     localStorage.setItem('theme', t.name);
@@ -248,25 +249,25 @@ const ui = {
     }
     // Warm the project index in the background so /projects and the
     // /open autocomplete don't pay a fetch round-trip on first use.
-    const warmIndex = () => getProjectIndex().catch(() => {});
-    if (typeof requestIdleCallback === 'function') requestIdleCallback(warmIndex);
-    else setTimeout(warmIndex, 1000);
+    // Also pull marked.js so the first reader open renders on the next
+    // frame instead of waiting on a script load.
+    const warm = () => {
+      getProjectIndex().catch(() => {});
+      loadMarked();
+    };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(warm);
+    else setTimeout(warm, 1000);
   },
   print(html) {
     const div = document.createElement('div');
     div.innerHTML = html;
     this.main.appendChild(div);
     const sa = document.getElementById('scrollarea');
-    sa.scrollTo({ top: sa.scrollHeight, behavior: 'smooth' });
+    sa.scrollTo({ top: sa.scrollHeight, behavior: scrollBehavior() });
     return div;
   },
   echo(cmd) {
-    const hasSlash = cmd.startsWith('/');
-    const slash = hasSlash ? '/' : '';
-    const rest = hasSlash ? cmd.slice(1) : cmd;
-    this.print(
-      `<div class="echo">› <span class="slash">${slash}</span>${escapeHtml(rest)}</div>`
-    );
+    this.print(`<div class="echo"><span class="chev">›</span> ${escapeHtml(cmd)}</div>`);
   },
   block(html) {
     return this.print(`<div class="block">${html}</div>`);
@@ -329,6 +330,7 @@ const ui = {
     this.ac.classList.add('show');
     this.positionAc();
     this.ac.querySelectorAll('.item').forEach((el) => {
+      el.addEventListener('mouseenter', () => this.setAcActive(+el.dataset.i));
       el.addEventListener('mousedown', (e) => {
         e.preventDefault();
         this.run(this.acItems[+el.dataset.i].cmd);
@@ -677,6 +679,8 @@ function renderDecisionsBlock(body) {
 // scoped to a single renderMarkdown() call below — never set from outside
 // this module. Safe because marked.parse is synchronous.
 let _currentImageBase = null;
+let _currentImageAspect = null; // frontmatter `aspect`, e.g. "1770 / 1125"
+let _figureCount = 0;
 function resolveImagePath(href) {
   if (!href) return href;
   if (/^(https?:|data:|\/)/.test(href) || href.includes('/')) return href;
@@ -737,8 +741,13 @@ function configureMarked() {
         }
         cap = title || alt;
         const resolved = resolveImagePath(href || '');
+        // First figure is above the fold; the rest can wait.
+        const loading = _figureCount++ === 0 ? 'eager' : 'lazy';
+        const style = _currentImageAspect
+          ? ` style="aspect-ratio: ${escapeHtml(_currentImageAspect)}"`
+          : '';
         return `<figure class="full-bleed">
-          <img src="${escapeHtml(resolved)}" alt="${escapeHtml(alt)}" loading="eager" decoding="async" />
+          <img src="${escapeHtml(resolved)}" alt="${escapeHtml(alt)}" loading="${loading}" decoding="async"${style} />
           ${cap ? `<figcaption>${escapeHtml(cap)}</figcaption>` : ''}
         </figure>`;
       },
@@ -750,14 +759,17 @@ function configureMarked() {
 // Single entry point for parsing reader-body markdown. `imageBase` (e.g.
 // `images/foo`) makes bare image hrefs resolve to that directory; pass
 // nothing when relative image expansion isn't wanted (travel entries).
-function renderMarkdown(body, { imageBase = null } = {}) {
+function renderMarkdown(body, { imageBase = null, imageAspect = null } = {}) {
   configureMarked();
   if (typeof marked === 'undefined') return escapeHtml(body);
   _currentImageBase = imageBase;
+  _currentImageAspect = imageAspect;
+  _figureCount = 0;
   try {
     return marked.parse(body);
   } finally {
     _currentImageBase = null;
+    _currentImageAspect = null;
   }
 }
 
@@ -861,7 +873,10 @@ const projectReader = {
   async loadEntry(name) {
     const text = await loadProjectMd(name);
     const { fm, body } = parseFrontmatter(text);
-    const html = renderMarkdown(body, { imageBase: `/images/${fm.name || name}` });
+    const html = renderMarkdown(body, {
+      imageBase: `/images/${fm.name || name}`,
+      imageAspect: fm.aspect || null,
+    });
     return { fm, html };
   },
   renderSidebar(_name, data) {
@@ -1248,14 +1263,19 @@ function renderPhoto() {
   }
   img.src = p.src;
   img.alt = p.caption || '';
-  // Cache dims for revisits even if this photo wasn't preloaded.
-  if (!dims) {
-    img.addEventListener(
-      'load',
-      () => _photoDims.set(p.src, { w: img.naturalWidth, h: img.naturalHeight }),
-      { once: true }
-    );
-  }
+  // Dim while the new bytes arrive so the swap never shows a blank stage.
+  // `complete` is true synchronously for cached images, so nothing flickers
+  // when the neighbor preload already landed.
+  img.classList.toggle('loading', !img.complete);
+  img.addEventListener(
+    'load',
+    () => {
+      img.classList.remove('loading');
+      if (!dims) _photoDims.set(p.src, { w: img.naturalWidth, h: img.naturalHeight });
+    },
+    { once: true }
+  );
+  img.addEventListener('error', () => img.classList.remove('loading'), { once: true });
   document.getElementById('photoviewer-count').textContent =
     `${idx + 1} / ${photos.length}`;
   document.getElementById('photoviewer-caption-text').textContent =
@@ -1268,7 +1288,7 @@ function renderPhoto() {
     strip.querySelectorAll('.photoviewer-thumb').forEach((el, i) => {
       const active = i === idx;
       el.classList.toggle('active', active);
-      if (active) el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+      if (active) el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: scrollBehavior() });
     });
   }
 
@@ -1291,26 +1311,51 @@ function renderPhoto() {
   });
 }
 
-// Touch swipe on the photoviewer stage. Horizontal swipe > 50px → navigate.
-// Filtered to pointerType === 'touch' so mouse drags on desktop don't trigger.
-// touch-action: pan-y in CSS allows vertical scroll to bypass this.
+// Touch swipe on the photoviewer stage. The photo tracks the finger 1:1
+// and commits on release by velocity sign, falling back to distance for
+// a slow drag. The set loops, so there is no edge to rubber-band against.
+// Filtered to touch so mouse drags on desktop don't trigger.
+// touch-action: pan-y keeps vertical scroll native.
 (function attachSwipe() {
   const stage = document.getElementById('photoviewer-stage');
-  if (!stage) return;
+  const img = document.getElementById('photoviewer-img');
+  if (!stage || !img) return;
   let startX = null;
+  let lastX = 0;
+  let lastT = 0;
+  let vx = 0; // px/ms, smoothed
   stage.addEventListener('pointerdown', (e) => {
     if (e.pointerType !== 'touch') return;
-    startX = e.clientX;
+    startX = lastX = e.clientX;
+    lastT = e.timeStamp;
+    vx = 0;
+    img.classList.add('dragging');
+    try {
+      stage.setPointerCapture(e.pointerId);
+    } catch {}
   });
-  stage.addEventListener('pointerup', (e) => {
-    if (e.pointerType !== 'touch' || startX === null) return;
-    const dx = e.clientX - startX;
+  stage.addEventListener('pointermove', (e) => {
+    if (startX === null) return;
+    const dt = e.timeStamp - lastT || 1;
+    vx = 0.7 * vx + 0.3 * ((e.clientX - lastX) / dt);
+    lastX = e.clientX;
+    lastT = e.timeStamp;
+    img.style.transform = `translateX(${e.clientX - startX}px)`;
+  });
+  const release = (commit) => {
+    if (startX === null) return;
+    const dx = lastX - startX;
     startX = null;
-    if (Math.abs(dx) > 50) navigatePhoto(dx < 0 ? 1 : -1);
-  });
-  stage.addEventListener('pointercancel', () => {
-    startX = null;
-  });
+    img.classList.remove('dragging');
+    img.style.transform = '';
+    if (!commit) return;
+    const fast = Math.abs(vx) > 0.4;
+    const far = Math.abs(dx) > 60;
+    if (fast) navigatePhoto(vx < 0 ? 1 : -1);
+    else if (far) navigatePhoto(dx < 0 ? 1 : -1);
+  };
+  stage.addEventListener('pointerup', () => release(true));
+  stage.addEventListener('pointercancel', () => release(false));
 })();
 
 function navigatePhoto(delta) {
@@ -1460,7 +1505,7 @@ document.addEventListener('keydown', (e) => {
     const factor = e.repeat ? 0.4 : 0.9;
     scroller.scrollBy({
       top: dir * scroller.clientHeight * factor,
-      behavior: e.repeat ? 'auto' : 'smooth',
+      behavior: e.repeat ? 'auto' : scrollBehavior(),
     });
   }
 });
@@ -1575,7 +1620,7 @@ async function renderProjectsList(ui, { featuredOnly = false } = {}) {
 function renderThemeList(ui) {
   const current = document.body.dataset.theme || THEMES[0].name;
   const rows = THEMES.map((t) => {
-    const swatches = [t.accent, t.yellow, t.violet, t.cyan, t.pink, t.red]
+    const swatches = [t.bg, t.fg, t.dim, t.accent]
       .map(
         (c) => `<span class="theme-swatch" style="background:${c}"></span>`
       )
