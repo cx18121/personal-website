@@ -613,9 +613,7 @@ function renderTravelsList(ui) {
 
 // ── markdown reader ──────────────────────────────────────────────
 // Parses /content/projects/{name}.md (frontmatter + body) and renders
-// into the reader modal. One custom fenced directive:
-//   ```decisions                   → numbered decision list
-// Project screenshots use plain markdown image syntax; click any to open
+// into the reader modal. Project screenshots use plain markdown image syntax; click any to open
 // the photoviewer at full-screen (see attachProjectPhotoHandlers below).
 function parseFrontmatter(text) {
   const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
@@ -634,44 +632,6 @@ function parseFrontmatter(text) {
     }
   }
   return { fm, body: m[2] };
-}
-
-function parseFenceParams(infoString) {
-  const tokens = (infoString || '').trim().split(/\s+/);
-  const lang = tokens.shift() || '';
-  const params = {};
-  for (const t of tokens) {
-    const eq = t.indexOf('=');
-    if (eq < 0) {
-      params[t] = true;
-      continue;
-    }
-    const k = t.slice(0, eq);
-    let v = t.slice(eq + 1);
-    if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1);
-    params[k] = v;
-  }
-  return { lang, params };
-}
-
-function renderDecisionsBlock(body) {
-  // Each non-empty line is: headline | body (both may contain inline md)
-  const items = body
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const sep = line.indexOf('|');
-      const head = (sep < 0 ? line : line.slice(0, sep)).trim();
-      const rest = (sep < 0 ? '' : line.slice(sep + 1)).trim();
-      const headHtml = typeof marked !== 'undefined' ? marked.parseInline(head) : escapeHtml(head);
-      const bodyHtml = typeof marked !== 'undefined' ? marked.parseInline(rest) : escapeHtml(rest);
-      return `<div class="item"><div><div class="head">${headHtml}</div>${
-        rest ? `<div class="body">${bodyHtml}</div>` : ''
-      }</div></div>`;
-    })
-    .join('');
-  return `<div class="decisions">${items}</div>`;
 }
 
 // Image-path resolver. Short paths (no slash, no http) in project markdown
@@ -709,22 +669,6 @@ function configureMarked() {
   if (typeof marked === 'undefined') return;
   marked.use({
     renderer: {
-      // Marked v12 inconsistency: renderer overrides may be invoked with
-      // either a token object or positional args. Same defense pattern as
-      // the image renderer below.
-      code(textOrToken, infostring) {
-        let text, lang;
-        if (textOrToken && typeof textOrToken === 'object') {
-          text = textOrToken.text;
-          lang = textOrToken.lang;
-        } else {
-          text = textOrToken;
-          lang = infostring;
-        }
-        const { lang: base } = parseFenceParams(lang);
-        if (base === 'decisions') return renderDecisionsBlock(text);
-        return false; // fall through to default
-      },
       // Marked v12 calls this with positional args (href, title, text), but
       // the API has also drifted to passing a token object in some versions.
       // Accept either shape so the renderer stays stable across upgrades.

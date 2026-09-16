@@ -13,20 +13,18 @@ live: https://skyops-ai.vercel.app/dashboard
 repo: https://github.com/erics118/skyops
 ---
 
-An AI-powered charter flight ops platform that parses booking requests from emails and automates flight quoting, routing, and pricing, and provides suggestions to improve plane management.
+A charter flight ops tool. It reads booking requests out of emails, builds the quote and routing, and points out where the fleet is sitting idle.
 
-![skyops operations dashboard](hero "operations overview: pipeline, fleet health, and live operations map")
+![skyops dashboard](hero)
 
 ## why
 
-Built for the NYU startup week hackathon. We realized that charter operators waste time and lose potential revenue due to fragmented data, manual routing, and empty legs. They depend on humans for a lot of the work, leading to potential losses and errors. This also leads to suboptimal routing, underutilized aircraft, and costly empty-leg flights. We saw an opportunity to create a centralized decision-making platform.
+Built for the NYU startup week hackathon. We talked to a few charter operators and the pattern was the same everywhere: requests come in by email, someone retypes them into a spreadsheet, quotes get built by hand, and planes fly back empty because nobody is looking at the whole fleet at once. We wanted one screen that did all of that.
 
 ## how it works
 
-When a new charter request comes in, the system extracts the key trip details: route, date and time, passenger count, aircraft preferences, client information, and special requirements. Users can
-review and edit the extracted fields before moving the request into quoting.
+When a request email comes in, Claude pulls out the trip details: route, dates, passenger count, aircraft preference, client, and anything unusual. You check the fields and fix anything it got wrong before it goes to quoting.
 
-From there, SkyOps helps build the quote using aircraft category, route distance, fuel estimates, FBO fees, repositioning costs, catering, permits, margin, and tax. The quote is generated with a clear cost breakdown, so operators can understand exactly how the final price was calculated.
+The quote is built from aircraft category, distance, fuel, FBO fees, repositioning, catering, permits, margin, and tax, with every line shown so the operator can see where the number came from.
 
-The dashboard also tracks operational performance over time. Operators can see open quotes, confirmed trips, recent activity, aircraft utilization, idle aircraft, capacity gaps, demand forecasts, and
-recommendations for repositioning or maintenance windows.
+The dashboard shows open quotes, confirmed trips, utilization per aircraft, and which planes are idle, and suggests repositioning or maintenance windows when there's a gap.

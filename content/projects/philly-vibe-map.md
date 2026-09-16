@@ -25,18 +25,18 @@ The inspiration for this was neighborhood maps that I'd seen online, like [nyt m
 
 ## how it works
 
-The pipeline fine-tunes DistilBERT with LoRA adapters for neighborhood-level sentiment classification, allowing the model to learn local review language without fully retraining the base transformer.
+There are two models. A DistilBERT fine-tuned with LoRA does sentiment on each review. LoRA meant I could train it on Philly review language without retraining the whole thing.
 
-In parallel, the 1.1M Yelp reviews are embedded with a sentence-transformer model, indexed with FAISS for efficient similarity search, and clustered with BERTopic to surface recurring neighborhood vibes from review text.
+Separately, all 1.1M reviews are embedded with a sentence-transformer, indexed in FAISS, and clustered with BERTopic. The clusters are the "vibes", recurring themes that show up across reviews.
 
-Cluster outputs and sentiment predictions are aggregated across 157 Philadelphia neighborhoods, producing scores across six vibe dimensions, which are then rendered on the map.
+Sentiment and cluster results get rolled up across 157 neighborhoods into six vibe scores each, and those are what the map colors.
 
 ![neighborhood vibe breakdown](detail)
 
-There's also a search bar that lets you find neighborhoods by feeling. Matching neighborhoods get highlighted on the map.
+There's also a search bar. Type a feeling and the neighborhoods that match light up.
 
-![search neighborhoods by feeling](search)
+![searching by feeling](search)
 
-A temporal slider lets you scrub through years to see how neighborhoods have shifted character over time.
+The slider at the bottom scrubs through years so you can watch neighborhoods change.
 
-![year-over-year character drift](timeline)
+![neighborhoods over time](timeline)

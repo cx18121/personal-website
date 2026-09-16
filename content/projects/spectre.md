@@ -23,18 +23,16 @@ This was originally built for the spring 2026 Cornell Claude Hackathon. We built
 
 ## how it works
 
-Each player's phone runs MediaPipe in the browser to extract pose keypoints, streamed to the Rust engine over WebSocket. The engine resolves keypoints into game-state (hit detection, HP, round transitions) and broadcasts state to the spectator-facing Arena view, which renders the two fighters as silhouettes.
+Each phone runs MediaPipe in the browser to get pose keypoints and streams them to a Rust engine over WebSocket. The engine turns keypoints into game state (hit detection, HP, rounds) and broadcasts it to the Arena, a separate page that draws both fighters as silhouettes so you can put it on a TV or laptop.
 
 ![round results](ko)
 
-The Commentator is Claude generating live play-by-play, voiced by ElevenLabs and timed against significant game events.
+The commentator is Claude doing live play-by-play, voiced by ElevenLabs, triggered off big moments like hits and knockouts.
 
-![claude-generated live commentary](commentary)
+![live commentary](commentary)
 
 ## decisions
 
-```decisions
-Rust engine over the original Python server | replacing the Python backend at v1.0 gave deterministic hit detection and tighter latency budgets
-Explicit message seams between components | engine, mobile controller, arena, shared types; polyglot only works when boundaries are crisp
-Spectator-facing render is a separate surface | the Arena is its own app rather than embedded in either phone, so a TV/laptop can host the match
-```
+The first version had a Python server. I rewrote it in Rust for v1.0 because hit detection needed to be deterministic and the Python version couldn't keep latency low enough for a fighting game.
+
+The engine, the phone controller, and the Arena are separate apps that only talk through a shared set of message types. That's what made mixing Rust and TypeScript workable.

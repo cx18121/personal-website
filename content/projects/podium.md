@@ -12,7 +12,7 @@ live: https://podium-speech-practice.vercel.app/
 repo: https://github.com/cx18121/podium
 ---
 
-A browser-based presentation practice tool. Records your webcam and microphone inputs, then scores your delivery based on metrics including eye contact, filler words, and pacing, using on-device ML/CV models.
+A presentation practice tool that runs in the browser. It records your webcam and mic, then scores your delivery on eye contact, filler words, pacing, and a few other things, all with on-device models.
 
 ![podium practice](hero)
 
@@ -26,10 +26,10 @@ Before starting, you set up the camera and mic, pick a topic, and choose a durat
 
 ![session setup](setup)
 
-The browser then captures video and audio locally. 6 behavioral dimensions are analyzed in real time via a Web Worker pipeline orchestrating 3 concurrent MediaPipe models for gaze detection, gesture tracking, and expressiveness scoring. Web Speech API and Whisper transcribe the audio to detect pacing, filler words (taking into account word context), and pauses. A weighted scoring engine combines these metrics into a composite score.
+Video and audio stay in the browser. Three MediaPipe models run in a Web Worker at the same time, one each for gaze, gestures, and facial expressiveness. The Web Speech API and Whisper transcribe the audio, which is how it catches pacing, pauses, and filler words (with enough context to tell "like" the filler from "like" the verb). Six metrics total, weighted into one score at the end.
 
-![post-session delivery breakdown](review)
+![the breakdown after a session](review)
 
-There's also a github-style activity tracker using sessions that are persisted locally in IndexedDB. Nothing leaves the browser.
+There's a GitHub-style activity grid too. Sessions are saved in IndexedDB, so nothing leaves the browser.
 
-![practice activity over time](history)
+![practice history](history)

@@ -23,6 +23,6 @@ I saw that ai-generated brainrot content was getting crazy amounts of views on y
 
 ## how it works
 
-The content backlog is populated by scrapers: Reddit via public reddit.com/.json endpoints, and X/Twitter via Playwright against cookie-authenticated home feed/profile pages. Scraped posts go through a CLI workflow (scrape -> review -> generate -> run-cycle). Claude adapts Reddit posts into short, voice-friendly scripts; tweet videos narrate the tweet text directly. ElevenLabs renders narration with timestamps; FFmpeg assembles 1080x1920 videos. Storytelling videos use gameplay clips plus subtitles; tweet videos use a Playwright-rendered X template. Finished videos are then automatically uploaded through YouTube and Instagram APIs. Video states are stored in SQLite to help with collecting video analytics.
+Scrapers fill a backlog: Reddit through the public .json endpoints, X through Playwright logged in with my cookies. From there it's a CLI flow of scrape, review, generate, run. Claude rewrites Reddit posts into short scripts that sound okay read aloud; tweet videos just read the tweet. ElevenLabs does the voice with word timestamps, and FFmpeg puts together a 1080x1920 video. Story videos get gameplay footage and subtitles, tweet videos get a screenshot of the tweet rendered with Playwright. Finished videos upload through the YouTube and Instagram APIs, and everything is tracked in SQLite so I can pull view counts later.
 
 Got over 500k views from uploading these videos but decided to stop uploading and work on something with more social impact

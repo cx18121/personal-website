@@ -632,38 +632,6 @@ a:hover {
   margin: var(--s1) 0 var(--s6);
 }
 
-/* fenced ```decisions``` blocks — numbered editorial layout */
-.reader-body .decisions {
-  counter-reset: decision;
-  margin: 0 0 1em;
-}
-.reader-body .decisions .item {
-  display: grid;
-  grid-template-columns: 48px 1fr;
-  column-gap: var(--s4);
-  padding: var(--s4) 0;
-  border-top: 1px solid var(--mute);
-}
-.reader-body .decisions .item:last-child {
-  border-bottom: 1px solid var(--mute);
-}
-.reader-body .decisions .item::before {
-  counter-increment: decision;
-  content: 'D' counter(decision, decimal-leading-zero);
-  font-family: var(--mono);
-  color: var(--dim);
-  font-weight: 600;
-  font-size: var(--fs-xs);
-  padding-top: 6px;
-}
-.reader-body .decisions .head {
-  font-weight: 600;
-  margin-bottom: var(--s1);
-}
-.reader-body .decisions .body {
-  color: var(--dim);
-}
-
 /* Screenshots sit on a recessed panel that eases the bright shot into the
    dark page. Radii are concentric: outer 12 = inner 4 + 8 padding. */
 .reader-body figure.full-bleed {

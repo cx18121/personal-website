@@ -9,7 +9,7 @@ stack:
 repo: https://github.com/cx18121/vulnscan
 ---
 
-A CLI tool that analyzes Python source files for security vulnerabilities using AST traversal, with AI-powered fix suggestions via the Claude API.
+A CLI that walks the AST of Python files looking for security problems and asks Claude to suggest a fix for each one.
 
 ## why
 
@@ -17,4 +17,4 @@ built to test some stuff out
 
 ## how it works
 
-Each source file is parsed into an AST and walked for known dangerous patterns: unsafe deserialization, SQL string concatenation, hardcoded secrets, weak hashing, shell-true subprocess calls. Findings are classified by severity and emitted with file/line context. Each finding is sent to Claude alongside the surrounding code for a fix suggestion which the user reviews and applies changes manually rather than auto-patching.
+Each file is parsed into an AST and checked for the usual suspects: pickle on untrusted input, SQL built by string concatenation, hardcoded secrets, MD5 and SHA1, subprocess with shell=True. Findings get a severity and a file and line. Each one is sent to Claude with the surrounding code for a suggested fix, which you apply yourself. It doesn't patch anything automatically.
