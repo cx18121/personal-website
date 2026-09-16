@@ -65,17 +65,17 @@ export const ABOUT = `Hi, I'm Charlie. I study CS and Stats at Cornell Universit
 
 I love building full-stack AI apps and working on agent harnesses.
 
-I'm also currently a software engineer at Pango (YC S26).`;
+I'm currently a software engineer at Pango (YC S26).`;
 
 export const CONTACT = `email     <button type="button" class="copy" data-copy="cx267@cornell.edu">cx267@cornell.edu</button><span class="copy-status muted" aria-live="polite"></span>
 github    <a href="https://github.com/cx18121" target="_blank" rel="noreferrer">github.com/cx18121</a>
 linkedin  <a href="https://www.linkedin.com/in/charles-xue/" target="_blank" rel="noreferrer">linkedin.com/in/charles-xue</a>`;
 
 export const COMMANDS = [
-  { cmd: '/about', desc: 'abt me' },
+  { cmd: '/about', desc: '' },
   { cmd: '/projects', desc: 'some things I’ve built' },
   { cmd: '/contact', desc: 'how to reach me' },
-  { cmd: '/travels', desc: "some places I've visited & want to visit" },
+  { cmd: '/travels', desc: 'some places I’ve visited & want to visit' },
   { cmd: '/theme', desc: 'change the color scheme' },
   { cmd: '/clear', desc: 'clear the screen' },
 ];
