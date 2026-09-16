@@ -1,37 +1,12 @@
-/* Self-hosted Newsreader (variable weight axis, 400-500 used) — replaces the
-   Google Fonts link to drop two third-party connections + a render-blocking
-   stylesheet. Files in /fonts; vietnamese subset omitted (unused). */
+/* Geist Mono, self-hosted variable face (100 to 900), latin. One family
+   for the whole site so the measure and ch alignment hold on every OS.
+   OFL 1.1, see /fonts/OFL-geist.txt. */
 @font-face {
-  font-family: 'Newsreader';
+  font-family: 'Geist Mono';
   font-style: normal;
-  font-weight: 400 500;
+  font-weight: 100 900;
   font-display: swap;
-  src: url('/fonts/newsreader-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: 'Newsreader';
-  font-style: normal;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('/fonts/newsreader-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-@font-face {
-  font-family: 'Newsreader';
-  font-style: italic;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('/fonts/newsreader-italic-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: 'Newsreader';
-  font-style: italic;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('/fonts/newsreader-italic-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  src: url('/fonts/geist-mono.woff2') format('woff2');
 }
 
 /* ── tokens ─────────────────────────────────────────────────────── */
@@ -45,15 +20,14 @@
   --mute: #414868;
   --red: #f7768e;
 
-  --mono: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  --serif: 'Newsreader', Georgia, serif;
+  --mono: 'Geist Mono', 'SF Mono', Menlo, Consolas, monospace;
 
   /* type scale */
   --fs-xs: 12px;
   --fs-sm: 12px;
   --fs-md: 14px;
   --fs-h3: 15px;
-  --fs-lg: 16px;
+  --fs-lg: 15px;
   --fs-h2: 18px;
   --fs-xl: 22px;
 
@@ -68,7 +42,7 @@
 
   --gutter: 18px;    /* terminal surface horizontal padding */
   --measure: 640px;  /* terminal column width, ~72ch at 14px mono */
-  --prose: 56ch;     /* reader body text cap, ~74 chars in Newsreader */
+  --prose: 68ch;     /* reader body text cap */
   --pane-pad: 32px;  /* reader + photoviewer inner gutter */
 
   --r-sm: 4px;
@@ -586,9 +560,8 @@ button {
 }
 
 .reader-body {
-  font-family: var(--serif);
   font-size: var(--fs-lg);
-  line-height: 1.75;
+  line-height: 1.7;
   min-width: 0;
   text-wrap: pretty;
 }
@@ -605,10 +578,6 @@ button {
 .reader-body p {
   margin: 0 0 1em;
 }
-.reader-body a {
-  text-underline-offset: 0.15em;
-  text-decoration-thickness: 1px;
-}
 .reader-body ul {
   margin: 0 0 1em;
   padding-left: 0;
@@ -620,10 +589,13 @@ button {
 .reader-body strong {
   font-weight: 600;
 }
+.reader-body em {
+  font-style: normal;
+  color: var(--dim);
+}
 .reader-body h1,
 .reader-body h2,
 .reader-body h3 {
-  font-family: var(--mono);
   font-weight: 600;
   line-height: 1.25;
   margin: var(--s8) 0 var(--s3);
@@ -643,7 +615,6 @@ button {
   margin-top: 0;
 }
 .reader-body .proj-tagline {
-  font-family: var(--mono);
   font-size: var(--fs-sm);
   color: var(--dim);
   margin: var(--s1) 0 var(--s6);
@@ -669,7 +640,6 @@ button {
   cursor: zoom-in;
 }
 .reader-body figure.full-bleed figcaption {
-  font-family: var(--mono);
   font-size: var(--fs-sm);
   color: var(--dim);
   margin-top: var(--s2);
@@ -681,13 +651,11 @@ button {
   border: 1px solid var(--mute);
   border-radius: var(--r-md);
   padding: var(--s3) var(--s4);
-  font-family: var(--mono);
   font-size: var(--fs-sm);
   line-height: 1.6;
   overflow-x: auto;
 }
 .reader-body code {
-  font-family: var(--mono);
   font-size: 0.9em;
   background: var(--hi);
   padding: 1px 5px;
@@ -721,7 +689,6 @@ button {
   grid-template-columns: 8ch 1fr;
   gap: var(--s1) var(--s4);
   margin: var(--s6) 0 0;
-  font-family: var(--mono);
   font-size: var(--fs-sm);
   max-width: 60ch;
 }
@@ -779,7 +746,6 @@ button {
 }
 .reader-body .trav-photos-btn {
   font: inherit;
-  font-family: var(--mono);
   font-size: var(--fs-sm);
   color: var(--fg);
   background: transparent;
