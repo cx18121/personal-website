@@ -591,19 +591,19 @@ function renderTravelsList(ui) {
   const visitedRows = TRAVELS.visited
     .map(
       (t) =>
-        `<div class="travel-row"><a class="travel-link" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a><span class="travel-date">${escapeHtml(t.endMonth ? `${t.month}–${t.endMonth}` : t.month)} ${t.year}</span></div>`
+        `<div class="row-sel travel-row"><a class="travel-link" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a><span class="travel-date">${escapeHtml(t.endMonth ? `${t.month}–${t.endMonth}` : t.month)} ${t.year}</span></div>`
     )
     .join('');
   const wishRows = TRAVELS.wishlist
     .map(
       (t) =>
-        `<div class="travel-row"><a class="travel-link" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a></div>`
+        `<div class="row-sel travel-row"><a class="travel-link" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a></div>`
     )
     .join('');
   const wrap = ui.block(
     `<div class="travels-grid">` +
-      `<div class="travels-col"><div class="section-head">─── visited ───</div>${visitedRows}</div>` +
-      `<div class="travels-col"><div class="section-head">─── wishlist ───</div>${wishRows}</div>` +
+      `<div class="travels-col"><div class="section-head">visited</div>${visitedRows}</div>` +
+      `<div class="travels-col"><div class="section-head">wishlist</div>${wishRows}</div>` +
       `</div>`
   );
   attachListNav([...wrap.querySelectorAll('.travel-row')]);
@@ -611,9 +611,8 @@ function renderTravelsList(ui) {
 
 // ── markdown reader ──────────────────────────────────────────────
 // Parses /content/projects/{name}.md (frontmatter + body) and renders
-// into the reader modal. Custom fenced directives:
-//   ```terminal title="~/x"       → terminal frame
-//   ```gallery layout=strip        → horizontal-scroll figure strip
+// into the reader modal. One custom fenced directive:
+//   ```decisions                   → numbered decision list
 // Project screenshots use plain markdown image syntax; click any to open
 // the photoviewer at full-screen (see attachProjectPhotoHandlers below).
 function parseFrontmatter(text) {
@@ -653,25 +652,7 @@ function parseFenceParams(infoString) {
   return { lang, params };
 }
 
-function renderTerminalBlock(body, params) {
-  const title = params.title || 'terminal';
-  // Minimal token coloring: lines beginning with `$ ` get an accent-colored prompt.
-  const lines = body
-    .split('\n')
-    .map((line) => {
-      if (line.startsWith('$ ')) {
-        return `<span style="color:var(--accent)">$</span> <span style="color:var(--yellow)">${escapeHtml(line.slice(2))}</span>`;
-      }
-      return escapeHtml(line);
-    })
-    .join('\n');
-  return `<div class="term-frame">
-    <div class="bar"><span class="title">${escapeHtml(title)}</span></div>
-    <pre>${lines}</pre>
-  </div>`;
-}
-
-function renderDecisionsBlock(body, _params) {
+function renderDecisionsBlock(body) {
   // Each non-empty line is: headline | body (both may contain inline md)
   const items = body
     .split('\n')
@@ -689,26 +670,6 @@ function renderDecisionsBlock(body, _params) {
     })
     .join('');
   return `<div class="decisions">${items}</div>`;
-}
-
-function renderGalleryBlock(body, params) {
-  // Each non-empty line is: src | caption
-  const figures = body
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [src, ...rest] = line.split('|').map((s) => s.trim());
-      const caption = rest.join('|');
-      const resolved = resolveImagePath(src);
-      return `<figure>
-        <img src="${escapeHtml(resolved)}" alt="${escapeHtml(caption)}" loading="lazy" decoding="async" />
-        ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}
-      </figure>`;
-    })
-    .join('');
-  const layout = params.layout || 'strip';
-  return `<div class="strip" data-layout="${escapeHtml(layout)}">${figures}</div>`;
 }
 
 // Image-path resolver. Short paths (no slash, no http) in project markdown
@@ -756,10 +717,8 @@ function configureMarked() {
           text = textOrToken;
           lang = infostring;
         }
-        const { lang: base, params } = parseFenceParams(lang);
-        if (base === 'terminal') return renderTerminalBlock(text, params);
-        if (base === 'gallery') return renderGalleryBlock(text, params);
-        if (base === 'decisions') return renderDecisionsBlock(text, params);
+        const { lang: base } = parseFenceParams(lang);
+        if (base === 'decisions') return renderDecisionsBlock(text);
         return false; // fall through to default
       },
       // Marked v12 calls this with positional args (href, title, text), but
@@ -802,27 +761,25 @@ function renderMarkdown(body, { imageBase = null } = {}) {
   }
 }
 
+// Sidebar rows are key/value pairs; `.item` children stack on desktop and
+// flow inline on narrow screens (see the 720px rules in styles.css).
+function sidebarRow(label, items) {
+  const val = items.map((i) => `<span class="item">${i}</span>`).join('');
+  return `<div class="row"><div class="label">${label}</div><div class="val">${val}</div></div>`;
+}
+
 function renderSidebar(fm) {
   const rows = [];
-  if (fm.shipped)
-    rows.push(
-      `<div class="row"><div class="label">shipped</div><div class="val">${escapeHtml(fm.shipped)}</div></div>`
-    );
-  if (Array.isArray(fm.stack) && fm.stack.length) {
-    rows.push(
-      `<div class="row"><div class="label">stack</div><div class="val">${fm.stack.map(escapeHtml).join('<br/>')}</div></div>`
-    );
-  }
+  if (fm.shipped) rows.push(sidebarRow('shipped', [escapeHtml(fm.shipped)]));
+  if (Array.isArray(fm.stack) && fm.stack.length)
+    rows.push(sidebarRow('stack', fm.stack.map(escapeHtml)));
   const link = (href, label) =>
     `<a href="${escapeHtml(href)}" target="_blank" rel="noreferrer">${label}</a>`;
   const links = [];
-  if (fm.live) links.push(link(fm.live, 'live ↗'));
-  if (fm.repo) links.push(link(fm.repo, 'repo ↗'));
-  if (fm.release) links.push(link(fm.release, 'release ↗'));
-  if (links.length)
-    rows.push(
-      `<div class="row"><div class="label">links</div><div class="val">${links.join('<br/>')}</div></div>`
-    );
+  if (fm.live) links.push(link(fm.live, 'live'));
+  if (fm.repo) links.push(link(fm.repo, 'repo'));
+  if (fm.release) links.push(link(fm.release, 'release'));
+  if (links.length) rows.push(sidebarRow('links', links));
   return rows.join('');
 }
 
@@ -958,7 +915,7 @@ function attachProjectPhotoHandlers(projectName) {
 // titlebar to read the project name instead of the travel name.
 function openProjectPhotoViewer(photos, idx, projectName) {
   _photoState = { photos, idx, travelName: null, when: '' };
-  document.getElementById('photoviewer-cmd').textContent = projectName;
+  setOverlayTitle('photoviewer-cmd', 'projects', projectName);
   renderThumbs();
   renderPhoto();
   document.getElementById('photoviewer').hidden = false;
@@ -992,6 +949,13 @@ const travelReader = {
   },
 };
 
+// Titlebar reads as a path (projects/sparrow) so it doesn't duplicate the
+// body heading and says which kind of entry is open.
+function setOverlayTitle(id, kind, name) {
+  document.getElementById(id).innerHTML =
+    `<span class="path">${kind}/</span>${escapeHtml(name)}`;
+}
+
 async function openReader(adapter, name) {
   const list = adapter.list();
   const idx = list.findIndex((e) => e.name === name);
@@ -1003,7 +967,7 @@ async function openReader(adapter, name) {
   await loadMarked();
   const data = await adapter.loadEntry(name);
 
-  document.getElementById('reader-cmd').textContent = name;
+  setOverlayTitle('reader-cmd', adapter.kind === 'project' ? 'projects' : 'travels', name);
   document.getElementById('reader-count').textContent =
     `${idx + 1} / ${list.length}`;
   document.getElementById('reader-side').innerHTML = adapter.renderSidebar(
@@ -1048,17 +1012,13 @@ async function loadTravelMd(name) {
 }
 
 function renderTravelSidebar(currentName) {
-  const groupRow = (label) => `<div class="trav-group">${label}</div>`;
   const item = (t) => {
     const active = t.name === currentName ? ' active' : '';
-    return `<a class="trav-item${active}" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a>`;
+    return `<a class="item trav-item${active}" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a>`;
   };
-  return (
-    groupRow('visited') +
-    TRAVELS.visited.map(item).join('') +
-    groupRow('wishlist') +
-    TRAVELS.wishlist.map(item).join('')
-  );
+  const row = (label, list) =>
+    `<div class="row"><div class="label">${label}</div><div class="val">${list.map(item).join('')}</div></div>`;
+  return row('visited', TRAVELS.visited) + row('wishlist', TRAVELS.wishlist);
 }
 
 function renderTravelVisitedBody(fm, html) {
@@ -1113,9 +1073,7 @@ function renderTravelVisitedBody(fm, html) {
             })
             .join('')}
         </div>
-        <button class="trav-photos-btn" tabindex="-1" data-trav-photos="${name}">
-          <span class="trav-photos-label">[view all photos] ↗ <span class="muted">(${photos.length})</span></span>
-        </button>
+        <button class="trav-photos-btn" tabindex="-1" data-trav-photos="${name}">view all ${photos.length} photos</button>
       </div>`
     : '';
 
@@ -1229,7 +1187,7 @@ function openPhotoViewer(travelName, startIdx = 0) {
   if (!fm || !fm.photos || !fm.photos.length) return;
   const idx = Math.min(Math.max(0, startIdx | 0), fm.photos.length - 1);
   _photoState = { photos: fm.photos, idx, travelName, when: fm.when || '' };
-  document.getElementById('photoviewer-cmd').textContent = travelName;
+  setOverlayTitle('photoviewer-cmd', 'travels', travelName);
   renderThumbs();
   renderPhoto();
   const pv = document.getElementById('photoviewer');
@@ -1591,23 +1549,23 @@ async function renderProjectsList(ui, { featuredOnly = false } = {}) {
     const stack = Array.isArray(p.stack)
       ? shown + (rest > 0 ? ` <span class="proj-stack-more">+${rest}</span>` : '')
       : escapeHtml(p.stack || '');
-    return `<div class="proj-row"><div class="proj-tick">▸</div><div class="proj-body"><div class="proj-head">${status}<a class="proj-link" data-open="${p.name}" href="/projects/${encodeURIComponent(p.name)}">${p.name} →</a><span class="proj-tag">${escapeHtml(p.tagline || '')}</span></div><div class="proj-stack">${stack}</div></div></div>`;
+    return `<div class="row-sel proj-row"><div class="proj-body"><div class="proj-head">${status}<a class="proj-link" data-open="${p.name}" href="/projects/${encodeURIComponent(p.name)}">${p.name}</a><span class="proj-tag">${escapeHtml(p.tagline || '')}</span></div><div class="proj-stack">${stack}</div></div></div>`;
   };
   const featured = projects.filter((p) => p.featured);
   const others = projects.filter((p) => !p.featured);
   const sections = [];
   if (featured.length)
     sections.push(
-      (featuredOnly ? '' : `<div class="section-head">─── featured ───</div>`) +
+      (featuredOnly ? '' : `<div class="section-head">featured</div>`) +
         featured.map(renderRow).join('')
     );
   if (others.length && featuredOnly)
     sections.push(
-      `<div class="proj-more"><a class="key" data-run="/projects" href="/projects">+${others.length} more →</a></div>`
+      `<div class="proj-more"><a class="key" data-run="/projects" href="/projects">+${others.length} more</a></div>`
     );
   else if (others.length)
     sections.push(
-      `<div class="section-head">─── more ───</div>` +
+      `<div class="section-head">more</div>` +
         others.map(renderRow).join('')
     );
   const wrap = ui.block(sections.join(''));
@@ -1624,11 +1582,9 @@ function renderThemeList(ui) {
       .join('');
     const active =
       t.name === current ? `<span class="theme-active">active</span>` : '';
-    return `<div class="theme-row"><div class="proj-tick">▸</div><div class="theme-body"><a class="proj-link theme-link" data-theme="${t.name}" href="?cmd=theme+${encodeURIComponent(t.name)}">${t.name}</a><span class="theme-swatches">${swatches}</span>${active}</div></div>`;
+    return `<div class="row-sel theme-row"><div class="theme-body"><a class="proj-link theme-link" data-theme="${t.name}" href="?cmd=theme+${encodeURIComponent(t.name)}">${t.name}</a><span class="theme-swatches">${swatches}</span>${active}</div></div>`;
   }).join('');
-  const wrap = ui.block(
-    rows
-  );
+  const wrap = ui.block(rows);
   attachListNav([...wrap.querySelectorAll('.theme-row')]);
 }
 

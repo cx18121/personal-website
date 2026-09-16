@@ -34,6 +34,9 @@
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
+/* ── tokens ─────────────────────────────────────────────────────── */
+/* Every rule below spends from these. Palette tokens are mutated by
+   applyTheme(); the rest are fixed. Add a value here before using it. */
 :root {
   --bg: #1a1b26;
   --accent: #7aa2f7;
@@ -45,7 +48,47 @@
   --pink: #f7768e;
   --yellow: #e0af68;
   --red: #f7768e;
+
+  --mono: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --serif: 'Newsreader', Georgia, serif;
+
+  /* type scale */
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-h3: 15px;
+  --fs-lg: 16px;
+  --fs-h2: 18px;
+  --fs-xl: 22px;
+
+  /* 4px spacing scale */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 24px;
+  --s8: 32px;
+
+  --gutter: 18px;    /* terminal surface horizontal padding */
+  --pane-pad: 32px;  /* reader + photoviewer inner gutter */
+
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+
+  --t-fast: 120ms;
+  --t-overlay: 160ms;
+
+  --row-y: 6px;      /* vertical padding of selectable rows + ac items */
+
+  /* derived surfaces */
+  --hi: color-mix(in oklab, var(--fg) 8%, transparent);   /* row highlight */
+  --well: color-mix(in oklab, var(--bg) 78%, black);      /* recessed panel */
+  --focus: color-mix(in oklab, var(--accent) 45%, var(--mute));
+  --img-edge: 0 0 0 1px oklch(1 0 0 / 0.1);
 }
+
 * {
   box-sizing: border-box;
 }
@@ -53,16 +96,14 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 13px;
-  line-height: 1.5;
-}
-html,
-body {
   height: 100%;
   overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 body {
   display: flex;
@@ -74,48 +115,12 @@ body {
   min-height: 0;
 }
 
-.topline {
-  padding: 8px 18px 6px;
-  font-size: 13px;
-}
-.topline .cwd {
-  color: var(--violet);
+a {
+  color: var(--yellow);
   text-decoration: none;
 }
-.topline a.cwd:hover {
+a:hover {
   text-decoration: underline;
-}
-
-.main {
-  padding: 0 18px;
-  white-space: pre-wrap;
-  flex: 1;
-}
-.main .echo {
-  color: var(--accent);
-  margin-top: 10px;
-}
-.main .echo .slash {
-  color: var(--yellow);
-}
-.main .comment {
-  color: var(--dim);
-  margin-top: 10px;
-}
-.main .comment a {
-  color: var(--dim);
-  text-decoration: underline;
-  text-decoration-color: var(--mute);
-}
-.main .comment a:hover {
-  color: var(--yellow);
-}
-.main .block {
-  margin: 4px 0 6px;
-  padding-left: 14px;
-  border-left: 1px solid var(--mute);
-  line-height: 1.55;
-  text-wrap: pretty;
 }
 .muted {
   color: var(--dim);
@@ -126,17 +131,54 @@ body {
 .key {
   color: var(--yellow);
 }
-a {
-  color: var(--cyan);
-  text-decoration: none;
+
+/* ── terminal surface ───────────────────────────────────────────── */
+.topline {
+  padding: var(--s2) var(--gutter) var(--s1);
 }
-a:hover {
+.topline .cwd {
+  color: var(--fg);
+}
+
+.main {
+  padding: 0 var(--gutter);
+  white-space: pre-wrap;
+}
+.main .echo {
+  color: var(--accent);
+  margin-top: var(--s3);
+}
+.main .echo .slash {
+  color: var(--yellow);
+}
+.main .comment {
+  color: var(--dim);
+  margin-top: var(--s3);
+}
+.main .comment a {
+  color: var(--dim);
   text-decoration: underline;
+  text-decoration-color: var(--mute);
+}
+.main .comment a:hover {
+  color: var(--yellow);
+}
+/* Output block. The rule sits under the echo's chevron column and the
+   text starts at 2ch, on the same x as the command after "› ". */
+.main .block {
+  margin: var(--s1) 0 var(--s2);
+  padding-left: calc(2ch - 1px);
+  border-left: 1px solid var(--mute);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+.main .block .name {
+  font-weight: 700;
 }
 /* Copy-to-clipboard button rendered as a link (e.g. email in /contact). */
 .copy {
   all: unset;
-  color: var(--cyan);
+  color: var(--yellow);
   cursor: pointer;
   user-select: text;
 }
@@ -144,22 +186,124 @@ a:hover {
   text-decoration: underline;
 }
 
+.section-head {
+  color: var(--accent);
+  font-weight: 600;
+  margin: var(--s3) 0 var(--s1);
+}
+.section-head:first-child {
+  margin-top: 0;
+}
+
+/* Selectable rows (projects, themes, travels). One row shape; the
+   highlight bleeds 8px past the text so it doesn't hug the glyphs. */
+.row-sel {
+  display: flex;
+  gap: var(--s3);
+  align-items: baseline;
+  padding: var(--row-y) var(--s2);
+  margin-left: calc(-1 * var(--s2));
+  border-radius: var(--r-sm);
+  white-space: normal;
+}
+.list-active {
+  background: var(--hi);
+}
+
+.proj-body {
+  flex: 1;
+  min-width: 0;
+}
+.proj-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 var(--s3);
+}
+.proj-tag {
+  color: var(--fg);
+}
+.proj-stack {
+  color: var(--dim);
+  font-size: var(--fs-xs);
+  margin-top: 2px;
+}
+.proj-stack-more {
+  color: var(--mute);
+}
+.proj-more {
+  margin-top: var(--s2);
+}
+
+.proj-link,
+.travel-link {
+  cursor: pointer;
+  color: var(--yellow);
+  text-decoration: underline;
+  text-decoration-color: var(--mute);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--t-fast) ease-out;
+}
+.proj-link:hover,
+.travel-link:hover {
+  text-decoration-color: currentColor;
+}
+
+.theme-body {
+  display: flex;
+  gap: var(--s4);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.theme-link {
+  min-width: 14ch;
+}
+.theme-swatches {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.theme-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.theme-active {
+  color: var(--dim);
+  font-size: var(--fs-sm);
+}
+
+.travels-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(260px, 320px);
+  gap: var(--s8);
+}
+.travels-col {
+  min-width: 0;
+}
+.travel-date {
+  color: var(--dim);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+/* ── prompt + autocomplete ──────────────────────────────────────── */
 .promptouter {
-  padding: 10px 18px 4px;
+  padding: var(--s3) var(--gutter) var(--s1);
   position: relative;
-  background: var(--bg);
 }
 .promptbox {
   border: 1px solid var(--mute);
-  border-radius: 8px;
-  padding: 10px 14px;
+  border-radius: var(--r-md);
+  padding: 10px var(--s4);
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: var(--bg);
+  gap: 1ch;
+  transition: border-color var(--t-fast) ease-out;
 }
 .promptbox.focused {
-  border-color: var(--accent);
+  border-color: var(--focus);
 }
 .promptbox .chev {
   color: var(--accent);
@@ -179,15 +323,14 @@ a:hover {
 .autocomplete {
   position: fixed;
   background: var(--bg);
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  padding: 4px 0;
+  border: 1px solid var(--focus);
+  border-radius: var(--r-md);
+  padding: var(--s1) 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   display: none;
   z-index: 100;
   scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 .autocomplete::-webkit-scrollbar {
   display: none;
@@ -195,67 +338,46 @@ a:hover {
 .autocomplete.show {
   display: block;
 }
-/* Left padding puts the command column on the same x as the typed text in
-   the prompt below (chevron + gap), so suggestions read as completions. */
+/* Left padding = prompt padding + border + "› " so the command column
+   sits on the same x as the typed text below it. */
 .autocomplete .item {
-  padding: 5px 14px 5px 32px;
+  padding: var(--row-y) var(--s4) var(--row-y) calc(var(--s4) + 1px + 2ch);
   cursor: pointer;
   display: flex;
-  gap: 14px;
+  gap: var(--s4);
   align-items: baseline;
 }
 .autocomplete .item.active {
-  background: color-mix(in oklab, var(--fg) 8%, transparent);
-}
-/* keyboard-nav active row across renderable lists (projects, themes, travels).
-   Same tint as autocomplete .active for visual continuity; brighter tick so the
-   selection reads at a glance without restyling the whole row. */
-.list-active {
-  background: color-mix(in oklab, var(--fg) 8%, transparent);
-}
-.list-active .proj-tick {
-  opacity: 1;
+  background: var(--hi);
 }
 .autocomplete .item .cmd {
   color: var(--yellow);
-  min-width: 110px;
+  min-width: 14ch;
 }
 .autocomplete .item .desc {
   color: var(--dim);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
+/* ── footer ─────────────────────────────────────────────────────── */
 .footer {
-  padding: 6px 18px 14px;
-  font-size: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  padding: var(--s2) var(--gutter) var(--s4);
+  font-size: var(--fs-sm);
+  color: var(--dim);
 }
 .footer .statusrow {
   display: flex;
   align-items: center;
-  gap: 0;
+  justify-content: space-between;
 }
-.footer .statusrow .clock-block {
-  margin-left: auto;
+.footer .repo {
   color: var(--dim);
 }
-.footer .statusrow .clock-block .moon {
-  color: var(--cyan);
+.footer .repo:hover {
+  color: var(--fg);
 }
-.footer .statusrow .clock-block .mode {
-  color: var(--dim);
-}
-.footer .statusrow .clock-block .time {
-  color: var(--yellow);
-}
-.footer .statusrow .repo {
-  color: var(--violet);
-  text-decoration: none;
-}
-.footer .statusrow .repo:hover {
-  text-decoration: underline;
+.footer .time {
+  font-variant-numeric: tabular-nums;
 }
 
 .sr-only {
@@ -270,29 +392,54 @@ a:hover {
   border: 0;
 }
 
-/* ── reader (project pages, rendered from markdown) ─────────── */
-
-.reader[hidden] {
-  display: none;
-}
-.reader {
+/* ── overlays (reader + photoviewer) ────────────────────────────── */
+/* `hidden` stays the logical open/closed state for app.js. Visually the
+   overlay fades and the window settles along the same path in both
+   directions; visibility flips after the exit so nothing is clickable
+   mid-fade. */
+.reader,
+.photoviewer {
   position: fixed;
   inset: 0;
-  z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--s6);
+  transition:
+    opacity var(--t-overlay) ease-out,
+    visibility 0s linear;
+}
+.reader {
+  z-index: 200;
+}
+.photoviewer {
+  z-index: 300;
+  padding: var(--s4);
+}
+.reader[hidden],
+.photoviewer[hidden] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--t-overlay) ease-out,
+    visibility 0s linear var(--t-overlay);
+}
+.reader-window {
+  transition: transform var(--t-overlay) ease-out;
+}
+.reader[hidden] .reader-window,
+.photoviewer[hidden] .reader-window {
+  transform: translateY(6px) scale(0.985);
 }
 .reader-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
 }
-/* The blur draws focus to the modal but is the most expensive paint on
-   machines without GPU acceleration. Drop it for users who've opted into
-   "Reduce transparency" (the standard low-GPU-effects signal); everyone
-   else keeps it. */
+/* The blur is the most expensive paint on machines without GPU
+   acceleration. Drop it for users who've opted into "Reduce
+   transparency"; everyone else keeps it. */
 @media (prefers-reduced-transparency: no-preference) {
   .reader-backdrop {
     backdrop-filter: blur(2px);
@@ -307,103 +454,112 @@ a:hover {
   flex-direction: column;
   background: var(--bg);
   border: 1px solid var(--mute);
-  border-radius: 10px;
+  border-radius: var(--r-lg);
   overflow: hidden;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+.photoviewer-window {
+  max-width: 1600px;
+  height: min(95vh, 1100px);
 }
 .reader-titlebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 32px;
+  padding: 10px var(--pane-pad);
   border-bottom: 1px solid var(--mute);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .reader-titlebar .title {
-  color: var(--fg);
   font-weight: 600;
 }
-.reader-titlebar .muted {
+.reader-titlebar .title .path {
   color: var(--dim);
+  font-weight: 400;
+}
+.reader-titlebar .muted {
   font-variant-numeric: tabular-nums;
 }
 .reader-titlebar .right {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--s3);
 }
-/* X button. The 28px box overhangs the titlebar gutter by its own
-   padding so the glyph's right edge sits on the 32px content edge,
-   flush with the body column below. Mobile grows it to 44px. */
+/* X button. The 28px box overhangs the gutter by its own padding so the
+   glyph's right edge sits on the content edge. Mobile grows it to 44px. */
 .reader-close {
   all: unset;
   cursor: pointer;
   color: var(--dim);
-  font-size: 18px;
+  font-size: var(--fs-h2);
   line-height: 1;
   width: 28px;
   height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: -2px -8px -2px 0;
-  border-radius: 4px;
-  transition: color 0.12s ease, background-color 0.12s ease;
+  margin: -2px calc(-1 * var(--s2)) -2px 0;
+  border-radius: var(--r-sm);
+  transition:
+    color var(--t-fast) ease-out,
+    background-color var(--t-fast) ease-out;
 }
 .reader-close:hover {
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--hi);
 }
-.reader-close:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
+
 .reader-grid {
   display: grid;
   grid-template-columns: 200px 1fr;
-  gap: 32px;
-  padding: 28px 32px 40px;
+  gap: var(--s8);
+  padding: var(--s6) var(--pane-pad) var(--s8);
   overflow-y: auto;
   min-height: 0;
   flex: 1;
 }
+
+/* Sidebar: key/value rows in the same register as /contact. */
 .reader-side {
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1.7;
-  color: var(--dim);
-  border-right: 1px dashed var(--mute);
-  padding-right: 20px;
+  border-right: 1px solid var(--mute);
+  padding-right: var(--s5);
   position: sticky;
   top: 0;
   align-self: start;
 }
 .reader-side .row {
-  margin-bottom: 14px;
+  margin-bottom: var(--s3);
+}
+.reader-side .row:last-child {
+  margin-bottom: 0;
 }
 .reader-side .label {
-  color: var(--accent);
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  margin-bottom: 2px;
+  color: var(--dim);
 }
 .reader-side .val {
   color: var(--fg);
 }
-.reader-side .val.live {
-  color: var(--accent);
+.reader-side .val .item {
+  display: block;
 }
 .reader-side a {
   color: var(--cyan);
 }
+.reader-side .trav-item {
+  color: var(--fg);
+}
+.reader-side .trav-item.active {
+  color: var(--yellow);
+}
 
 .reader-body {
-  font-family: 'Newsreader', Georgia, serif;
-  font-size: 16px;
+  font-family: var(--serif);
+  font-size: var(--fs-lg);
   line-height: 1.75;
-  color: var(--fg);
   min-width: 0;
+  text-wrap: pretty;
 }
 .reader-body p {
   margin: 0 0 1em;
@@ -420,44 +576,34 @@ a:hover {
   margin-bottom: 0.4em;
 }
 .reader-body strong {
-  color: var(--fg);
   font-weight: 600;
-}
-.reader-body em {
-  font-style: italic;
-  color: var(--fg);
 }
 .reader-body h1,
 .reader-body h2,
 .reader-body h3 {
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-family: var(--mono);
   font-weight: 600;
-  color: var(--fg);
-  margin: 32px 0 14px;
+  margin: var(--s8) 0 var(--s3);
+  text-wrap: balance;
 }
 .reader-body h1 {
-  font-size: 22px;
+  font-size: var(--fs-xl);
 }
 .reader-body h2 {
-  font-size: 18px;
+  font-size: var(--fs-h2);
 }
 .reader-body h3 {
-  font-size: 15px;
+  font-size: var(--fs-h3);
 }
-.reader-body h1::before {
-  content: '# ';
-  color: var(--accent);
-}
-.reader-body h2::before {
-  content: '## ';
-  color: var(--accent);
-}
-.reader-body h3::before {
-  content: '### ';
-  color: var(--accent);
-}
-.reader-body h1:first-child {
+.reader-body h1:first-child,
+.reader-body .proj-title {
   margin-top: 0;
+}
+.reader-body .proj-tagline {
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+  margin: var(--s1) 0 var(--s6);
 }
 
 /* fenced ```decisions``` blocks — numbered editorial layout */
@@ -468,192 +614,37 @@ a:hover {
 .reader-body .decisions .item {
   display: grid;
   grid-template-columns: 48px 1fr;
-  column-gap: 18px;
-  padding: 16px 0;
-  border-top: 1px solid rgba(92, 88, 82, 0.4);
+  column-gap: var(--s4);
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--mute);
 }
 .reader-body .decisions .item:last-child {
-  border-bottom: 1px solid rgba(92, 88, 82, 0.4);
+  border-bottom: 1px solid var(--mute);
 }
 .reader-body .decisions .item::before {
   counter-increment: decision;
   content: 'D' counter(decision, decimal-leading-zero);
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-family: var(--mono);
   color: var(--accent);
   font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-xs);
   padding-top: 6px;
 }
 .reader-body .decisions .head {
   font-weight: 600;
-  color: var(--fg);
-  margin-bottom: 4px;
+  margin-bottom: var(--s1);
 }
 .reader-body .decisions .body {
   color: var(--dim);
 }
-.reader-body .decisions .body a {
-  color: var(--cyan);
-}
 
-.reader-body .proj-title {
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-weight: 600;
-  font-size: 22px;
-  margin: 0;
-  color: var(--fg);
-}
-.reader-body .proj-title::before {
-  content: '# ';
-  color: var(--accent);
-}
-.reader-body .proj-tagline {
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 12px;
-  color: var(--dim);
-  margin: 4px 0 24px;
-}
-
-.reader-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  padding: 10px 24px;
-  border-top: 1px solid var(--mute);
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 11px;
-}
-.reader-nav .nav-link {
-  color: var(--cyan);
-  text-decoration: none;
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-.reader-nav .nav-link:hover {
-  background: color-mix(in oklab, var(--cyan) 15%, transparent);
-}
-
-.section-head {
-  color: var(--accent);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  margin: 14px 0 6px;
-}
-.section-head:first-child {
-  margin-top: 0;
-}
-
-.proj-more {
-  margin-top: 8px;
-  padding-left: 28px;
-}
-.proj-row {
-  display: flex;
-  gap: 12px;
-  padding: 6px 0;
-  align-items: flex-start;
-  white-space: normal;
-}
-.proj-tick {
-  color: var(--accent);
-  opacity: 0.55;
-  font-size: 12px;
-  min-width: 16px;
-  padding-top: 2px;
-  user-select: none;
-}
-.proj-body {
-  flex: 1;
-  min-width: 0;
-}
-.proj-head {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.proj-head .proj-link {
-  font-size: 13.5px;
-}
-.proj-tag {
-  color: var(--fg);
-}
-.proj-stack {
-  color: var(--dim);
-  font-size: 11.5px;
-  margin-top: 2px;
-}
-.proj-stack-more {
-  color: var(--mute);
-}
-.main .block .name {
-  font-weight: 700;
-}
-
-.theme-row {
-  display: flex;
-  gap: 12px;
-  padding: 6px 0;
-  align-items: flex-start;
-}
-.theme-body {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.theme-link {
-  font-size: 13.5px;
-  min-width: 120px;
-  display: inline-block;
-}
-.theme-swatches {
-  display: inline-flex;
-  gap: 5px;
-  align-items: center;
-}
-.theme-swatch {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.theme-active {
-  color: var(--dim);
-  font-size: 11.5px;
-}
-
-.proj-link {
-  cursor: pointer;
-  color: var(--yellow);
-  text-decoration: underline;
-  text-decoration-color: var(--mute);
-  text-underline-offset: 3px;
-  padding: 1px 4px;
-  margin: 0 -4px;
-  border-radius: 3px;
-  transition:
-    background-color 0.12s ease,
-    text-decoration-color 0.12s ease;
-}
-.proj-link:hover {
-  background: color-mix(in oklab, var(--accent) 12%, transparent);
-  text-decoration-color: var(--accent);
-}
-
-/* Recessed-matte presentation: each screenshot sits on a slightly-darker
-   panel with a subtle inset shadow. The mount works as a transition zone
-   between the bright (often light-themed) screenshot and the dark page,
-   so the edge contrast isn't harsh on the eyes — composition does what
-   the old always-on brightness filter used to do. A gentle filter stays
-   for extra softness on light-themed shots; no hover behavior. */
+/* Screenshots sit on a recessed panel that eases the bright shot into the
+   dark page. Radii are concentric: outer 12 = inner 4 + 8 padding. */
 .reader-body figure.full-bleed {
-  margin: 28px 0;
-  background: color-mix(in oklab, var(--bg) 78%, black);
-  padding: 12px;
-  border-radius: 12px;
+  margin: var(--s6) 0;
+  background: var(--well);
+  padding: var(--s2);
+  border-radius: var(--r-lg);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 .reader-body figure.full-bleed img {
@@ -661,306 +652,114 @@ a:hover {
   height: auto;
   aspect-ratio: auto 16 / 9;
   display: block;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
+  box-shadow: var(--img-edge);
   filter: brightness(0.95) saturate(0.97);
   cursor: zoom-in;
 }
 .reader-body figure.full-bleed figcaption {
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 11.5px;
-  color: color-mix(in oklab, var(--fg) 70%, transparent);
-  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+  margin-top: var(--s2);
   text-align: center;
-  letter-spacing: 0.02em;
 }
 
-.reader-body .term-frame {
+.reader-body pre {
+  background: var(--well);
   border: 1px solid var(--mute);
-  border-radius: 8px;
-  overflow: hidden;
-  margin: 24px 0;
-  background: color-mix(in oklab, var(--bg) 75%, black);
-}
-.reader-body .term-frame .bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--mute);
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 11px;
-  color: var(--dim);
-}
-.reader-body .term-frame .bar .title {
-  color: var(--violet);
-}
-.reader-body .term-frame pre {
-  margin: 0;
-  padding: 14px 18px;
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.55;
-  color: var(--fg);
-  white-space: pre;
-  overflow-x: auto;
-}
-
-
-.reader-body .strip {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  padding: 4px 4px 16px;
-  margin: 24px -4px;
-  scroll-snap-type: x mandatory;
-}
-.reader-body .strip figure {
-  flex: 0 0 320px;
-  margin: 0;
-  scroll-snap-align: start;
-}
-.reader-body .strip img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  border-radius: 6px;
-  display: block;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-}
-.reader-body .strip figcaption {
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 11px;
-  color: var(--dim);
-  margin-top: 8px;
-}
-
-.reader-body pre:not(.term-frame pre) {
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid var(--mute);
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 12px;
+  border-radius: var(--r-md);
+  padding: var(--s3) var(--s4);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
   line-height: 1.6;
   overflow-x: auto;
-  color: var(--fg);
 }
 .reader-body code {
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-family: var(--mono);
   font-size: 0.9em;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 1px 6px;
-  border-radius: 4px;
-  color: var(--fg);
+  background: var(--hi);
+  padding: 1px 5px;
+  border-radius: var(--r-sm);
 }
 .reader-body pre code {
   background: transparent;
   padding: 0;
 }
 
-@media (max-width: 720px) {
-  .reader {
-    padding: 12px;
-  }
-  .reader-grid {
-    grid-template-columns: 1fr;
-    gap: 18px;
-    padding: 20px 18px 32px;
-  }
-  .reader-side {
-    border-right: none;
-    border-bottom: 1px dashed var(--mute);
-    padding-right: 0;
-    padding-bottom: 14px;
-    position: static;
-  }
-}
-
-@media (max-width: 640px) {
-  html,
-  body {
-    height: auto;
-    overflow: visible;
-  }
-  body {
-    font-size: 14px;
-  }
-  /* Honor iOS safe areas (notch / home-indicator). The footer pads from
-     the bottom inset so the status row never tucks behind the indicator;
-     the prompt also lifts above the inset so the input stays tappable. */
-  .footer {
-    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  }
-  .promptouter {
-    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px) * 0.4);
-  }
-  /* iOS Safari auto-zooms inputs whose computed font-size is <16px on
-     focus. The 13px terminal font reads fine elsewhere, but the prompt
-     input must be 16px+ to suppress that zoom. */
-  .promptbox input {
-    font-size: 16px;
-  }
-  .scrollarea {
-    overflow: visible;
-    flex: none;
-  }
-  .topline {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-  .main {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-  .promptouter {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-  .footer {
-    padding-left: 14px;
-    padding-right: 14px;
-    font-size: 11px;
-  }
-}
-
-/* ── /travels list ──────────────────────────────────────────────── */
-.travels-grid {
-  display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(260px, 320px);
-  gap: 32px;
-  margin-top: 4px;
-}
-.travels-col {
-  min-width: 0;
-}
-.travels-col .section-head {
-  margin-top: 0;
-}
-.travel-row {
+.reader-nav {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 2px 0;
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 13px;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s4);
+  padding: var(--s2) calc(var(--pane-pad) - var(--s2));
+  border-top: 1px solid var(--mute);
+  font-size: var(--fs-sm);
 }
-.travel-link {
-  color: var(--yellow);
-  text-decoration: underline;
-  text-decoration-color: var(--mute);
-  text-underline-offset: 3px;
+.reader-nav .nav-link {
+  color: var(--cyan);
+  padding: var(--s1) var(--s2);
+  border-radius: var(--r-sm);
+  transition: background-color var(--t-fast) ease-out;
 }
-.travel-link:hover {
-  color: var(--accent);
-}
-.travel-date {
-  color: var(--dim);
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-@media (max-width: 640px) {
-  .travels-grid {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-}
-
-/* ── /travels reader sidebar (nav, not metadata) ───────────────── */
-.reader-side .trav-group {
-  color: var(--accent);
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  margin: 16px 0 4px;
-}
-.reader-side .trav-group:first-child {
-  margin-top: 0;
-}
-.reader-side .trav-item {
-  display: block;
-  color: var(--dim);
+.reader-nav .nav-link:hover {
+  background: var(--hi);
   text-decoration: none;
-  padding: 2px 0 2px 6px;
-  border-left: 2px solid transparent;
-  margin-left: -2px;
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 12px;
-}
-.reader-side .trav-item:hover {
-  color: var(--fg);
-}
-.reader-side .trav-item.active {
-  color: var(--yellow);
-  border-left-color: var(--accent);
 }
 
-/* ── /travels reader body — fields & photos button ─────────────── */
+/* ── travel reader body ─────────────────────────────────────────── */
 .reader-body .trav-fields {
   display: grid;
-  grid-template-columns: 100px 1fr;
-  gap: 6px 16px;
-  margin: 24px 0 0;
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 13px;
+  grid-template-columns: 8ch 1fr;
+  gap: var(--s1) var(--s4);
+  margin: var(--s6) 0 0;
+  font-family: var(--mono);
+  font-size: var(--fs-md);
   max-width: 60ch;
 }
 .reader-body .trav-fields dt {
   color: var(--dim);
 }
 .reader-body .trav-fields dd {
-  color: var(--fg);
   margin: 0;
 }
-.reader-body .trav-route .trav-route-seg {
+.reader-body .trav-route-seg {
   white-space: nowrap;
 }
-.reader-body .trav-route .trav-route-sep {
+.reader-body .trav-route-sep {
   color: var(--dim);
 }
-.reader-body .trav-why {
-  /* Plain prose. Inherits Newsreader serif + var(--fg) from .reader-body —
-     same body style as visited entries, no special framing. */
-}
 .reader-body .trav-photos {
-  margin-top: 26px;
+  margin-top: var(--s6);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: flex-start;
+  gap: var(--s3);
 }
 .reader-body .trav-photos-strip {
-  position: relative;
+  align-self: stretch;
   display: flex;
-  gap: 6px;
+  gap: var(--s2);
   overflow-x: auto;
-  padding: 2px 0 10px;
-  /* Hide scrollbar across browsers — the right-edge fade is the affordance. */
-  scrollbar-width: none; /* Firefox */
-  /* right-edge fade hints at more content past the visible scroll. The
-     mask drops opacity to ~0 in the last 48px of the strip, which feels
-     like the photos extend beyond the frame instead of cutting off. */
+  padding: 2px 0 var(--s2);
+  scrollbar-width: none;
+  /* right-edge fade hints at more photos past the visible strip. */
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent);
           mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent);
 }
 .reader-body .trav-photos-strip::-webkit-scrollbar {
-  display: none; /* WebKit (Safari/Chrome) */
+  display: none;
 }
 .reader-body .trav-photos-thumb {
   all: unset;
   display: block;
   width: 120px;
   height: 80px;
-  border-radius: 3px;
-  border: 1px solid var(--mute);
+  border-radius: var(--r-sm);
+  box-shadow: var(--img-edge);
   flex: 0 0 auto;
   overflow: hidden;
   cursor: zoom-in;
-  transition: border-color 0.15s ease;
-}
-.reader-body .trav-photos-thumb:focus-visible {
-  outline: 1px solid var(--accent);
-  outline-offset: 2px;
 }
 .reader-body .trav-photos-thumb img {
   width: 100%;
@@ -968,51 +767,28 @@ a:hover {
   object-fit: cover;
   display: block;
   filter: saturate(0.95) brightness(0.92);
-  transition: filter 0.15s ease;
+  transition: filter var(--t-fast) ease-out;
 }
 .reader-body .trav-photos-thumb:hover img {
-  filter: saturate(1.05) brightness(1);
+  filter: none;
 }
 .reader-body .trav-photos-btn {
-  align-self: flex-start;
   font: inherit;
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 12.5px;
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
   color: var(--cyan);
   background: transparent;
   border: 1px solid var(--mute);
-  border-radius: 6px;
-  padding: 8px 14px;
+  border-radius: var(--r-md);
+  padding: var(--s2) var(--s3);
   cursor: pointer;
+  transition: border-color var(--t-fast) ease-out;
 }
 .reader-body .trav-photos-btn:hover {
   border-color: var(--cyan);
 }
-.reader-body .trav-photos-btn .muted {
-  color: var(--dim);
-}
-.reader-body .trav-photos-label {
-  color: var(--cyan);
-}
 
-/* ── photo viewer (reader-style framed) ────────────────────────── */
-.photoviewer[hidden] {
-  display: none;
-}
-.photoviewer {
-  position: fixed;
-  inset: 0;
-  z-index: 300;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.photoviewer-window {
-  width: 100%;
-  max-width: 1600px;
-  height: min(95vh, 1100px);
-}
+/* ── photo viewer ───────────────────────────────────────────────── */
 .photoviewer-stage {
   position: relative;
   flex: 1;
@@ -1020,13 +796,15 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 64px;
+  padding: var(--s6) 64px;
+  /* vertical page scroll still works; horizontal swipe is ours. */
+  touch-action: pan-y;
 }
 .photoviewer-photo {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 .photoviewer-arrow {
   position: absolute;
@@ -1037,50 +815,37 @@ a:hover {
   color: var(--dim);
   font-size: 28px;
   cursor: pointer;
-  padding: 12px 14px;
+  padding: var(--s3) var(--s4);
   font-family: inherit;
+  transition: color var(--t-fast) ease-out;
 }
 .photoviewer-arrow:hover {
   color: var(--fg);
 }
 .photoviewer-arrow.l {
-  left: 8px;
+  left: var(--s2);
 }
 .photoviewer-arrow.r {
-  right: 8px;
+  right: var(--s2);
 }
 .photoviewer-caption {
-  padding: 0 32px 20px;
-  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  font-size: 12.5px;
-  color: var(--fg);
+  padding: 0 var(--pane-pad) var(--s5);
+  font-size: var(--fs-sm);
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 16px;
+  gap: var(--s4);
 }
 .photoviewer-caption .muted {
-  color: var(--dim);
-  font-size: 11.5px;
   white-space: nowrap;
 }
-.photoviewer-caption:empty,
 .photoviewer-caption:has(> :first-child:empty + :empty) {
   display: none;
 }
-
-/* Stage gets touch-action so vertical scroll still works on the page while
-   horizontal swipe is captured for prev/next photo navigation. */
-.photoviewer-stage {
-  touch-action: pan-y;
-}
-
-/* Thumbnail strip — horizontal row beneath the caption. Current photo
-   gets the accent outline; clicking a thumb jumps to that photo. */
 .photoviewer-thumbs {
   display: flex;
-  gap: 6px;
-  padding: 12px 32px 16px;
+  gap: var(--s2);
+  padding: var(--s3) var(--pane-pad) var(--s4);
   border-top: 1px solid var(--mute);
   overflow-x: auto;
   overscroll-behavior-inline: contain;
@@ -1093,14 +858,14 @@ a:hover {
   flex: 0 0 auto;
   width: 48px;
   height: 48px;
-  border-radius: 3px;
+  border-radius: var(--r-sm);
   background: var(--bg);
   border: 1px solid transparent;
   opacity: 0.55;
   cursor: pointer;
   transition:
-    opacity 0.12s ease,
-    border-color 0.12s ease;
+    opacity var(--t-fast) ease-out,
+    border-color var(--t-fast) ease-out;
   padding: 0;
   overflow: hidden;
 }
@@ -1118,24 +883,15 @@ a:hover {
   border-color: var(--accent);
 }
 
-/* ── focus-visible (keyboard nav) ──────────────────────────────── */
-/* Default browser outline doesn't match the palette. Custom focus ring */
-/* uses the theme accent, only shown for keyboard navigation. */
+/* ── focus-visible (keyboard nav) ───────────────────────────────── */
 a:focus-visible,
-button:focus-visible,
-.autocomplete .item:focus-visible {
+button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 3px;
-}
-.reader-nav .nav-link:focus-visible,
-.trav-item:focus-visible,
-.travel-link:focus-visible,
-.proj-link:focus-visible {
-  outline-offset: 3px;
+  border-radius: var(--r-sm);
 }
 
-/* ── reduced motion ────────────────────────────────────────────── */
+/* ── reduced motion ─────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1143,109 +899,146 @@ button:focus-visible,
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
 }
 
-/* ── reader + photo viewer mobile ──────────────────────────────── */
+/* ── reader single column ───────────────────────────────────────── */
+@media (max-width: 720px) {
+  .reader-grid {
+    grid-template-columns: 1fr;
+    gap: var(--s5);
+  }
+  /* Sidebar becomes a compact key/value block above the body so the
+     title is still on the first screen. Stack and travel items flow
+     inline, separated by dots. */
+  .reader-side {
+    border-right: none;
+    border-bottom: 1px solid var(--mute);
+    padding-right: 0;
+    padding-bottom: var(--s4);
+    position: static;
+    align-self: auto;
+  }
+  .reader-side .row {
+    display: grid;
+    grid-template-columns: 8ch 1fr;
+    gap: 0 var(--s4);
+    margin-bottom: var(--s1);
+  }
+  .reader-side .val .item {
+    display: inline;
+  }
+  .reader-side .val .item + .item::before {
+    content: ' · ';
+    color: var(--dim);
+  }
+}
+
+/* ── mobile ─────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
+  :root {
+    --gutter: 14px;
+    --pane-pad: 18px;
+    --fs-md: 14px;
+  }
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+  }
+  .scrollarea {
+    overflow: visible;
+    flex: none;
+  }
+  /* Honor iOS safe areas so the status row never tucks behind the home
+     indicator and the prompt stays tappable. */
+  .footer {
+    padding-bottom: calc(var(--s4) + env(safe-area-inset-bottom, 0px));
+  }
+  .promptouter {
+    padding-bottom: calc(var(--s1) + env(safe-area-inset-bottom, 0px) * 0.4);
+  }
+  /* iOS Safari zooms inputs under 16px on focus. */
+  .promptbox input {
+    font-size: 16px;
+  }
+  .autocomplete .item {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  /* Touch: grow inline-link hit boxes toward 44px without moving text. */
+  .proj-link,
+  .travel-link {
+    display: inline-block;
+    padding: var(--s2) 6px;
+    margin: calc(-1 * var(--s2)) -6px;
+  }
+  .row-sel {
+    padding-top: var(--s2);
+    padding-bottom: var(--s2);
+  }
+  .travels-grid {
+    grid-template-columns: 1fr;
+    gap: var(--s5);
+  }
+
   .reader,
   .photoviewer {
-    padding: 8px;
+    padding: var(--s2);
   }
   .reader-window,
   .photoviewer-window {
     height: min(94vh, 100%);
-    border-radius: 8px;
+    border-radius: var(--r-md);
   }
   .reader-titlebar {
-    padding: 4px 2px 4px 18px;
-    font-size: 11px;
+    padding: var(--s1) 2px var(--s1) var(--pane-pad);
   }
-  /* 44px hit target on touch; glyph right edge stays on the 18px gutter. */
   .reader-close {
     width: 44px;
     height: 44px;
     margin: 0;
-    font-size: 22px;
+    font-size: var(--fs-xl);
   }
   .reader-grid {
-    grid-template-columns: 1fr;
-    gap: 18px;
-    padding: 20px 18px 28px;
+    padding: var(--s5) var(--pane-pad) var(--s6);
   }
-  .reader-side {
-    border-right: none;
-    border-bottom: 1px dashed var(--mute);
-    padding-right: 0;
-    padding-bottom: 14px;
-    position: static;
-    /* Desktop sets align-self:start so the sticky sidebar can hug the
-       top. In the mobile single-column grid that — combined with
-       overflow:auto's implicit min-height:0 — collapses the row to ~0px
-       and lets the side render *on top of* the body. Reset on mobile and
-       let the side flow naturally; the whole reader scrolls, so we don't
-       need an inner scroll container here. */
-    align-self: auto;
+  .reader-side .trav-item {
+    display: inline-block;
+    padding: var(--s2) 0;
+    margin: calc(-1 * var(--s2)) 0;
   }
   .reader-body {
-    font-size: 15px;
+    font-size: var(--fs-h3);
     line-height: 1.7;
   }
   .reader-body h1,
   .reader-body .proj-title {
-    font-size: 19px;
+    font-size: var(--fs-h2);
   }
   .reader-body h2 {
-    font-size: 16px;
+    font-size: var(--fs-lg);
   }
   .reader-body .trav-fields {
-    grid-template-columns: 80px 1fr;
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
   }
   .reader-nav {
-    padding: 10px 10px;
-    gap: 8px;
+    padding: var(--s2) var(--s2);
   }
   .reader-nav .nav-link {
-    padding: 10px 8px;
-  }
-
-  /* Touch: expand inline-link hit boxes toward ~44px tall. Inline-block
-     plus min-height gives a real tap area without breaking row layout. */
-  .proj-link,
-  .travel-link {
-    display: inline-block;
-    min-height: 36px;
-    padding: 8px 6px;
-    margin: -8px -6px;
-  }
-  .proj-row {
-    padding: 8px 0;
-  }
-  .travel-row {
-    padding: 6px 0;
-  }
-  .reader-side .trav-item {
-    padding: 10px 6px;
-    margin-left: -6px;
-    border-left-width: 0;
-  }
-  .reader-side .trav-item.active {
-    padding-left: 8px;
-    border-left-width: 2px;
-    margin-left: -8px;
+    padding: 10px var(--s2);
   }
 
   .photoviewer-stage {
-    padding: 14px 52px;
+    padding: var(--s4) 52px;
     min-height: 240px;
   }
   .photoviewer-arrow {
-    /* iOS HIG: 44x44 minimum touch target. */
     min-width: 44px;
     min-height: 44px;
-    padding: 10px 12px;
+    padding: 10px var(--s3);
     font-size: 24px;
     display: flex;
     align-items: center;
@@ -1258,39 +1051,20 @@ button:focus-visible,
     right: 2px;
   }
   .photoviewer-caption {
-    padding: 0 18px 14px;
-    font-size: 12px;
+    padding-bottom: var(--s4);
   }
   .photoviewer-thumbs {
-    padding: 10px 18px 12px;
+    padding: 10px var(--pane-pad) var(--s3);
   }
   .photoviewer-thumb {
     width: 40px;
     height: 40px;
   }
-  /* Larger AC item rows on touch — 13px → 15px line-height + padding lands
-     at ~44px tall. */
-  .autocomplete .item {
-    padding: 10px 14px 10px 32px;
-    gap: 12px;
-  }
-  .autocomplete .item .cmd {
-    min-width: 96px;
-  }
-  /* Travel sidebar nav items: already padded for touch; make sure groups
-     aren't squashed when the side becomes a single column. */
-  .reader-side .trav-group {
-    margin-top: 14px;
-  }
 }
 
 /* Below the iPhone-SE width: tighten gutters. */
 @media (max-width: 380px) {
-  .topline,
-  .main,
-  .promptouter,
-  .footer {
-    padding-left: 10px;
-    padding-right: 10px;
+  :root {
+    --gutter: 10px;
   }
 }
