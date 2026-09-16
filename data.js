@@ -79,6 +79,7 @@ export const COMMANDS = [
   { cmd: '/contact', desc: 'how to reach me' },
   { cmd: '/travels', desc: 'some places I’ve visited & want to visit' },
   { cmd: '/theme', desc: 'change the color scheme' },
+  { cmd: '/help', desc: 'list commands' },
   { cmd: '/clear', desc: 'clear the screen' },
 ];
 

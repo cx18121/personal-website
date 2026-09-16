@@ -151,16 +151,28 @@ button {
 .footer {
   max-width: calc(var(--measure) + 2 * var(--gutter));
 }
-.main .echo {
-  color: var(--dim);
-  margin-top: var(--s3);
+/* A turn is one echoed command plus everything it printed. The gap
+   between turns (s6) must clearly beat the gap between rows inside a
+   list (2 × row-y = 12px) or the scrollback reads as one column. */
+.main .turn {
+  scroll-margin-top: var(--s3); /* print() scrolls a new turn to the top */
+}
+.main .turn + .turn .echo {
+  margin-top: var(--s6);
 }
 .main .echo .chev {
   color: var(--accent);
 }
+/* Once the visitor has run a command, earlier turns recede so the eye
+   lands on the newest output. The landing screen is exempt: its three
+   pre-run turns are all "current". */
+.main.ran .turn:not(:last-child) {
+  opacity: 0.55;
+  transition: opacity var(--t-theme) ease-out;
+}
 .main .comment {
   color: var(--dim);
-  margin-top: var(--s3);
+  margin-top: var(--s5);
 }
 .main .comment a {
   color: var(--dim);
@@ -168,7 +180,7 @@ button {
 /* Output block. The rule sits under the echo's chevron column and the
    text starts at 2ch, on the same x as the command after "› ". */
 .main .block {
-  margin: var(--s1) 0 var(--s2);
+  margin: var(--s1) 0 0;
   padding-left: calc(2ch - 1px);
   border-left: 1px solid var(--mute);
   text-wrap: pretty;
@@ -238,14 +250,6 @@ button {
 }
 .proj-tag {
   color: var(--fg);
-}
-.proj-stack {
-  color: var(--dim);
-  font-size: var(--fs-xs);
-  margin-top: 2px;
-}
-.proj-stack-more {
-  color: var(--dim);
 }
 .proj-more {
   margin-top: var(--s2);
@@ -875,6 +879,9 @@ button {
   }
   .main .comment a:hover {
     color: var(--fg);
+  }
+  .main.ran .turn:not(:last-child):hover {
+    opacity: 1;
   }
   .footer .repo:hover {
     color: var(--fg);

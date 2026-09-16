@@ -108,7 +108,7 @@ function applyTheme(t) {
 // for every unknown path (see /_redirects) and we dispatch the matching
 // command on init.
 const STATIC_ROUTES = new Set([
-  '/about', '/projects', '/contact', '/travels', '/theme',
+  '/about', '/projects', '/contact', '/travels', '/theme', '/help',
 ]);
 function pathToCommand(pathname) {
   const p = pathname.length > 1 && pathname.endsWith('/')
@@ -157,7 +157,13 @@ const ui = {
     this.input = document.getElementById('input');
     this.ac = document.getElementById('ac');
     this.box = document.getElementById('promptbox');
-    this.input.addEventListener('input', () => this.updateAutocomplete());
+    this.input.addEventListener('input', () => {
+      // A long output leaves the prompt below the fold; typing brings the
+      // whole box back. The browser alone only reveals the caret line, and
+      // its instant scroll cuts a smooth one short, so match it.
+      this.box.parentElement.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+      this.updateAutocomplete();
+    });
     this.input.addEventListener('keydown', (e) => this.onKey(e));
     this.input.addEventListener('focus', () =>
       this.box.classList.add('focused')
@@ -267,15 +273,22 @@ const ui = {
     if (typeof requestIdleCallback === 'function') requestIdleCallback(warm);
     else setTimeout(warm, 1000);
   },
+  // Output goes into the current turn (opened by echo). Each print keeps
+  // the turn's echo at the top of the viewport rather than pinning the
+  // tail of the output to the bottom, so a long list is read from its
+  // command down. scrollIntoView clamps when the turn is short and works
+  // whether .scrollarea or the window is the scroller (mobile).
   print(html) {
     const div = document.createElement('div');
     div.innerHTML = html;
-    this.main.appendChild(div);
-    const sa = document.getElementById('scrollarea');
-    sa.scrollTo({ top: sa.scrollHeight, behavior: scrollBehavior() });
+    (this._turn || this.main).appendChild(div);
+    (this._turn || div).scrollIntoView({ block: 'start', behavior: scrollBehavior() });
     return div;
   },
   echo(cmd) {
+    this._turn = document.createElement('div');
+    this._turn.className = 'turn';
+    this.main.appendChild(this._turn);
     this.print(`<div class="echo"><span class="chev">›</span> ${escapeHtml(cmd)}</div>`);
   },
   block(html) {
@@ -352,12 +365,15 @@ const ui = {
     const r = this.box.getBoundingClientRect();
     const vh = window.innerHeight;
     const margin = 12;
-    const cap = 228;
     this.ac.style.left = r.left + 'px';
     this.ac.style.width = r.width + 'px';
-    // Allow dropdown to size to content first, capped, so we can read scrollHeight.
-    this.ac.style.maxHeight = cap + 'px';
+    // Let the dropdown size to content so scrollHeight is readable, then
+    // cap at eight rows (the whole command catalog fits; long /open lists
+    // scroll). Row height is measured so mobile's taller rows still fit.
+    this.ac.style.maxHeight = '';
     const content = this.ac.scrollHeight;
+    const row = this.ac.querySelector('.item')?.offsetHeight || 34;
+    const cap = row * 8 + (content - row * this.acItems.length);
     const below = vh - r.bottom - margin - 4;
     const above = r.top - margin - 4;
     if (below >= above) {
@@ -492,6 +508,7 @@ const ui = {
   run(raw) {
     const cmd = (raw || '').trim();
     this.echo(raw || '');
+    this.main.classList.add('ran');
     if (!cmd) return;
     this.history.push(cmd);
     this.histIdx = -1;
@@ -520,7 +537,7 @@ const ui = {
       );
     } else {
       this.block(
-        `<span class="warn">${escapeHtml(name)}: command not found</span>. type <span class="key">/</span> to see commands.`
+        `<span class="warn">${escapeHtml(name)}: command not found</span>. try <a class="key" data-run="/help" href="/help">/help</a>.`
       );
     }
   },
@@ -1564,15 +1581,8 @@ async function renderProjectsList(ui, { featuredOnly = false } = {}) {
   const renderRow = (p) => {
     const status =
       p.status === 'wip' ? `<span class="warn">[wip]</span> ` : '';
-    // Stack is a YAML list in frontmatter. The list view shows the first
-    // five and a "+n"; the reader sidebar shows the full stack.
-    const stackList = Array.isArray(p.stack) ? p.stack : [];
-    const shown = stackList.slice(0, 5).map(escapeHtml).join(' · ');
-    const rest = stackList.length - 5;
-    const stack = Array.isArray(p.stack)
-      ? shown + (rest > 0 ? ` <span class="proj-stack-more">+${rest}</span>` : '')
-      : escapeHtml(p.stack || '');
-    return `<div class="row-sel proj-row"><div class="proj-body"><div class="proj-head">${status}<a class="proj-link" data-open="${p.name}" href="/projects/${encodeURIComponent(p.name)}">${p.name}</a><span class="proj-tag">${escapeHtml(p.tagline || '')}</span></div><div class="proj-stack">${stack}</div></div></div>`;
+    // Name + tagline only; the reader sidebar carries the stack.
+    return `<div class="row-sel proj-row"><div class="proj-body"><div class="proj-head">${status}<a class="proj-link" data-open="${p.name}" href="/projects/${encodeURIComponent(p.name)}">${p.name}</a><span class="proj-tag">${escapeHtml(p.tagline || '')}</span></div></div></div>`;
   };
   const featured = projects.filter((p) => p.featured);
   const others = projects.filter((p) => !p.featured);
@@ -1614,11 +1624,22 @@ function renderThemeList(ui) {
 const commandHandlers = {
   clear(ui) {
     ui.main.innerHTML = '';
+    ui._turn = null;
     clearActiveList();
     // Reset the URL so a refresh doesn't re-run the last deep-linked command.
     if (location.pathname !== '/' || location.search) {
       history.replaceState({}, '', '/');
     }
+  },
+  help(ui) {
+    const width = Math.max(...COMMANDS.map((c) => c.cmd.length)) + 2;
+    ui.block(
+      COMMANDS.map(
+        (c) =>
+          `<a class="key" data-run="${c.cmd}" href="${c.cmd}">${c.cmd}</a>${' '.repeat(width - c.cmd.length)}<span class="muted">${c.desc}</span>`
+      ).join('\n') +
+        `\n\n<span class="muted">keys: ↑↓ history · tab complete · esc cancel</span>`
+    );
   },
   about(ui) {
     ui.block(ABOUT);
