@@ -64,9 +64,9 @@ export const LOCATION = 'ithaca';
 export const ABOUT = `<span class="name">charlie xue</span>
 cs & stats @ cornell
 
-I enjoy building full-stack AI applications, harness engineering, and working with agents.
+I love building full-stack AI apps and working on agent harnesses.
 
-Currently I'm a software engineer at Pango (YC S26)!`;
+I'm currently a software engineer at Pango (YC S26).`;
 
 export const CONTACT = `email     <button type="button" class="copy" data-copy="cx267@cornell.edu">cx267@cornell.edu</button><span class="copy-status muted" aria-live="polite"></span>
 github    <a href="https://github.com/cx18121" target="_blank" rel="noreferrer">github.com/cx18121</a>
