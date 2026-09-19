@@ -63,7 +63,7 @@ export const LOCATION = 'ithaca';
 
 export const ABOUT = `Hi, I'm Charlie. I'm studying CS and Statistics at Cornell University.
 
-I love building full-stack AI apps and working on agent harnesses.
+I love building full-stack applied AI apps and optimizing agent harnesses.
 
 I'm currently a software engineer at Pango (YC S26).
 
