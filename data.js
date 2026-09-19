@@ -61,7 +61,7 @@ export const TRAVELS = {
 // glyph. Update when you move.
 export const LOCATION = 'ithaca';
 
-export const ABOUT = `Hi, I'm Charlie. I study CS and Stats at Cornell University.
+export const ABOUT = `Hi, I'm Charlie. I'm studying CS and Statistics at Cornell University.
 
 I love building full-stack AI apps and working on agent harnesses.
 
