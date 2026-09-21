@@ -1,7 +1,5 @@
 ---
 name: vulnscan
-tagline: AST-based python vuln scanner with fix suggestions
-status: dormant
 stack:
   - python
   - click

@@ -1,7 +1,5 @@
 ---
 name: auto-shorts
-tagline: end-to-end shortform video pipeline
-status: live
 shipped: 2026-03
 stack:
   - python

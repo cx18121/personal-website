@@ -241,10 +241,8 @@ const ui = {
     // /travels, ...) asked for one view and get only that.
     const deep = pathToCommand(location.pathname);
     const opensReader = /^\/(open|travels) \S/.test(deep || '');
-    setTimeout(async () => {
-      if (!deep || opensReader) await this.landing();
-      if (deep) this.run(deep);
-    }, 0);
+    if (!deep || opensReader) this.landing();
+    if (deep) this.run(deep);
     if (!matchMedia('(pointer: coarse)').matches) this.input.focus();
     // Tab-away blurs the input; nothing refocuses on return, so all the
     // keydown handlers (incl. list nav) silently die. Reclaim focus on
@@ -262,16 +260,10 @@ const ui = {
       window.addEventListener('focus', refocus);
       document.addEventListener('visibilitychange', refocus);
     }
-    // Warm the project index in the background so /projects and the
-    // /open autocomplete don't pay a fetch round-trip on first use.
-    // Also pull marked.js so the first reader open renders on the next
-    // frame instead of waiting on a script load.
-    const warm = () => {
-      getProjectIndex().catch(() => {});
-      loadMarked();
-    };
-    if (typeof requestIdleCallback === 'function') requestIdleCallback(warm);
-    else setTimeout(warm, 1000);
+    // Pull marked.js in the background so the first reader open renders on
+    // the next frame instead of waiting on a script load.
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(loadMarked);
+    else setTimeout(loadMarked, 1000);
   },
   // Output goes into the current turn (opened by echo). Each print keeps
   // the turn's echo at the top of the viewport rather than pinning the
@@ -309,11 +301,7 @@ const ui = {
     const travelMatch = v.match(/^\/travels(?:\s+(\S*))?$/);
     if (openMatch && v.includes(' ')) {
       const q = (openMatch[1] || '').toLowerCase();
-      // Use the cached index for taglines if available; bare names if not.
-      // Index warms in background on init, so this only misses on the very
-      // first keystrokes during cold load.
-      const projects = _projectIndexCache || PROJECTS;
-      matches = projects.filter((p) => p.name.toLowerCase().startsWith(q)).map(
+      matches = PROJECTS.filter((p) => p.name.toLowerCase().startsWith(q)).map(
         (p) => ({ cmd: '/open ' + p.name, desc: p.tagline || '' })
       );
     } else if (themeMatch && v.includes(' ')) {
@@ -483,15 +471,15 @@ const ui = {
   },
   // Landing screen: the shell has already run the commands a first-time
   // visitor would type. Nothing enters history, so ↑ still starts empty.
-  async landing() {
+  //
+  // Synchronous end to end — every command it runs renders from data.js,
+  // which arrives with app.js. The whole screen lands in one paint instead
+  // of stuttering in as fetches resolve, so nothing here may await.
+  landing() {
     this.echo('/about');
     commandHandlers.about(this);
     this.echo('/projects');
-    await renderProjectsList(this, { featuredOnly: true }).catch((err) => {
-      this.block(
-        `<span class="warn">couldn't load projects (${escapeHtml(err.message)}).</span> refresh to try again.`
-      );
-    });
+    renderProjectsList(this, { featuredOnly: true });
     this.echo('/contact');
     commandHandlers.contact(this);
     this.print(
@@ -801,35 +789,6 @@ async function loadProjectMd(name) {
   return text;
 }
 
-// Project Index — merges PROJECTS (the order + featured flag) with each
-// project's frontmatter (tagline, stack, status, links). Single source of
-// truth for project metadata: edit the markdown file, not data.js.
-//
-// Fetches all project markdown in parallel and caches the merged entries.
-// Warmed in ui.init() so /projects and autocomplete don't pay the round-trip
-// on first use. Falls back gracefully to bare names if a fetch fails.
-let _projectIndexCache = null;
-let _projectIndexPromise = null;
-async function getProjectIndex() {
-  if (_projectIndexCache) return _projectIndexCache;
-  if (_projectIndexPromise) return _projectIndexPromise;
-  _projectIndexPromise = Promise.all(
-    PROJECTS.map(async (p) => {
-      try {
-        const text = await loadProjectMd(p.name);
-        const { fm } = parseFrontmatter(text);
-        return { ...p, ...fm };
-      } catch {
-        return p; // bare name + featured if markdown is missing
-      }
-    })
-  ).then((entries) => {
-    _projectIndexCache = entries;
-    return entries;
-  });
-  return _projectIndexPromise;
-}
-
 // _currentReader = { adapter, name } — drives keyboard nav, history, & escape.
 // `adapter` is one of projectReader / travelReader (defined below).
 let _currentReader = null;
@@ -880,8 +839,8 @@ const projectReader = {
   },
   renderBody(entry, data) {
     const title = `<h1 class="proj-title">${escapeHtml(data.fm.name || entry.name)}</h1>`;
-    const tagline = data.fm.tagline
-      ? `<div class="proj-tagline">${escapeHtml(data.fm.tagline)}</div>`
+    const tagline = entry.tagline
+      ? `<div class="proj-tagline">${escapeHtml(entry.tagline)}</div>`
       : '';
     return title + tagline + data.html;
   },
@@ -1576,16 +1535,15 @@ function beacon(params) {
 
 // `featuredOnly` is the landing digest: featured rows plus a one-line link
 // to the full list, so the prompt stays near the fold on first load.
-async function renderProjectsList(ui, { featuredOnly = false } = {}) {
-  const projects = await getProjectIndex();
+function renderProjectsList(ui, { featuredOnly = false } = {}) {
   const renderRow = (p) => {
     const status =
       p.status === 'wip' ? `<span class="warn">[wip]</span> ` : '';
     // Name + tagline only; the reader sidebar carries the stack.
     return `<div class="row-sel proj-row"><div class="proj-body"><div class="proj-head">${status}<a class="proj-link" data-open="${p.name}" href="/projects/${encodeURIComponent(p.name)}">${p.name}</a><span class="proj-tag">${escapeHtml(p.tagline || '')}</span></div></div></div>`;
   };
-  const featured = projects.filter((p) => p.featured);
-  const others = projects.filter((p) => !p.featured);
+  const featured = PROJECTS.filter((p) => p.featured);
+  const others = PROJECTS.filter((p) => !p.featured);
   const sections = [];
   if (featured.length)
     sections.push(
@@ -1648,11 +1606,7 @@ const commandHandlers = {
     ui.block(CONTACT);
   },
   projects(ui) {
-    renderProjectsList(ui).catch((err) => {
-      ui.block(
-        `<span class="warn">couldn't load projects (${escapeHtml(err.message)}).</span> refresh to try again.`
-      );
-    });
+    renderProjectsList(ui);
   },
   travels(ui, args) {
     if (args.length === 0) {
@@ -1677,17 +1631,12 @@ const commandHandlers = {
   open(ui, args) {
     const p = PROJECTS.find((x) => x.name === args[0]);
     if (!p) {
-      // Fallback to the cached index if loaded so taglines appear; otherwise
-      // fall back to bare names (the index warms in the background on init).
-      const projects = _projectIndexCache || PROJECTS;
       ui.block(
         `<span class="muted">usage:</span> <span class="key">/open &lt;project&gt;</span>\n` +
-          projects
-            .map(
-              (x) =>
-                `  <span class="key">/open ${x.name}</span>  <span class="muted">${x.tagline || ''}</span>`
-            )
-            .join('\n')
+          PROJECTS.map(
+            (x) =>
+              `  <span class="key">/open ${x.name}</span>  <span class="muted">${x.tagline || ''}</span>`
+          ).join('\n')
       );
       return;
     }

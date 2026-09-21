@@ -1,7 +1,5 @@
 ---
 name: spectre
-tagline: fight anyone from anywhere in real-time
-status: live
 shipped: 2026-05
 stack:
   - rust

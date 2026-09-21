@@ -1,7 +1,5 @@
 ---
 name: skyops
-tagline: charter flight operations platform
-status: live
 shipped: 2026-03
 stack:
   - typescript

@@ -124,6 +124,15 @@
         />
         <link rel="dns-prefetch" href="https://media.charliexue.com" />
         <link rel="stylesheet" href="/styles.css" />
+
+        <!-- The landing screen renders synchronously from data.js, so these
+         two files are the whole critical path: request them in the head,
+         alongside the stylesheet, instead of after the body parses.
+         `type=module` is deferred, so execution still waits for the DOM.
+         modulepreload on data.js keeps app.js's import from serializing
+         into a second round-trip (app.js -> discover import -> data.js). -->
+        <link rel="modulepreload" href="/data.js" />
+        <script type="module" src="/app.js"></script>
     </head>
     <body>
         <div class="scrollarea" id="scrollarea">
@@ -350,10 +359,5 @@
                 linkedin.com/in/charles-xue
             </p>
         </section>
-
-        <!-- app.js imports data.js; preload it so the two fetch in parallel
-         instead of serially (app.js → discover import → data.js). -->
-        <link rel="modulepreload" href="/data.js" />
-        <script type="module" src="/app.js"></script>
     </body>
 </html>

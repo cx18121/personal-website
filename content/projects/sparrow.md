@@ -1,7 +1,5 @@
 ---
 name: sparrow
-tagline: cold email startups automatically
-status: live
 stack:
   - typescript
   - react

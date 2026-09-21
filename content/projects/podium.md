@@ -1,7 +1,5 @@
 ---
 name: podium
-tagline: on-device speech practice app
-status: live
 stack:
   - typescript
   - react

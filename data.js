@@ -1,22 +1,67 @@
-// Thin index for the /projects list. Tagline, stack, status, links etc.
-// live in each project's frontmatter at content/projects/{name}.md — that
-// markdown file is the single source of truth. Edit one file, not two.
+// The /projects index. Everything the list rows, the /open autocomplete,
+// and the reader header need — so all of it is in the first payload and
+// the landing screen paints without a single fetch. Heavier per-project
+// detail (stack, links, shipped, screenshots) stays in that project's
+// frontmatter at content/projects/{name}.md and is loaded on open.
 //
-// This array exists only to:
-//   - establish the rendering order (top = most prominent)
-//   - flag which projects are "featured" (above the fold) — list ordering
-//     metadata, not project metadata
-//   - give the autocomplete + closestCommand fast access to the name set
+// Order is rendering order (top = most prominent); `featured` is the
+// above-the-fold digest. `status: 'wip'` is the only status the list
+// badges; the rest is plain bookkeeping.
 export const PROJECTS = [
-  { name: 'sparrow', featured: true },
-  { name: 'spectre', featured: true },
-  { name: 'cve-intel', featured: true },
-  { name: 'podium', featured: false },
-  { name: 'philly-vibe-map', featured: false },
-  { name: 'auto-shorts', featured: false },
-  { name: 'algotrader-bridge', featured: false },
-  { name: 'skyops', featured: false },
-  { name: 'vulnscan', featured: false },
+  {
+    name: 'sparrow',
+    tagline: 'cold email startups automatically',
+    status: 'live',
+    featured: true,
+  },
+  {
+    name: 'spectre',
+    tagline: 'fight anyone from anywhere in real-time',
+    status: 'live',
+    featured: true,
+  },
+  {
+    name: 'cve-intel',
+    tagline: 'natural language CVE search and analysis engine',
+    status: 'live',
+    featured: true,
+  },
+  {
+    name: 'podium',
+    tagline: 'on-device speech practice app',
+    status: 'live',
+    featured: false,
+  },
+  {
+    name: 'philly-vibe-map',
+    tagline: 'view neighborhood vibes from 1.1M yelp reviews',
+    status: 'live',
+    featured: false,
+  },
+  {
+    name: 'auto-shorts',
+    tagline: 'end-to-end shortform video pipeline',
+    status: 'live',
+    featured: false,
+  },
+  {
+    name: 'algotrader-bridge',
+    tagline: 'turn tradingview signals into automatic ibkr trading',
+    status: 'live',
+    featured: false,
+  },
+  {
+    name: 'skyops',
+    tagline: 'charter flight operations platform',
+    status: 'live',
+    featured: false,
+  },
+  {
+    name: 'vulnscan',
+    tagline: 'AST-based python vuln scanner with fix suggestions',
+    status: 'dormant',
+    featured: false,
+  },
 ];
 
 // Visited entries have full content at /content/travels/{name}.md.

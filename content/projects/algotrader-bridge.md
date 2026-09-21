@@ -1,7 +1,5 @@
 ---
 name: algotrader-bridge
-tagline: turn tradingview signals into automatic ibkr trading
-status: live
 shipped: 2026-04
 stack:
   - python

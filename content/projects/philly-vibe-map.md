@@ -1,7 +1,5 @@
 ---
 name: philly-vibe-map
-tagline: view neighborhood vibes from 1.1M yelp reviews
-status: live
 stack:
   - python
   - typescript
