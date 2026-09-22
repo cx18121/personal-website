@@ -1,19 +1,23 @@
+import {
+  BOT_UA,
+  classifyOrg,
+  detectBot,
+  isValidSitePath,
+  parseDevice,
+  signalRejectionReason,
+} from './visitor-classification.mjs';
+
 // Cloudflare Pages middleware. Runs on every request before the static
 // asset is served. Two independent streams:
 //
-//   Firehose — every real page load (not assets, not honest bots) pings
-//   the firehose webhook and appends a row to the D1 visit log. Raw,
-//   noisy, durable.
+//   Firehose — every page request that is not an asset or an honest bot
+//   pings the firehose webhook and appends a row to D1. Probe paths stay in
+//   this stream and are labeled as automation instead of being discarded.
 //
-//   Signal — driven entirely by the page's own JS via the /b beacon, not
-//   by raw requests. The site fires /b?e=load once it executes (proof a
-//   real browser ran it — the only human signal that survives a visitor
-//   arriving through a cloud or corporate proxy) and /b?e=view each time a
-//   project/travel is opened (client-side routing hides those opens from
-//   the server). Each beacon appends to one running per-visitor message
-//   that gets PATCHed as they read on. So signal = "ran the JS," never an
-//   ASN guess; the view lines show exactly what they read. Org/ASN is kept
-//   only as a label, it gates nothing.
+//   Signal — the page's own JS fires /b?e=load after the app runs and
+//   /b?e=view when project or travel content opens. Known crawlers and
+//   scanner networks are removed. A valid browser load can qualify on any
+//   network so homepage-only visitors are not discarded.
 //
 // All writes go through waitUntil so they never block the response.
 //
@@ -24,12 +28,6 @@
 //   SESSION_SALT                secret — salt for IP→session_key hash
 
 const SKIP_EXT = /\.(css|js|mjs|md|png|jpe?g|webp|svg|gif|ico|woff2?|ttf|otf|map|json|xml|txt|pdf)$/i;
-const BOT_UA = /bot|crawl|spider|slurp|duckduck|baidu|yandex|sogou|facebookexternal|twitter|linkedinbot|applebot|ahrefs|semrush|mj12|dotbot|headlesschrome|phantomjs|selenium|puppeteer|playwright|curl|wget|monitor|pingdom|uptime/i;
-
-// Orgs that show up as "Likely corporate" or similar but are actually
-// internet-wide scanners or commercial proxy/scraper providers. Filter
-// these out of the signal channel.
-const NOISE_ORG = /onyphe|qualys|tenable|rapid7|censys|shodan|shadowserver|netcraft|binaryedge|leakix|securitytrails|stretchoid|alphastrike|driftnet|recyber|internet measurement|cyberresilience|1337 services|hostroyale|racknerd|aventice|subnet digital|uab code200|bl networks|omegatech|31173 services|qux labs|datacamp limited|m247|leaseweb|cogent communications/i;
 
 // Session freshness window — visits from the same session_key within
 // this window get appended to the existing message. After this we
@@ -78,16 +76,16 @@ export async function onRequest(context) {
   return next();
 }
 
-function buildVisit(request, url, ua) {
+function buildVisit(request, url, ua, path = url.pathname) {
   const cf = request.cf || {};
   const org = classifyOrg(cf.asOrganization, cf.asn);
   const device = parseDevice(ua);
-  const bot = detectBot(org.category, device);
+  const bot = detectBot(org.category, device, path);
   const referer = request.headers.get('referer') || '';
 
   return {
     ts: new Date().toISOString(),
-    path: url.pathname,
+    path,
     query: url.search || null,
     referer: referer || null,
     user_agent: ua || null,
@@ -107,27 +105,29 @@ function buildVisit(request, url, ua) {
   };
 }
 
-// The page's JS fires /b on load and on each project/travel open. A load
-// beacon proves a real browser executed the page (our only human signal
-// that survives a cloud/corp proxy); a view beacon names what they opened.
-// Honest bots (BOT_UA) and known JS-capable scanners (NOISE_ORG) are
-// dropped — everything else that runs the code counts as a real visitor.
+// The page's existing load and content-view beacons drive the filtered
+// channel. No additional client tracking is required. Network information is
+// one filter input, never an employer or identity claim.
 async function handleBeacon(context, url, ua) {
   const { request, env } = context;
   const ip = request.headers.get('cf-connecting-ip') || '';
-  if (!ip || BOT_UA.test(ua)) return;
+  if (!ip) return;
 
-  const v = buildVisit(request, url, ua);
-  if (v.org_label && NOISE_ORG.test(v.org_label)) return;
+  const pagePath = refPath(request.headers.get('referer'), request.url);
+  const sameOriginFetch = request.headers.get('sec-fetch-site') === 'same-origin';
+  if (!pagePath && !sameOriginFetch) return;
+  const effectivePath = pagePath || '/';
+  if (!isValidSitePath(effectivePath)) return;
 
   // /b is public and unauthenticated, and these values land verbatim in a
   // Discord embed. Validate hard: a backtick in `n` would break out of the
   // code span (markdown/link injection); an unbounded value would bloat or
   // 400 the embed. Reject anything that isn't a plain slug.
+  const eventType = url.searchParams.get('e');
   let label;
-  switch (url.searchParams.get('e')) {
+  switch (eventType) {
     case 'load':
-      label = `landed \`${refPath(request.headers.get('referer')) || '/'}\``;
+      label = `landed \`${effectivePath}\``;
       break;
     case 'view': {
       const name = url.searchParams.get('n');
@@ -141,16 +141,25 @@ async function handleBeacon(context, url, ua) {
       return;
   }
 
+  const v = buildVisit(request, url, ua, effectivePath);
+  if (signalRejectionReason({
+    orgLabel: v.org_label,
+    botFlagged: v.bot_flagged,
+    ua,
+  })) return;
+
   const sessionKey = await hashSession(env.SESSION_SALT, ip);
   await recordEvent(env.DISCORD_SIGNAL_WEBHOOK_URL, env.VISITOR_LOG, sessionKey, v, eventLine(v, label));
 }
 
-function refPath(ref) {
+function refPath(ref, requestUrl) {
   try {
+    const source = new URL(ref);
+    if (source.origin !== new URL(requestUrl).origin) return null;
     // pathname only (the URL parser percent-encodes backticks, so this can't
     // break out of the code span); bounded so a forged Referer can't bloat
     // the embed.
-    return new URL(ref).pathname.slice(0, 80);
+    return source.pathname.slice(0, 80);
   } catch {
     return null;
   }
@@ -322,36 +331,24 @@ async function createSessionMessage(webhookUrl, db, sessionKey, v, line) {
   }
 }
 
-// Session embed: same field structure as the firehose embed, but the
-// description carries the running event list and the timestamp tracks the
-// most recent beacon (Discord localizes it per viewer). No bot framing — a
-// beacon means the client executed our JS, so it's a real browser by
-// definition; org/ASN here is just a color-coded label.
+// The filtered embed describes the browser activity first. ASN ownership is
+// supporting network context, not a claim about the visitor's employer.
 function buildSignalEmbed(v, listBody) {
   const location = [v.city, v.region, v.country].filter(Boolean).join(', ') || 'unknown';
+  const engaged = listBody.includes('viewed ');
 
   return {
-    title: `${headerDot(v)} ${v.org_label}`,
-    color: v.org_color,
+    title: engaged ? '🟢 Engaged visitor' : '🟢 Likely visitor',
+    color: 0x3ba55c,
     description: listBody,
     fields: [
-      { name: 'Org', value: `${v.org_label}\n_${v.org_category}_`, inline: true },
+      { name: 'Network', value: `${v.org_label}\n${v.org_category}`, inline: true },
       { name: 'Location', value: location, inline: true },
       { name: 'Device', value: v.device_label, inline: true },
     ],
     footer: { text: `ASN ${v.asn || '?'} · ${v.colo || 'cf'}` },
     timestamp: v.ts,
   };
-}
-
-function headerDot(v) {
-  switch (v.org_category) {
-    case 'Likely corporate': return '🟢';
-    case 'SASE (corp behind security vendor)': return '🟠';
-    case 'Residential ISP':
-    case 'Mobile carrier': return '🟡';
-    default: return '⚪';
-  }
 }
 
 // One line in the running per-visitor list: a label ("landed `/`",
@@ -387,7 +384,7 @@ function buildEmbed(v, url) {
   const location = [v.city, v.region, v.country].filter(Boolean).join(', ') || 'unknown';
 
   const fields = [
-    { name: 'Org', value: `${v.org_label}\n_${v.org_category}_`, inline: true },
+    { name: 'Network', value: `${v.org_label}\n${v.org_category}`, inline: true },
     { name: 'Location', value: location, inline: true },
     { name: 'Device', value: v.device_label, inline: true },
   ];
@@ -417,77 +414,6 @@ async function hashSession(salt, ip) {
   let hex = '';
   for (let i = 0; i < 8; i++) hex += arr[i].toString(16).padStart(2, '0');
   return hex;
-}
-
-// ASN classification — color stripe on the embed at a glance signals
-// signal quality. Green = a real company hit (high signal). Orange =
-// corp traffic but masked by SASE so the company isn't visible. Yellow
-// = residential/mobile (low signal — most home browsing). Purple =
-// cloud or VPN (could be hiding something). Grey = unclassified.
-function classifyOrg(org, asn) {
-  const label = org || (asn ? `ASN ${asn}` : 'unknown');
-  if (!org) return { label, category: 'Unknown', color: 0x808080 };
-  const s = org.toLowerCase();
-
-  if (/t-mobile|verizon wireless|at&t mobility|sprint|cellco|cricket|metropcs|bharti airtel|reliance jio|vodafone idea|orange s\.a\.|telefonica|o2 czech|ee limited|vodafone gmbh/.test(s))
-    return { label, category: 'Mobile carrier', color: 0xe0c060 };
-
-  if (/comcast|spectrum|charter|cox|verizon fios|verizon online|centurylink|frontier|optimum|cablevision|xfinity|altice|rogers|bell canada|telus|shaw|virgin media|sky broadband|bt group|deutsche telekom|google fiber/.test(s))
-    return { label, category: 'Residential ISP', color: 0xe0c060 };
-
-  if (/zscaler|netskope|palo alto networks|cisco umbrella|prisma|forcepoint|symantec|mcafee|cato networks|perimeter 81|iboss|menlo security/.test(s))
-    return { label, category: 'SASE (corp behind security vendor)', color: 0xd97757 };
-
-  if (/nordvpn|expressvpn|surfshark|protonvpn|mullvad|cyberghost|private internet|tunnelbear|ipvanish|windscribe|hideman/.test(s))
-    return { label, category: 'Consumer VPN', color: 0xb381c5 };
-
-  if (/amazon\.com|amazon technologies|amazon data|aws|google llc|google cloud|microsoft corp|azure|digitalocean|linode|vultr|hetzner|ovh|oracle|alibaba cloud|tencent cloud/.test(s))
-    return { label, category: 'Cloud / hosting', color: 0xb381c5 };
-
-  if (/cloudflare|akamai|fastly|stackpath|incapsula|imperva|sucuri/.test(s))
-    return { label, category: 'CDN / edge', color: 0x808080 };
-
-  if (/apple inc/.test(s))
-    return { label, category: 'iCloud Private Relay', color: 0xb381c5 };
-
-  return { label, category: 'Likely corporate', color: 0x3ba55c };
-}
-
-function parseDevice(ua) {
-  if (!ua) return { label: 'unknown', browser: null, os: null, browserKnown: false, osKnown: false };
-
-  let browser = 'Browser';
-  let browserKnown = false;
-  if (/Edg\//.test(ua)) { browser = 'Edge'; browserKnown = true; }
-  else if (/OPR\//.test(ua) || /Opera\//.test(ua)) { browser = 'Opera'; browserKnown = true; }
-  else if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) { browser = 'Chrome'; browserKnown = true; }
-  else if (/Firefox\//.test(ua)) { browser = 'Firefox'; browserKnown = true; }
-  else if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) { browser = 'Safari'; browserKnown = true; }
-
-  let os = 'OS';
-  let osKnown = false;
-  if (/iPhone/.test(ua)) { os = 'iPhone'; osKnown = true; }
-  else if (/iPad/.test(ua)) { os = 'iPad'; osKnown = true; }
-  else if (/Android/.test(ua)) { os = 'Android'; osKnown = true; }
-  else if (/Macintosh|Mac OS X/.test(ua)) { os = 'Mac'; osKnown = true; }
-  else if (/Windows NT/.test(ua)) { os = 'Windows'; osKnown = true; }
-  else if (/Linux/.test(ua)) { os = 'Linux'; osKnown = true; }
-
-  return { label: `${browser} on ${os}`, browser, os, browserKnown, osKnown };
-}
-
-// Heuristic bot detection — runs AFTER the obvious BOT_UA filter that
-// catches honest crawlers. This catches the dishonest ones that fake a
-// browser UA but leak signal elsewhere: scraper traffic from CDN/cloud
-// ASNs, or UAs that look browser-shaped but match no known parser.
-function detectBot(orgCategory, device) {
-  if (orgCategory === 'CDN / edge')
-    return { flagged: true, reason: 'CDN/edge infrastructure (not a real client)' };
-  if (!device.browserKnown && !device.osKnown)
-    return { flagged: true, reason: 'unrecognized browser+OS (likely faked UA)' };
-  if (!device.browserKnown && orgCategory === 'Cloud / hosting')
-    return { flagged: true, reason: 'cloud ASN + unknown browser' };
-  return { flagged: false };
 }
 
 function formatReferer(ref) {
