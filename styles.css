@@ -61,6 +61,10 @@
   --well: color-mix(in oklab, var(--bg) 78%, black);      /* recessed panel */
   --focus: color-mix(in oklab, var(--accent) 45%, var(--mute));
   --img-edge: 0 0 0 1px oklch(1 0 0 / 0.1);
+  --raised: color-mix(in oklab, var(--bg) 94%, var(--fg));
+  --popup-shadow:
+    0 0 0 1px oklch(1 0 0 / 0.08),
+    0 var(--s2) var(--s6) oklch(0 0 0 / 0.3);
 }
 
 * {
@@ -151,24 +155,26 @@ button {
 .footer {
   max-width: calc(var(--measure) + 2 * var(--gutter));
 }
-/* A turn is one echoed command plus everything it printed. The gap
-   between turns (s6) must clearly beat the gap between rows inside a
-   list (2 × row-y = 12px) or the scrollback reads as one column. */
+/* A turn is one echoed command plus everything it printed. Compact,
+   square command highlights mark each start without dimming scrollback. */
 .main .turn {
   scroll-margin-top: var(--s3); /* print() scrolls a new turn to the top */
 }
-.main .turn + .turn .echo {
-  margin-top: var(--s6);
+.main .turn + .turn {
+  margin-block-start: var(--s8);
+}
+.main .echo {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline-start: calc(-1 * var(--s2));
+  padding: var(--s1) var(--s2);
+  background: var(--hi);
+  color: var(--accent);
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 .main .echo .chev {
   color: var(--accent);
-}
-/* Once the visitor has run a command, earlier turns recede so the eye
-   lands on the newest output. The landing screen is exempt: its three
-   pre-run turns are all "current". */
-.main.ran .turn:not(:last-child) {
-  opacity: 0.55;
-  transition: opacity var(--t-theme) ease-out;
 }
 .main .comment {
   color: var(--dim);
@@ -180,7 +186,7 @@ button {
 /* Output block. The rule sits under the echo's chevron column and the
    text starts at 2ch, on the same x as the command after "› ". */
 .main .block {
-  margin: var(--s1) 0 0;
+  margin: var(--s2) 0 0;
   padding-left: calc(2ch - 1px);
   border-left: 1px solid var(--mute);
   text-wrap: pretty;
@@ -335,10 +341,13 @@ button {
   color: var(--dim);
 }
 .autocomplete {
+  --ac-inset: var(--s4);
+  --ac-gap: var(--s2);
   position: fixed;
-  background: var(--bg);
-  border: 1px solid var(--focus);
-  border-radius: var(--r-md);
+  background: var(--raised);
+  box-shadow: var(--popup-shadow);
+  border-radius: var(--r-sm);
+  container-type: inline-size;
   padding: var(--s1) 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -353,16 +362,16 @@ button {
   display: grid;
   grid-template-columns: max-content 1fr;
 }
-/* Left padding = prompt padding + border + "› " so the command column
-   sits on the same x as the typed text below it. Rows share the parent's
-   columns (subgrid) so descriptions align across every row. */
+/* The menu is inset by the prompt's padding. Adding its border + "› "
+   keeps suggestions aligned with the input, not with the menu's edge.
+   Shared columns keep descriptions aligned across rows. */
 .autocomplete .item {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: subgrid;
   column-gap: var(--s4);
   align-items: baseline;
-  padding: var(--row-y) var(--s4) var(--row-y) calc(var(--s4) + 1px + 2ch);
+  padding: var(--row-y) var(--s3) var(--row-y) calc(1px + 2ch);
   cursor: pointer;
 }
 .autocomplete .item.active {
@@ -372,6 +381,18 @@ button {
 .autocomplete .item .desc {
   color: var(--dim);
   font-size: var(--fs-sm);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* When two columns cannot comfortably fit, put the description below
+   its command rather than squeezing it into a sliver. */
+@container (max-width: 360px) {
+  .autocomplete .item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .autocomplete .item .cmd {
+    overflow-wrap: anywhere;
+  }
 }
 
 /* ── footer ─────────────────────────────────────────────────────── */

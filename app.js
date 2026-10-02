@@ -90,6 +90,11 @@ function closestCommand(name) {
 
 function applyTheme(t) {
   document.body.dataset.theme = t.name;
+  // Theme pickers remain live in scrollback, unlike change confirmations.
+  for (const row of document.querySelectorAll('.theme-row')) {
+    row.querySelector('.theme-active').hidden =
+      row.querySelector('[data-theme]').dataset.theme !== t.name;
+  }
   const r = document.documentElement.style;
   r.setProperty('--bg', t.bg);
   r.setProperty('--fg', t.fg);
@@ -221,12 +226,14 @@ const ui = {
         this.run(runner.dataset.run);
       }
     });
-    window.addEventListener('resize', () => {
+    const repositionAc = () => {
       if (this.ac.classList.contains('show')) this.positionAc();
-    });
-    document.getElementById('scrollarea').addEventListener('scroll', () => {
-      if (this.ac.classList.contains('show')) this.positionAc();
-    });
+    };
+    window.addEventListener('resize', repositionAc);
+    // Responsive layout can resize the prompt after the window event.
+    new ResizeObserver(repositionAc).observe(this.box);
+    window.addEventListener('scroll', repositionAc);
+    document.getElementById('scrollarea').addEventListener('scroll', repositionAc);
     document.addEventListener('keydown', (e) => {
       if (e.key !== '/') return;
       const tag = document.activeElement?.tagName;
@@ -350,11 +357,14 @@ const ui = {
     });
   },
   positionAc() {
+    const style = getComputedStyle(this.ac);
+    const inset = parseFloat(style.getPropertyValue('--ac-inset'));
+    const gap = parseFloat(style.getPropertyValue('--ac-gap'));
     const r = this.box.getBoundingClientRect();
     const vh = window.innerHeight;
     const margin = 12;
-    this.ac.style.left = r.left + 'px';
-    this.ac.style.width = r.width + 'px';
+    this.ac.style.left = r.left + inset + 'px';
+    this.ac.style.width = r.width - 2 * inset + 'px';
     // Let the dropdown size to content so scrollHeight is readable, then
     // cap at eight rows (the whole command catalog fits; long /open lists
     // scroll). Row height is measured so mobile's taller rows still fit.
@@ -362,16 +372,16 @@ const ui = {
     const content = this.ac.scrollHeight;
     const row = this.ac.querySelector('.item')?.offsetHeight || 34;
     const cap = row * 8 + (content - row * this.acItems.length);
-    const below = vh - r.bottom - margin - 4;
-    const above = r.top - margin - 4;
+    const below = vh - r.bottom - margin - gap;
+    const above = r.top - margin - gap;
     if (below >= above) {
       // Drop below — fit dropdown to either content or available space.
       const h = Math.min(content, below, cap);
-      this.ac.style.top = r.bottom + 4 + 'px';
+      this.ac.style.top = r.bottom + gap + 'px';
       this.ac.style.maxHeight = h + 'px';
     } else {
       const h = Math.min(content, above, cap);
-      this.ac.style.top = r.top - h - 4 + 'px';
+      this.ac.style.top = r.top - h - gap + 'px';
       this.ac.style.maxHeight = h + 'px';
     }
   },
@@ -496,7 +506,6 @@ const ui = {
   run(raw) {
     const cmd = (raw || '').trim();
     this.echo(raw || '');
-    this.main.classList.add('ran');
     if (!cmd) return;
     this.history.push(cmd);
     this.histIdx = -1;
@@ -1572,7 +1581,7 @@ function renderThemeList(ui) {
       )
       .join('');
     const active =
-      t.name === current ? `<span class="theme-active">active</span>` : '';
+      `<span class="theme-active"${t.name === current ? '' : ' hidden'}>active</span>`;
     return `<div class="row-sel theme-row"><div class="theme-body"><a class="proj-link theme-link" data-theme="${t.name}" href="?cmd=theme+${encodeURIComponent(t.name)}">${t.name}</a><span class="theme-swatches">${swatches}</span>${active}</div></div>`;
   }).join('');
   const wrap = ui.block(rows);
