@@ -5,10 +5,11 @@ export const BOT_UA = /bot|crawl|spider|slurp|duckduck|baidu|yandex|sogou|facebo
 // its existing coverage.
 const SIGNAL_BOT_UA = /googleother|google-inspectiontool|google-read-aloud/i;
 
-// Scanner, proxy, and commodity hosting organizations observed executing the
-// site's JavaScript. These known-noise providers are excluded from signal;
-// generic cloud and privacy networks are not excluded by network alone.
-const NOISE_ORG = /onyphe|qualys|tenable|rapid7|censys|shodan|shadowserver|netcraft|binaryedge|leakix|securitytrails|stretchoid|alphastrike|driftnet|recyber|internet measurement|cyberresilience|1337 services|hostroyale|racknerd|aventice|subnet digital|uab code200|bl networks|omegatech|31173 services|qux labs|datacamp limited|m247|leaseweb|cogent communications|techoff srv|virtualine|tc datacenter|vpspay|server mania|contabo|scaleway|egihosting|logicweb|tnahosting|titanic technologies|oculus networks|datalix|digivps|ace data centers|frantech|cloudvider/i;
+// Descriptive hosting/proxy labels, not a visitor denylist. Network ownership
+// alone cannot distinguish an automated client from a person using a proxy.
+// Scanner/security organizations and connectivity providers such as Cogent
+// are not described as hosting just because they appeared in the old denylist.
+const HOSTING_ORG = /1337 services|hostroyale|racknerd|aventice|subnet digital|uab code200|bl networks|omegatech|31173 services|qux labs|datacamp limited|m247|leaseweb|techoff srv|virtualine|tc datacenter|vpspay|server mania|contabo|scaleway|egihosting|logicweb|tnahosting|titanic technologies|oculus networks|datalix|digivps|ace data centers|frantech|cloudvider/i;
 
 const STATIC_ROUTES = new Set([
   '/about',
@@ -45,7 +46,7 @@ export function classifyOrg(org, asn) {
   if (/nordvpn|expressvpn|surfshark|protonvpn|mullvad|cyberghost|private internet|tunnelbear|ipvanish|windscribe|hideman/.test(s))
     return { label, category: 'Consumer VPN', color: 0xb381c5 };
 
-  if (NOISE_ORG.test(s) || /amazon\.com|amazon technologies|amazon data|aws|google llc|google cloud|microsoft corp|azure|digitalocean|linode|vultr|hetzner|ovh|oracle|alibaba cloud|aliyun|tencent cloud|routerhosting|mevspace/.test(s))
+  if (HOSTING_ORG.test(s) || /amazon\.com|amazon technologies|amazon data|aws|google llc|google cloud|microsoft corp|azure|digitalocean|linode|vultr|hetzner|ovh|oracle|alibaba cloud|aliyun|tencent cloud|routerhosting|mevspace/.test(s))
     return { label, category: 'Cloud / hosting', color: 0xb381c5 };
 
   if (/cloudflare|akamai|fastly|stackpath|incapsula|imperva|sucuri/.test(s))
@@ -91,14 +92,11 @@ export function detectBot(orgCategory, device, path) {
 }
 
 export function signalRejectionReason({
-  orgLabel,
   botFlagged,
   ua,
 }) {
   if (BOT_UA.test(ua || '') || SIGNAL_BOT_UA.test(ua || ''))
     return 'known crawler user agent';
-  if (NOISE_ORG.test(orgLabel || ''))
-    return 'known scanner or proxy network';
   if (botFlagged)
     return 'request already flagged as automated';
   return null;

@@ -67,14 +67,28 @@ test('accepts a homepage visitor from generic cloud infrastructure', () => {
   }), null);
 });
 
-test('rejects known noise providers even after a view', () => {
-  assert.equal(signalRejectionReason({
-    eventType: 'view',
-    orgLabel: 'Subnet Digital LLC',
-    orgCategory: 'Cloud / hosting',
-    botFlagged: false,
-    ua: chromeOnMac,
-  }), 'known scanner or proxy network');
+test('accepts browser-shaped visitors regardless of provider name', () => {
+  const providers = [
+    ['RackNerd LLC', 'Cloud / hosting'],
+    ['GlobalConnect AB', 'Other network'],
+    ['Cogent Communications', 'Other network'],
+    ['Subnet Digital LLC', 'Cloud / hosting'],
+    ['Leaseweb', 'Cloud / hosting'],
+    ['Scaleway', 'Cloud / hosting'],
+    ['Shodan', 'Other network'],
+    ['Qualys', 'Other network'],
+  ];
+  for (const [name, category] of providers) {
+    const org = classifyOrg(name, 123);
+    assert.equal(org.category, category, name);
+    const bot = detectBot(org.category, parseDevice(chromeOnMac), '/');
+    assert.equal(bot.flagged, false, name);
+    assert.equal(signalRejectionReason({
+      orgLabel: name,
+      botFlagged: bot.flagged,
+      ua: chromeOnMac,
+    }), null, name);
+  }
 });
 
 test('accepts a homepage visitor through a CDN-backed privacy proxy', () => {
@@ -94,6 +108,28 @@ test('still rejects an unrecognized client from a CDN network', () => {
     botFlagged: bot.flagged,
     ua,
   }), 'request already flagged as automated');
+});
+
+test('still rejects declared automation even with a familiar browser and OS', () => {
+  for (const token of ['HeadlessChrome', 'GoogleOther', 'Google-InspectionTool', 'Google-Read-Aloud', 'bot']) {
+    assert.equal(signalRejectionReason({
+      botFlagged: false,
+      ua: `${chromeOnMac} ${token}`,
+    }), 'known crawler user agent', token);
+  }
+});
+
+test('preserves unknown-client heuristics independently of provider-name bans', () => {
+  assert.deepEqual(detectBot('Other network', parseDevice('unrecognized-client'), '/'), {
+    flagged: true,
+    reason: 'unrecognized browser+OS (likely faked UA)',
+  });
+  const unknownBrowser = parseDevice('Windows NT 10.0');
+  assert.deepEqual(detectBot('Cloud / hosting', unknownBrowser, '/'), {
+    flagged: true,
+    reason: 'cloud ASN + unknown browser',
+  });
+  assert.deepEqual(detectBot('Other network', unknownBrowser, '/'), { flagged: false });
 });
 
 test('accepts a normal browser load from an access network', () => {

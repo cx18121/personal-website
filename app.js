@@ -1507,18 +1507,15 @@ document.addEventListener('click', (e) => {
 const modeEl = document.getElementById('mode');
 if (modeEl) modeEl.textContent = LOCATION;
 
-// Same-origin behavioral beacon. The middleware uses these to drive the
-// visitor signal channel: one on load (proof a real browser executed the
-// page — the only signal that survives a visitor arriving via a cloud or
-// corporate proxy) and one per project/travel opened (client-side routing
-// hides opens from the server). keepalive so a beacon fired as the tab
-// closes still lands; failures are silent.
+// Same-origin behavioral beacon. One on load and one per project/travel
+// opened (client-side routing hides opens from the server). This is evidence
+// the app ran, not proof of a human; automation can run JavaScript too.
+// keepalive lets the browser continue a request when the tab closes, but
+// delivery is best-effort and failures are silent on the client.
 //
-// Beacons are chained, not fired in parallel: on a deep-link entry the load
-// and view beacons would otherwise hit the server concurrently and race to
-// create the session message (one would lose and drop its line). Serializing
-// guarantees load's request lands — creating the message — before view's
-// request is sent, so view always edits cleanly.
+// Chaining orders the requests, not their background server work. /b replies
+// before Discord/session processing finishes, so a subsequent beacon can
+// still race with message creation and be dropped by the middleware.
 let _beaconChain = Promise.resolve();
 function beacon(params) {
   _beaconChain = _beaconChain.then(() => {

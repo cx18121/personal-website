@@ -15,9 +15,9 @@ import {
 //   this stream and are labeled as automation instead of being discarded.
 //
 //   Signal — the page's own JS fires /b?e=load after the app runs and
-//   /b?e=view when project or travel content opens. Known crawlers and
-//   scanner networks are removed. A valid browser load can qualify on any
-//   network so homepage-only visitors are not discarded.
+//   /b?e=view when project or travel content opens. Crawler user agents and
+//   invalid/unknown-client requests are removed. A valid browser load can
+//   qualify on any network so homepage-only and proxy visitors are not discarded.
 //
 // All writes go through waitUntil so they never block the response.
 //
@@ -53,7 +53,11 @@ export async function onRequest(context) {
   // signal channel; never a logged pageview. Always answer 204.
   if (url.pathname === '/b' && request.method === 'GET') {
     if (env.DISCORD_SIGNAL_WEBHOOK_URL && env.VISITOR_LOG && env.SESSION_SALT) {
-      waitUntil(handleBeacon(context, url, ua));
+      waitUntil(handleBeacon(context, url, ua).catch(() => {
+        signalLog('failed', { stage: 'beacon' });
+      }));
+    } else {
+      signalLog('skipped', { reason: 'missing signal bindings' });
     }
     return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
   }
@@ -105,19 +109,34 @@ function buildVisit(request, url, ua, path = url.pathname) {
   };
 }
 
+// Fixed outcome fields only. No IP, session hash, UA, URL, webhook, or exception
+// text. These logs support live troubleshooting; Pages does not retain them.
+function signalLog(outcome, details = {}) {
+  console.log(JSON.stringify({ event: 'visitor_signal', outcome, ...details }));
+}
+
 // The page's existing load and content-view beacons drive the filtered
-// channel. No additional client tracking is required. Network information is
-// one filter input, never an employer or identity claim.
+// channel. Running JavaScript is supporting evidence, not proof of a person.
+// Provider names describe the connection; they do not disqualify a visitor.
 async function handleBeacon(context, url, ua) {
   const { request, env } = context;
   const ip = request.headers.get('cf-connecting-ip') || '';
-  if (!ip) return;
+  if (!ip) {
+    signalLog('rejected', { reason: 'missing client IP' });
+    return;
+  }
 
   const pagePath = refPath(request.headers.get('referer'), request.url);
   const sameOriginFetch = request.headers.get('sec-fetch-site') === 'same-origin';
-  if (!pagePath && !sameOriginFetch) return;
+  if (!pagePath && !sameOriginFetch) {
+    signalLog('rejected', { reason: 'missing same-origin evidence' });
+    return;
+  }
   const effectivePath = pagePath || '/';
-  if (!isValidSitePath(effectivePath)) return;
+  if (!isValidSitePath(effectivePath)) {
+    signalLog('rejected', { reason: 'invalid/probe path' });
+    return;
+  }
 
   // /b is public and unauthenticated, and these values land verbatim in a
   // Discord embed. Validate hard: a backtick in `n` would break out of the
@@ -132,21 +151,32 @@ async function handleBeacon(context, url, ua) {
     case 'view': {
       const name = url.searchParams.get('n');
       const kind = url.searchParams.get('k');
-      if (!name || !/^[a-z0-9 _-]{1,40}$/i.test(name)) return;
-      if (kind && !/^(project|travel)$/.test(kind)) return;
+      if (!name || !/^[a-z0-9 _-]{1,40}$/i.test(name)) {
+        signalLog('rejected', { reason: 'invalid content name' });
+        return;
+      }
+      if (kind && !/^(project|travel)$/.test(kind)) {
+        signalLog('rejected', { reason: 'invalid content kind' });
+        return;
+      }
       label = `viewed ${kind ? `${kind} ` : ''}\`${name}\``;
       break;
     }
     default:
+      signalLog('rejected', { reason: 'invalid event type' });
       return;
   }
 
   const v = buildVisit(request, url, ua, effectivePath);
-  if (signalRejectionReason({
-    orgLabel: v.org_label,
+  const rejection = signalRejectionReason({
     botFlagged: v.bot_flagged,
     ua,
-  })) return;
+  });
+  if (rejection) {
+    signalLog('rejected', { reason: rejection });
+    return;
+  }
+  signalLog('accepted');
 
   const sessionKey = await hashSession(env.SESSION_SALT, ip);
   await recordEvent(env.DISCORD_SIGNAL_WEBHOOK_URL, env.VISITOR_LOG, sessionKey, v, eventLine(v, label));
@@ -225,8 +255,11 @@ async function recordEvent(webhookUrl, db, sessionKey, v, line) {
     // PATCH failed (message deleted manually, etc.) — drop this one line
     // rather than risk a duplicate message.
   }
-  // Else: lost the race before the winner wrote its message_id. Dropping the
-  // odd line beats a duplicate; the next beacon edits cleanly.
+  // Else: the winning request may still be creating its message. This event
+  // is dropped, not queued. A later beacon may edit the completed session.
+  else {
+    signalLog('dropped', { reason: session ? 'session message pending' : 'session unavailable' });
+  }
 }
 
 // Insert a placeholder row, or reset it if the prior session has gone stale
@@ -253,6 +286,7 @@ async function claimNewSession(db, sessionKey, ts) {
       .run();
     return (res.meta?.changes ?? 0) > 0;
   } catch {
+    signalLog('failed', { stage: 'session_claim' });
     return false;
   }
 }
@@ -264,6 +298,7 @@ async function loadSession(db, sessionKey) {
       .bind(sessionKey)
       .first();
   } catch {
+    signalLog('failed', { stage: 'session_load' });
     return null;
   }
 }
@@ -271,6 +306,7 @@ async function loadSession(db, sessionKey) {
 async function tryEditMessage(webhookUrl, db, sessionKey, session, v, line) {
   // session.content holds just the accumulated event list (the embed body).
   const newList = appendVisitLine(session.content, line);
+  let stage = 'discord_edit';
   try {
     const res = await fetch(`${webhookUrl}/messages/${session.message_id}`, {
       method: 'PATCH',
@@ -280,13 +316,19 @@ async function tryEditMessage(webhookUrl, db, sessionKey, session, v, line) {
         allowed_mentions: { parse: [] },
       }),
     });
-    if (!res.ok) return false;
+    if (!res.ok) {
+      signalLog('failed', { stage, status: res.status });
+      return false;
+    }
+    signalLog('delivered', { stage });
+    stage = 'session_update';
     await db
       .prepare('UPDATE sessions SET last_seen = ?, hits = hits + 1, content = ? WHERE session_key = ?')
       .bind(v.ts, newList, sessionKey)
       .run();
     return true;
   } catch {
+    signalLog('failed', { stage });
     return false;
   }
 }
@@ -297,6 +339,7 @@ async function tryEditMessage(webhookUrl, db, sessionKey, session, v, line) {
 async function createSessionMessage(webhookUrl, db, sessionKey, v, line) {
   const list = line;
   let posted = false;
+  let stage = 'discord_create';
   try {
     const res = await fetch(`${webhookUrl}?wait=true`, {
       method: 'POST',
@@ -309,15 +352,21 @@ async function createSessionMessage(webhookUrl, db, sessionKey, v, line) {
     if (res.ok) {
       const msg = await res.json();
       if (msg.id) {
+        signalLog('delivered', { stage });
+        stage = 'session_save';
         await db
           .prepare('UPDATE sessions SET message_id = ?, last_seen = ?, hits = 1, content = ? WHERE session_key = ?')
           .bind(msg.id, v.ts, list, sessionKey)
           .run();
         posted = true;
+      } else {
+        signalLog('failed', { stage, reason: 'missing message ID' });
       }
+    } else {
+      signalLog('failed', { stage, status: res.status });
     }
   } catch {
-    // Swallow — cleanup below.
+    signalLog('failed', { stage });
   }
   if (!posted) {
     try {
@@ -326,7 +375,7 @@ async function createSessionMessage(webhookUrl, db, sessionKey, v, line) {
         .bind(sessionKey)
         .run();
     } catch {
-      // Best-effort.
+      signalLog('failed', { stage: 'session_cleanup' });
     }
   }
 }
