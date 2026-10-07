@@ -112,7 +112,7 @@ I love building full-stack applied AI apps and optimizing agent harnesses.
 
 I'm currently a software engineer at Pango (YC S26) where I build agents to automate e-commerce operations.
 
-Some things I enjoy are rock climbing, hiking, and skiing! I was also 7x Challenger and peaked at top 20 in North America (top 0.004%) in the strategy game Teamfight Tactics.`;
+In my free time, I enjoy rock climbing, hiking, and skiing. I was also 7x challenger and peaked at top 20 in North America (top 0.004%) in Teamfight Tactics.`;
 
 export const CONTACT = `email     <button type="button" class="copy" data-copy="cx267@cornell.edu">cx267@cornell.edu</button><span class="copy-status muted" aria-live="polite"></span>
 github    <a href="https://github.com/cx18121" target="_blank" rel="noreferrer">github.com/cx18121</a>
