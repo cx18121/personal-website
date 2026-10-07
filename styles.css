@@ -43,6 +43,7 @@
 
   --gutter: 18px;    /* terminal surface horizontal padding */
   --measure: 640px;  /* terminal column width, ~72ch at 14px mono */
+  --terminal-inset: clamp(0px, calc(25vw - 280px), 180px);
   --prose: 68ch;     /* reader body text cap */
   --pane-pad: 32px;  /* reader + photoviewer inner gutter */
 
@@ -138,6 +139,12 @@ button {
 }
 
 /* ── terminal surface ───────────────────────────────────────────── */
+@media (min-width: 1111px) {
+  .scrollarea {
+    padding-block-start: var(--s8);
+  }
+}
+
 .topline {
   padding: var(--s2) var(--gutter) var(--s1);
 }
@@ -154,6 +161,7 @@ button {
 .promptouter,
 .footer {
   max-width: calc(var(--measure) + 2 * var(--gutter));
+  margin-inline-start: var(--terminal-inset);
 }
 /* A turn is one echoed command plus everything it printed. Compact,
    square command highlights mark each start without dimming scrollback. */
@@ -400,15 +408,7 @@ button {
   padding: var(--s2) var(--gutter) var(--s4);
   font-size: var(--fs-sm);
   color: var(--dim);
-}
-.footer .statusrow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.footer .repo {
-  color: var(--dim);
-  text-decoration: none;
+  text-align: end;
 }
 .footer .time {
   font-variant-numeric: tabular-nums;
@@ -903,9 +903,6 @@ button {
   }
   .main.ran .turn:not(:last-child):hover {
     opacity: 1;
-  }
-  .footer .repo:hover {
-    color: var(--fg);
   }
   .reader-close:hover {
     color: var(--fg);
