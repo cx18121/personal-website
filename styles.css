@@ -43,7 +43,7 @@
 
   --gutter: 18px;    /* terminal surface horizontal padding */
   --measure: 640px;  /* terminal column width, ~72ch at 14px mono */
-  --terminal-inset: clamp(0px, calc(25vw - 280px), 180px);
+  --terminal-inset: clamp(0px, calc(36vw - 324px), 360px);
   --prose: 68ch;     /* reader body text cap */
   --pane-pad: 32px;  /* reader + photoviewer inner gutter */
 
@@ -52,8 +52,8 @@
   --r-lg: 12px;
 
   --t-fast: 120ms;
-  --t-overlay: 160ms;
-  --t-theme: 200ms;
+  --t-overlay: 200ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   --row-y: 6px;      /* vertical padding of selectable rows + ac items */
 
@@ -88,10 +88,7 @@ body {
   font-size: var(--fs-md);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  /* /theme swaps the palette; ease the brightness change. */
-  transition:
-    background-color var(--t-theme) ease-out,
-    color var(--t-theme) ease-out;
+  -moz-osx-font-smoothing: grayscale;
 }
 ::selection {
   background: color-mix(in oklab, var(--accent) 30%, transparent);
@@ -141,7 +138,7 @@ button {
 /* ── terminal surface ───────────────────────────────────────────── */
 @media (min-width: 1111px) {
   .scrollarea {
-    padding-block-start: var(--s8);
+    padding-block-start: clamp(var(--s8), 3vw, 48px);
   }
 }
 
@@ -154,15 +151,43 @@ button {
 
 .main {
   padding: 0 var(--gutter);
+}
+#route-output,
+#command-output {
   white-space: pre-wrap;
 }
+.route-title {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  margin: var(--s3) 0;
+}
+.page-error:empty, .reader-error:empty { display: none; }
+.reader-error { margin: var(--s2) var(--pane-pad) 0; }
+#route-output:not(:empty) ~ #command-output:not(:empty) { margin-block-start: var(--s6); }
 .topline,
 .main,
-.promptouter,
-.footer {
+.promptouter {
   max-width: calc(var(--measure) + 2 * var(--gutter));
   margin-inline-start: var(--terminal-inset);
 }
+.home-intro { margin-block-start: var(--s3); text-wrap: pretty; }
+.home-intro p { margin: 0; }
+.home-intro p + p { margin-block-start: var(--s4); }
+.home-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--s2);
+  margin-block-start: var(--s5);
+  color: var(--dim);
+}
+#home:not(:empty) + #command-output:not(:empty) { margin-block-start: var(--s6); }
+.home-links a { color: inherit; }
+.home-links a:focus-visible, .home-links a:active { color: var(--fg); }
+@media (hover: hover) and (pointer: fine) {
+  .home-links a:hover { color: var(--fg); }
+}
+
 /* A turn is one echoed command plus everything it printed. Compact,
    square command highlights mark each start without dimming scrollback. */
 .main .turn {
@@ -198,7 +223,6 @@ button {
   padding-left: calc(2ch - 1px);
   border-left: 1px solid var(--mute);
   text-wrap: pretty;
-  transition: border-color var(--t-theme) ease-out;
 }
 .main .block .name {
   font-weight: 700;
@@ -228,62 +252,41 @@ button {
   opacity: 1;
 }
 
-.section-head {
-  color: var(--dim);
-  font-weight: 600;
-  margin: var(--s6) 0 var(--s1);
-}
-.section-head:first-child {
-  margin-top: 0;
-}
-
-/* Selectable rows (projects, themes, travels). One row shape; the
-   highlight bleeds 8px past the text so it doesn't hug the glyphs. */
+/* Projects, travels, and themes share one selectable row rhythm. */
 .row-sel {
   display: flex;
-  gap: var(--s3);
+  flex-wrap: wrap;
+  gap: 0 var(--s3);
   align-items: baseline;
   padding: var(--row-y) var(--s2);
-  margin-left: calc(-1 * var(--s2));
+  margin-inline-start: calc(-1 * var(--s2));
   border-radius: var(--r-sm);
   white-space: normal;
 }
-.list-active {
-  background: var(--hi);
-}
-
-.proj-body {
+.list-active,
+.row-sel:focus-within { background: var(--hi); }
+.row-link { font-weight: 600; overflow-wrap: anywhere; }
+.proj-row, .travel-row { padding: 0; }
+.row-full-link {
+  display: flex;
   flex: 1;
   min-width: 0;
-}
-.proj-head {
-  display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  flex-wrap: wrap;
   gap: 0 var(--s3);
+  padding: calc(var(--row-y) + var(--s1)) var(--s2);
+  text-decoration: none;
 }
-.proj-tag {
-  color: var(--fg);
+.row-full-link .row-name { text-decoration: underline var(--mute); text-underline-offset: 3px; }
+.row-full-link .row-description { font-weight: 400; }
+@media (hover: hover) and (pointer: fine) {
+  .row-full-link:hover { background: var(--hi); border-radius: var(--r-sm); }
+  .row-full-link:hover .row-name { text-decoration-color: currentColor; }
 }
-.proj-more {
-  margin-top: var(--s2);
-}
+.row-description { min-width: 0; overflow-wrap: anywhere; }
+.row-meta { color: var(--dim); font-size: var(--fs-sm); }
+.theme-row .row-link { min-width: 14ch; }
 
-.proj-link,
-.travel-link {
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.theme-body {
-  display: flex;
-  gap: var(--s4);
-  align-items: center;
-  flex-wrap: wrap;
-}
-.theme-link {
-  min-width: 14ch;
-}
 .theme-swatches {
   display: inline-flex;
   gap: 6px;
@@ -296,28 +299,12 @@ button {
   display: inline-block;
   box-shadow: var(--img-edge);
 }
-.theme-active {
-  color: var(--dim);
-  font-size: var(--fs-sm);
-}
 
-.travels-grid {
-  display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(260px, 320px);
-  gap: var(--s8);
-}
-.travels-col {
-  min-width: 0;
-}
-.travel-date {
-  color: var(--dim);
-  font-size: var(--fs-sm);
-  white-space: nowrap;
-}
+.travel-row .row-meta { white-space: nowrap; }
 
 /* ── prompt + autocomplete ──────────────────────────────────────── */
 .promptouter {
-  padding: var(--s3) var(--gutter) var(--s1);
+  padding: var(--s3) var(--gutter) calc(var(--s4) + env(safe-area-inset-bottom, 0px));
   position: relative;
 }
 .promptbox {
@@ -338,6 +325,7 @@ button {
 }
 .promptbox input {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;
@@ -381,6 +369,7 @@ button {
   align-items: baseline;
   padding: var(--row-y) var(--s3) var(--row-y) calc(1px + 2ch);
   cursor: pointer;
+  touch-action: manipulation;
 }
 .autocomplete .item.active {
   background: var(--hi);
@@ -403,17 +392,6 @@ button {
   }
 }
 
-/* ── footer ─────────────────────────────────────────────────────── */
-.footer {
-  padding: var(--s2) var(--gutter) var(--s4);
-  font-size: var(--fs-sm);
-  color: var(--dim);
-  text-align: end;
-}
-.footer .time {
-  font-variant-numeric: tabular-nums;
-}
-
 .sr-only {
   position: absolute;
   width: 1px;
@@ -427,10 +405,8 @@ button {
 }
 
 /* ── overlays (reader + photoviewer) ────────────────────────────── */
-/* `hidden` stays the logical open/closed state for app.js. Visually the
-   overlay fades and the window settles along the same path in both
-   directions; visibility flips after the exit so nothing is clickable
-   mid-fade. */
+/* Command- and key-driven opens are instant. A pointer-open gets a short
+   fade for context; the reader's position never moves. */
 .reader,
 .photoviewer {
   position: fixed;
@@ -439,9 +415,7 @@ button {
   align-items: center;
   justify-content: center;
   padding: var(--s6);
-  transition:
-    opacity var(--t-overlay) ease-out,
-    visibility 0s linear;
+  overscroll-behavior: contain;
 }
 .reader {
   z-index: 200;
@@ -455,17 +429,14 @@ button {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition:
-    opacity var(--t-overlay) ease-out,
-    visibility 0s linear var(--t-overlay);
 }
-.reader-window {
-  transition: transform var(--t-overlay) ease-out;
+@media (prefers-reduced-motion: no-preference) {
+  .reader[data-pointer-open]:not([hidden]) {
+    transition: opacity var(--t-overlay) var(--ease-out);
+    @starting-style { opacity: 0; }
+  }
 }
-.reader[hidden] .reader-window,
-.photoviewer[hidden] .reader-window {
-  transform: translateY(6px) scale(0.985);
-}
+.reader[inert] { pointer-events: none; }
 .reader-backdrop {
   position: absolute;
   inset: 0;
@@ -543,8 +514,10 @@ button {
 
 .reader-grid {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: var(--s8);
+  grid-template-columns: 200px minmax(0, 1fr);
+  grid-template-areas: 'side intro' 'side body';
+  align-content: start;
+  gap: var(--s5) var(--s8);
   padding: var(--s6) var(--pane-pad) var(--s8);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -552,8 +525,19 @@ button {
   flex: 1;
 }
 
+.reader-intro { grid-area: intro; min-width: 0; }
+.reader-intro .proj-title {
+  margin: 0;
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+.reader-intro .proj-tagline { margin-block-start: var(--s1); color: var(--dim); font-size: var(--fs-sm); }
 /* Sidebar: key/value rows in the same register as /contact. */
 .reader-side {
+  grid-area: side;
   font-size: var(--fs-sm);
   line-height: 1.7;
   border-right: 1px solid var(--mute);
@@ -591,6 +575,7 @@ button {
 }
 
 .reader-body {
+  grid-area: body;
   font-size: var(--fs-lg);
   line-height: 1.7;
   min-width: 0;
@@ -644,6 +629,8 @@ button {
 .reader-body h1:first-child,
 .reader-body .proj-title {
   margin-top: 0;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
 }
 .reader-body .proj-tagline {
   font-size: var(--fs-sm);
@@ -659,6 +646,15 @@ button {
   padding: var(--s2);
   border-radius: var(--r-lg);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.screenshot-zoom {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  cursor: zoom-in;
 }
 .reader-body figure.full-bleed img {
   width: 100%;
@@ -798,8 +794,8 @@ button {
   align-items: center;
   justify-content: center;
   padding: var(--s6) 64px;
-  /* vertical page scroll still works; horizontal swipe is ours. */
-  touch-action: pan-y;
+  /* Keep native vertical gestures and pinch zoom. */
+  touch-action: pan-y pinch-zoom;
 }
 .photoviewer-photo {
   max-width: 100%;
@@ -941,6 +937,19 @@ button {
 }
 
 /* ── focus-visible (keyboard nav) ───────────────────────────────── */
+.skip-link {
+  position: absolute;
+  z-index: 10;
+  inset: var(--s2) auto auto var(--gutter);
+  padding: var(--s2) var(--s3);
+  background: var(--bg);
+  clip-path: inset(50%);
+}
+.skip-link:focus { clip-path: none; }
+:root.switching-theme,
+:root.switching-theme *,
+:root.switching-theme *::before,
+:root.switching-theme *::after { transition: none !important; }
 a:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--accent);
@@ -964,12 +973,11 @@ button:focus-visible {
 /* ── reader single column ───────────────────────────────────────── */
 @media (max-width: 720px) {
   .reader-grid {
-    grid-template-columns: 1fr;
-    gap: var(--s5);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'intro' 'side' 'body';
+    gap: var(--s4);
   }
-  /* Sidebar becomes a compact key/value block above the body so the
-     title is still on the first screen. Stack and travel items flow
-     inline, separated by dots. */
+  /* On narrow screens the title and pitch lead, then the compact metadata. */
   .reader-side {
     border-right: none;
     border-bottom: 1px solid var(--mute);
@@ -1008,17 +1016,13 @@ button:focus-visible {
   .scrollarea {
     overflow: visible;
     flex: none;
-  }
-  /* Honor iOS safe areas so the status row never tucks behind the home
-     indicator and the prompt stays tappable. */
-  .footer {
-    padding-bottom: calc(var(--s4) + env(safe-area-inset-bottom, 0px));
-  }
-  .promptouter {
-    padding-bottom: calc(var(--s1) + env(safe-area-inset-bottom, 0px) * 0.4);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
   /* iOS Safari zooms inputs under 16px on focus. */
-  .promptbox input {
+  .promptbox input,
+  .home-intro {
     font-size: 16px;
   }
   .autocomplete .item {
@@ -1026,28 +1030,28 @@ button:focus-visible {
     padding-bottom: 10px;
   }
   /* Touch: grow inline-link hit boxes toward 44px without moving text. */
-  .proj-link,
-  .travel-link {
+  .row-link:not(.row-full-link) {
     display: inline-block;
     padding: var(--s2) 6px;
     margin: calc(-1 * var(--s2)) -6px;
   }
-  .row-sel {
+  .row-sel:not(.proj-row, .travel-row) {
     padding-top: var(--s2);
     padding-bottom: var(--s2);
   }
-  .travels-grid {
-    grid-template-columns: 1fr;
-    gap: var(--s5);
-  }
+  .row-full-link { padding-block: var(--s3); }
 
   .reader,
   .photoviewer {
-    padding: var(--s2);
+    padding: max(var(--s2), env(safe-area-inset-top, 0px))
+      max(var(--s2), env(safe-area-inset-right, 0px))
+      max(var(--s2), env(safe-area-inset-bottom, 0px))
+      max(var(--s2), env(safe-area-inset-left, 0px));
   }
   .reader-window,
   .photoviewer-window {
     height: min(94vh, 100%);
+    height: min(94dvh, 100%);
     border-radius: var(--r-md);
   }
   .reader-titlebar {
@@ -1068,11 +1072,11 @@ button:focus-visible {
     margin: calc(-1 * var(--s2)) 0;
   }
   .reader-body {
-    font-size: var(--fs-h3);
-    line-height: 1.7;
+    font-size: 16px;
+    line-height: 1.75;
   }
   .reader-body h1,
-  .reader-body .proj-title {
+  .reader-intro .proj-title {
     font-size: var(--fs-h2);
   }
   .reader-body h2 {
@@ -1090,7 +1094,7 @@ button:focus-visible {
 
   .photoviewer-stage {
     padding: var(--s4) 52px;
-    min-height: 240px;
+    min-height: 44px;
   }
   .photoviewer-arrow {
     min-width: 44px;
@@ -1117,6 +1121,11 @@ button:focus-visible {
     width: 40px;
     height: 40px;
   }
+}
+@media (max-height: 420px) {
+  .photoviewer-stage { padding-block: var(--s1); }
+  .photoviewer-caption { padding-block-end: var(--s2); }
+  .photoviewer-thumbs { padding-block: var(--s2); }
 }
 
 /* Below the iPhone-SE width: tighten gutters. */

@@ -125,28 +125,38 @@
         <link rel="dns-prefetch" href="https://media.charliexue.com" />
         <link rel="stylesheet" href="/styles.css" />
 
-        <!-- The landing screen renders synchronously from data.js, so these
-         two files are the whole critical path: request them in the head,
-         alongside the stylesheet, instead of after the body parses.
-         `type=module` is deferred, so execution still waits for the DOM.
-         modulepreload on data.js keeps app.js's import from serializing
-         into a second round-trip (app.js -> discover import -> data.js). -->
+        <!-- Fetch the landing dependencies in parallel with app.js. -->
         <link rel="modulepreload" href="/data.js" />
+        <link rel="modulepreload" href="/components/command-suggestions.js" />
+        <link rel="modulepreload" href="/components/dom.js" />
+        <link rel="modulepreload" href="/components/photo-viewer.js" />
+        <link rel="modulepreload" href="/components/terminal-list.js" />
         <script type="module" src="/app.js"></script>
     </head>
     <body>
         <div class="scrollarea" id="scrollarea">
-            <div class="topline">
+            <a class="skip-link" href="#main">Skip to content</a>
+            <header class="topline">
                 <a class="cwd" href="/" translate="no">charliexue.com</a>
-            </div>
+            </header>
 
-            <div class="main" id="main"></div>
+            <main class="main" id="main" tabindex="-1">
+                <div id="home"></div>
+                <div id="route-output"></div>
+                <p class="warn page-error" id="page-error"></p>
+                <div id="command-output"></div>
+                <span class="sr-only" id="command-status" role="status"></span>
+            </main>
 
             <div class="promptouter">
                 <div class="promptbox" id="promptbox">
-                    <span class="chev">›</span>
+                    <span class="chev" aria-hidden="true">›</span>
                     <input
                         id="input"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-controls="ac"
+                        aria-expanded="false"
                         name="command"
                         enterkeyhint="go"
                         autocomplete="off"
@@ -158,19 +168,12 @@
                     />
                 </div>
             </div>
-
-            <div class="footer">
-                <span class="clock-block">
-                    <span class="mode" id="mode">ithaca</span> ·
-                    <span class="time" id="clock">—</span>
-                </span>
-            </div>
         </div>
         <!-- /scrollarea -->
 
-        <div class="autocomplete" id="ac"></div>
+        <div class="autocomplete" id="ac" role="listbox" aria-label="Commands" translate="no"></div>
 
-        <div class="photoviewer" id="photoviewer" hidden>
+        <div class="photoviewer" id="photoviewer" role="dialog" aria-modal="true" aria-labelledby="photoviewer-cmd" hidden>
             <div class="reader-backdrop"></div>
             <div class="reader-window photoviewer-window">
                 <div class="reader-titlebar">
@@ -191,6 +194,7 @@
                     <button
                         class="photoviewer-arrow l"
                         id="photoviewer-prev"
+                        type="button"
                         aria-label="previous photo"
                     >
                         ‹
@@ -203,6 +207,7 @@
                     <button
                         class="photoviewer-arrow r"
                         id="photoviewer-next"
+                        type="button"
                         aria-label="next photo"
                     >
                         ›
@@ -213,10 +218,11 @@
                     <span class="muted" id="photoviewer-caption-meta"></span>
                 </div>
                 <div class="photoviewer-thumbs" id="photoviewer-thumbs"></div>
+                <span class="sr-only" id="photoviewer-status" role="status"></span>
             </div>
         </div>
 
-        <div class="reader" id="reader" hidden>
+        <div class="reader" id="reader" role="dialog" aria-modal="true" aria-labelledby="reader-cmd" hidden>
             <div class="reader-backdrop"></div>
             <div class="reader-window">
                 <div class="reader-titlebar">
@@ -233,11 +239,17 @@
                         </button>
                     </span>
                 </div>
+                <p class="warn reader-error" id="reader-error" role="status"></p>
                 <div class="reader-grid">
+                    <header class="reader-intro" id="reader-intro"></header>
                     <aside class="reader-side" id="reader-side"></aside>
                     <div class="reader-body" id="reader-body"></div>
                 </div>
-                <div class="reader-nav" id="reader-nav"></div>
+                <nav class="reader-nav" id="reader-nav" aria-label="Browse entries">
+                    <a class="nav-link" id="reader-prev"></a>
+                    <a class="nav-link" id="reader-next"></a>
+                </nav>
+                <span class="sr-only" id="reader-status" role="status"></span>
             </div>
         </div>
 

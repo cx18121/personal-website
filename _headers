@@ -22,6 +22,8 @@
   Cache-Control: public, max-age=0, must-revalidate
 /styles.css
   Cache-Control: public, max-age=0, must-revalidate
+/components/*
+  Cache-Control: public, max-age=0, must-revalidate
 /vendor/*
   Cache-Control: public, max-age=86400
 /content/*

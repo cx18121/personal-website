@@ -1,3 +1,7 @@
+import { terminalRow } from './components/terminal-list.js';
+import { createCommandSuggestions } from './components/command-suggestions.js';
+import { createPhotoViewer, thumbSrcFor } from './components/photo-viewer.js';
+import { escapeHtml, setOverlayTitle } from './components/dom.js';
 import {
   PROJECTS,
   TRAVELS,
@@ -5,7 +9,6 @@ import {
   CONTACT,
   COMMANDS,
   THEMES,
-  LOCATION,
 } from './data.js';
 
 const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
@@ -13,16 +16,6 @@ const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 // reach scrollTo()/scrollIntoView() options.
 function scrollBehavior() {
   return REDUCE_MOTION.matches ? 'instant' : 'smooth';
-}
-
-function escapeHtml(s) {
-  return String(s).replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
-        c
-      ]
-  );
 }
 
 // Copies `data-copy` text and flashes a status in the adjacent `.copy-status`.
@@ -64,9 +57,7 @@ function levenshtein(a, b) {
   return dp[m][n];
 }
 function closestCommand(name) {
-  const travelNames = [...TRAVELS.visited, ...TRAVELS.wishlist].map(
-    (t) => t.name
-  );
+  const travelNames = TRAVELS.map((t) => t.name);
   const candidates = COMMANDS.map((c) => c.cmd.slice(1))
     .concat(PROJECTS.map((p) => p.name))
     .concat(travelNames);
@@ -95,7 +86,9 @@ function applyTheme(t) {
     row.querySelector('.theme-active').hidden =
       row.querySelector('[data-theme]').dataset.theme !== t.name;
   }
-  const r = document.documentElement.style;
+  const root = document.documentElement;
+  root.classList.add('switching-theme');
+  const r = root.style;
   r.setProperty('--bg', t.bg);
   r.setProperty('--fg', t.fg);
   r.setProperty('--accent', t.accent);
@@ -103,6 +96,8 @@ function applyTheme(t) {
   r.setProperty('--mute', t.mute);
   r.setProperty('--red', t.red);
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t.bg);
+  void getComputedStyle(root).backgroundColor;
+  root.classList.remove('switching-theme');
   try {
     localStorage.setItem('theme', t.name);
   } catch {}
@@ -133,9 +128,11 @@ function pathToCommand(pathname) {
   }
   return null;
 }
+function readerIndex(kind) {
+  return kind === 'project' ? '/projects' : '/travels';
+}
 function readerPath(kind, name) {
-  const prefix = kind === 'project' ? '/projects' : '/travels';
-  return `${prefix}/${encodeURIComponent(name)}`;
+  return `${readerIndex(kind)}/${encodeURIComponent(name)}`;
 }
 
 // Restore a previously-chosen theme on load. No-op (and the default stays) if
@@ -151,17 +148,23 @@ function readerPath(kind, name) {
 const ui = {
   main: null,
   input: null,
-  ac: null,
   box: null,
-  acItems: [],
-  acIdx: 0,
   history: [],
   histIdx: -1,
   init() {
-    this.main = document.getElementById('main');
+    this.home = document.getElementById('home');
+    this.route = document.getElementById('route-output');
+    this.main = document.getElementById('command-output');
+    this.status = document.getElementById('command-status');
     this.input = document.getElementById('input');
-    this.ac = document.getElementById('ac');
     this.box = document.getElementById('promptbox');
+    this.suggestions = createCommandSuggestions({
+      root: document.getElementById('ac'),
+      input: this.input,
+      anchor: this.box,
+      scroller: document.getElementById('scrollarea'),
+      onChoose: (command) => this.submitCommand(command),
+    });
     this.input.addEventListener('input', () => {
       // A long output leaves the prompt below the fold; typing brings the
       // whole box back. The browser alone only reveals the caret line, and
@@ -175,7 +178,7 @@ const ui = {
     );
     this.input.addEventListener('blur', () => {
       this.box.classList.remove('focused');
-      setTimeout(() => this.hideAc(), 120);
+      this.suggestions.close();
     });
     // Clicking dead space returns focus to the prompt, but only after the
     // mouse is released with nothing selected, so drag-to-select on the
@@ -197,16 +200,14 @@ const ui = {
       if (getSelection().isCollapsed) this.input.focus();
     });
     document.body.addEventListener('click', (e) => {
-      const opener = e.target.closest('[data-open]');
-      if (opener) {
+      const readerLink = e.target.closest('a[data-open], a[data-travels]');
+      if (readerLink) {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const adapter = readerLink.hasAttribute('data-open') ? projectReader : travelReader;
+        const name = readerLink.getAttribute(adapter.dataAttr);
         e.preventDefault();
-        this.run('/open ' + opener.dataset.open);
-        return;
-      }
-      const traveler = e.target.closest('[data-travels]');
-      if (traveler) {
-        e.preventDefault();
-        this.run('/travels ' + traveler.dataset.travels);
+        const trigger = document.activeElement === this.input && !e.detail ? this.input : readerLink;
+        tryOpenReader(adapter, name, { trigger, pointerOpen: e.detail > 0 });
         return;
       }
       const themer = e.target.closest('a[data-theme]');
@@ -221,21 +222,13 @@ const ui = {
         return;
       }
       const runner = e.target.closest('a[data-run]');
-      if (runner) {
+      if (runner && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
         e.preventDefault();
         this.run(runner.dataset.run);
       }
     });
-    const repositionAc = () => {
-      if (this.ac.classList.contains('show')) this.positionAc();
-    };
-    window.addEventListener('resize', repositionAc);
-    // Responsive layout can resize the prompt after the window event.
-    new ResizeObserver(repositionAc).observe(this.box);
-    window.addEventListener('scroll', repositionAc);
-    document.getElementById('scrollarea').addEventListener('scroll', repositionAc);
     document.addEventListener('keydown', (e) => {
-      if (e.key !== '/') return;
+      if (e.key !== '/' || document.getElementById('scrollarea').inert) return;
       const tag = document.activeElement?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       e.preventDefault();
@@ -243,14 +236,19 @@ const ui = {
       this.input.value = '/';
       this.updateAutocomplete();
     });
-    // Reader deep links (/projects/x, /travels/x) open a modal, so the page
-    // behind it should still be the landing screen. List routes (/projects,
-    // /travels, ...) asked for one view and get only that.
-    const deep = pathToCommand(location.pathname);
-    const opensReader = /^\/(open|travels) \S/.test(deep || '');
-    if (!deep || opensReader) this.landing();
-    if (deep) this.run(deep);
-    if (!matchMedia('(pointer: coarse)').matches) this.input.focus();
+    const [command, entryName] = (pathToCommand(location.pathname) || '').split(' ');
+    const adapter = entryName ? (command === '/open' ? projectReader : travelReader) : null;
+    if (adapter) {
+      this.showRoute(readerIndex(adapter.kind));
+      const trigger = Array.from(this.route.querySelectorAll(`a[${adapter.dataAttr}]`))
+        .find(link => link.getAttribute(adapter.dataAttr) === entryName);
+      tryOpenReader(adapter, entryName, { trigger, historyMode: 'deep' });
+    } else if (command) {
+      this.showRoute(command);
+    } else {
+      this.landing();
+      if (!matchMedia('(pointer: coarse)').matches) this.input.focus({ preventScroll: true });
+    }
     // Tab-away blurs the input; nothing refocuses on return, so all the
     // keydown handlers (incl. list nav) silently die. Reclaim focus on
     // window-focus and visibility-restore. Coarse-pointer devices opt out
@@ -262,7 +260,7 @@ const ui = {
         // (the reader, photoviewer, or any link/button).
         const ae = document.activeElement;
         if (ae && ae !== document.body && ae !== this.input) return;
-        this.input.focus();
+        if (ae === this.input || !this.route.firstElementChild) this.input.focus({ preventScroll: true });
       };
       window.addEventListener('focus', refocus);
       document.addEventListener('visibilitychange', refocus);
@@ -280,15 +278,15 @@ const ui = {
   print(html) {
     const div = document.createElement('div');
     div.innerHTML = html;
-    (this._turn || this.main).appendChild(div);
-    (this._turn || div).scrollIntoView({ block: 'start', behavior: scrollBehavior() });
+    (this._routeTarget || this._turn || this.main).appendChild(div);
+    if (!this._routeTarget) (this._turn || div).scrollIntoView({ block: 'start', behavior: 'instant' });
     return div;
   },
   echo(cmd) {
     this._turn = document.createElement('div');
     this._turn.className = 'turn';
     this.main.appendChild(this._turn);
-    this.print(`<div class="echo"><span class="chev">›</span> ${escapeHtml(cmd)}</div>`);
+    this.print(`<div class="echo" translate="no"><span class="chev" aria-hidden="true">›</span> ${escapeHtml(cmd)}</div>`);
   },
   block(html) {
     const el = this.print(`<div class="block">${html}</div>`);
@@ -298,7 +296,7 @@ const ui = {
   updateAutocomplete() {
     const v = this.input.value;
     if (!v.startsWith('/')) {
-      this.hideAc();
+      this.suggestions.close();
       return;
     }
     let matches;
@@ -318,121 +316,46 @@ const ui = {
       );
     } else if (travelMatch && v.includes(' ')) {
       const q = (travelMatch[1] || '').toLowerCase();
-      const visited = TRAVELS.visited
-        .filter((t) => t.name.toLowerCase().startsWith(q))
-        .map((t) => ({
-          cmd: '/travels ' + t.name,
-          desc: t.endMonth ? `${t.month}–${t.endMonth} ${t.year}` : `${t.month} ${t.year}`,
-        }));
-      const wish = TRAVELS.wishlist
-        .filter((t) => t.name.toLowerCase().startsWith(q))
-        .map((t) => ({ cmd: '/travels ' + t.name, desc: 'wishlist' }));
-      matches = [...visited, ...wish];
+      matches = TRAVELS.filter((trip) => trip.name.toLowerCase().startsWith(q))
+        .map((trip) => ({ cmd: '/travels ' + trip.name, desc: tripDate(trip) }));
     } else {
       const q = v.slice(1).toLowerCase();
       matches = COMMANDS.filter((c) => c.cmd.slice(1).startsWith(q));
     }
-    if (!matches.length) {
-      this.hideAc();
-      return;
-    }
-    this.acItems = matches;
-    this.acIdx = 0;
-    this.ac.innerHTML = matches
-      .map(
-        (m, i) =>
-          `<div class="item ${i === 0 ? 'active' : ''}" data-i="${i}">
-         <span class="cmd">${m.cmd}</span><span class="desc">${m.desc}</span>
-       </div>`
-      )
-      .join('');
-    this.ac.classList.add('show');
-    this.positionAc();
-    this.ac.querySelectorAll('.item').forEach((el) => {
-      el.addEventListener('mouseenter', () => this.setAcActive(+el.dataset.i));
-      el.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        this.run(this.acItems[+el.dataset.i].cmd);
-      });
-    });
+    this.suggestions.show(matches);
   },
-  positionAc() {
-    const style = getComputedStyle(this.ac);
-    const inset = parseFloat(style.getPropertyValue('--ac-inset'));
-    const gap = parseFloat(style.getPropertyValue('--ac-gap'));
-    const r = this.box.getBoundingClientRect();
-    const vh = window.innerHeight;
-    const margin = 12;
-    this.ac.style.left = r.left + inset + 'px';
-    this.ac.style.width = r.width - 2 * inset + 'px';
-    // Let the dropdown size to content so scrollHeight is readable, then
-    // cap at eight rows (the whole command catalog fits; long /open lists
-    // scroll). Row height is measured so mobile's taller rows still fit.
-    this.ac.style.maxHeight = '';
-    const content = this.ac.scrollHeight;
-    const row = this.ac.querySelector('.item')?.offsetHeight || 34;
-    const cap = row * 8 + (content - row * this.acItems.length);
-    const below = vh - r.bottom - margin - gap;
-    const above = r.top - margin - gap;
-    if (below >= above) {
-      // Drop below — fit dropdown to either content or available space.
-      const h = Math.min(content, below, cap);
-      this.ac.style.top = r.bottom + gap + 'px';
-      this.ac.style.maxHeight = h + 'px';
-    } else {
-      const h = Math.min(content, above, cap);
-      this.ac.style.top = r.top - h - gap + 'px';
-      this.ac.style.maxHeight = h + 'px';
-    }
-  },
-  hideAc() {
-    this.ac.classList.remove('show');
-    this.acItems = [];
-  },
-  setAcActive(i) {
-    this.acIdx = i;
-    const items = this.ac.querySelectorAll('.item');
-    items.forEach((el, j) => el.classList.toggle('active', i === j));
-    items[i]?.scrollIntoView({ block: 'nearest' });
+  submitCommand(value) {
+    this.input.value = '';
+    this.suggestions.close();
+    this.run(value);
   },
   onKey(e) {
-    // Reader/photoviewer own the keyboard while open. The input keeps focus
-    // (we never blur it — keeps the CLI metaphor intact), but its handlers
-    // must stand down so ↑↓⏎ don't fire commands behind the overlay, AND
-    // we must preventDefault so letter keys (e.g. `v`) don't insert text.
-    // Allow the rare keys the overlay shouldn't shadow (Cmd/Ctrl combos
-    // like ⌘R, ⌘L for browser actions).
+    // Only the topmost overlay handles keys while a reader is open.
     const reader = document.getElementById('reader');
     const pv = document.getElementById('photoviewer');
     if ((reader && !reader.hidden) || (pv && !pv.hidden)) {
       if (!e.metaKey && !e.ctrlKey) e.preventDefault();
       return;
     }
-    const acOpen = this.ac.classList.contains('show');
+    const selected = this.suggestions.selected;
+    const acOpen = selected !== undefined;
     const inputEmpty = !this.input.value;
     // ↑↓ navigate the most-recent rendered list when input is empty.
     // ↑ at row 0 falls through to history (boundary leak — the list hint
     // surfaces this so it isn't a hidden trick). ↓ at the last row no-ops.
-    // ←/→ jump between columns for columnar lists (travels).
     const listNav = inputEmpty && _activeList && !acOpen;
     if (e.key === 'ArrowDown' && acOpen) {
       e.preventDefault();
-      this.setAcActive(Math.min(this.acIdx + 1, this.acItems.length - 1));
+      this.suggestions.move(1);
     } else if (e.key === 'ArrowUp' && acOpen) {
       e.preventDefault();
-      this.setAcActive(Math.max(this.acIdx - 1, 0));
+      this.suggestions.move(-1);
     } else if (e.key === 'ArrowDown' && listNav) {
       e.preventDefault();
       if (_activeList.idx < _activeList.rows.length - 1) moveActiveList(1);
     } else if (e.key === 'ArrowUp' && listNav && _activeList.idx > 0) {
       e.preventDefault();
       moveActiveList(-1);
-    } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && listNav) {
-      // Only consume the key if a column actually moved; otherwise let the
-      // input cursor handle it (which on empty input is a no-op anyway).
-      if (moveActiveListHoriz(e.key === 'ArrowRight' ? 1 : -1)) {
-        e.preventDefault();
-      }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (!this.history.length) return;
@@ -449,29 +372,21 @@ const ui = {
         this.histIdx = -1;
         this.input.value = '';
       } else this.input.value = this.history[this.histIdx];
-    } else if (e.key === 'Tab' && acOpen) {
+    } else if (e.key === 'Tab' && acOpen && !e.shiftKey && this.input.value.trim() !== selected) {
       e.preventDefault();
-      this.input.value = this.acItems[this.acIdx].cmd + ' ';
+      this.input.value = selected + ' ';
       this.updateAutocomplete();
-    } else if (e.key === 'Tab') {
-      // No autocomplete to fill — swallow Tab so focus doesn't escape the
-      // prompt. There's nothing useful to tab to on the root view.
-      e.preventDefault();
     } else if (e.key === 'Enter') {
-      if (acOpen) this.input.value = this.acItems[this.acIdx].cmd;
-      if (inputEmpty && !acOpen && _activeList) {
+      if (inputEmpty && !acOpen && _activeList?.idx >= 0) {
         e.preventDefault();
         activateActiveList();
         return;
       }
-      const v = this.input.value;
-      this.input.value = '';
-      this.hideAc();
-      this.run(v);
+      this.submitCommand(acOpen ? selected : this.input.value);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       if (acOpen) {
-        this.hideAc();
+        this.suggestions.close();
       } else if (this.input.value) {
         this.input.value = '';
       }
@@ -479,38 +394,39 @@ const ui = {
       // first; blurring strands subsequent keypresses (incl. list-nav ↑↓).
     }
   },
-  // Landing screen: the shell has already run the commands a first-time
-  // visitor would type. Nothing enters history, so ↑ still starts empty.
-  //
-  // Synchronous end to end — every command it runs renders from data.js,
-  // which arrives with app.js. The whole screen lands in one paint instead
-  // of stuttering in as fetches resolve, so nothing here may await.
+  showRoute(command) {
+    const heading = document.createElement('h1');
+    heading.className = 'route-title';
+    heading.textContent = command;
+    heading.translate = false;
+    heading.tabIndex = -1;
+    this.route.replaceChildren(heading);
+    this._routeTarget = this.route;
+    try {
+      commandHandlers[command.slice(1)](this, []);
+    } finally {
+      this._routeTarget = null;
+    }
+  },
+  announce(message) {
+    this.status.textContent = message;
+  },
+  // The bio isn't part of the terminal's scrollback.
   landing() {
-    this.echo('/about');
-    commandHandlers.about(this);
-    this.echo('/projects');
-    renderProjectsList(this, { featuredOnly: true });
-    this.echo('/contact');
-    commandHandlers.contact(this);
-    this.print(
-      `<div class="comment"># more: <a data-run="/travels" href="/travels">/travels</a> · <a data-run="/theme" href="/theme">/theme</a></div>`
-    );
-    clearActiveList();
-    // print() smooth-scrolls to the bottom; a landing page should open at
-    // the top. `.scrollarea` scrolls on desktop, the window on mobile.
-    requestAnimationFrame(() => {
-      document.getElementById('scrollarea').scrollTo({ top: 0, behavior: 'instant' });
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    });
+    const paragraphs = ABOUT.split('\n\n').map(text => `<p>${escapeHtml(text)}</p>`).join('');
+    const links = ['/projects', '/contact'].map(cmd => `<a href="${cmd}" translate="no">${cmd}</a>`).join('<span aria-hidden="true">·</span>');
+    this.home.innerHTML = `<section class="home-intro" aria-label="About Charlie">${paragraphs}</section><nav class="home-links" aria-label="Explore">${links}</nav>`;
+    smartenTextNodes(this.home.querySelector('.home-intro'));
   },
   run(raw) {
     const cmd = (raw || '').trim();
-    this.echo(raw || '');
     if (!cmd) return;
+    this.announce('');
     this.history.push(cmd);
     this.histIdx = -1;
     const norm = cmd.startsWith('/') ? cmd.slice(1) : cmd;
     const [name, ...args] = norm.split(/\s+/);
+    if (name !== 'clear') this.echo(raw);
 
     // Drop the list highlight unless this command is "drill into the list"
     // (open/travels/theme with an argument). Those route through the body
@@ -523,11 +439,13 @@ const ui = {
 
     const handler = commandHandlers[name];
     if (handler) {
-      handler(this, args);
+      const summary = handler(this, args);
+      if (summary) this.announce(summary);
       return;
     }
 
     const suggestion = closestCommand(name);
+    this.announce(suggestion ? `${name}: command not found. Did you mean ${suggestion}?` : `${name}: command not found. Try /help.`);
     if (suggestion) {
       this.block(
         `<span class="warn">${escapeHtml(name)}: command not found</span>. did you mean <span class="key">${suggestion}</span>?`
@@ -550,47 +468,22 @@ let _activeList = null; // { rows: HTMLElement[], idx: number }
 function attachListNav(rows) {
   clearActiveList();
   if (!rows.length) return;
-  _activeList = { rows, idx: 0 };
-  rows[0].classList.add('list-active');
+  _activeList = { rows, idx: -1 };
 }
 function moveActiveList(d) {
   if (!_activeList) return;
   const { rows } = _activeList;
   const i = Math.max(0, Math.min(rows.length - 1, _activeList.idx + d));
   if (i === _activeList.idx) return;
-  rows[_activeList.idx].classList.remove('list-active');
+  rows[_activeList.idx]?.classList.remove('list-active');
   _activeList.idx = i;
   rows[i].classList.add('list-active');
   rows[i].scrollIntoView({ block: 'nearest' });
 }
-// Columnar lists (just /travels today) get ←/→ to jump between columns at
-// the same in-column index. Returns true if a jump happened, false if the
-// list isn't columnar — caller decides whether to preventDefault.
-function moveActiveListHoriz(d) {
-  if (!_activeList) return false;
-  const cur = _activeList.rows[_activeList.idx];
-  const col = cur.closest('.travels-col');
-  if (!col) return false;
-  const cols = [...col.parentElement.querySelectorAll('.travels-col')];
-  const target = cols[cols.indexOf(col) + d];
-  if (!target) return false;
-  const colRows = [...col.querySelectorAll('.travel-row')];
-  const inColIdx = colRows.indexOf(cur);
-  const targetRows = [...target.querySelectorAll('.travel-row')];
-  const targetRow = targetRows[Math.min(inColIdx, targetRows.length - 1)];
-  if (!targetRow) return false;
-  const newIdx = _activeList.rows.indexOf(targetRow);
-  if (newIdx < 0) return false;
-  cur.classList.remove('list-active');
-  _activeList.idx = newIdx;
-  targetRow.classList.add('list-active');
-  targetRow.scrollIntoView({ block: 'nearest' });
-  return true;
-}
 function activateActiveList() {
   if (!_activeList) return false;
   const row = _activeList.rows[_activeList.idx];
-  const link = row.querySelector('[data-open], [data-travels], [data-theme]');
+  const link = row?.querySelector('[data-open], [data-travels], [data-theme]');
   if (link) link.click();
   return true;
 }
@@ -606,34 +499,18 @@ function clearActiveList() {
 // command, not with the input-handling `ui` object. Each takes the
 // ui sink and produces a `ui.block(...)` of rendered HTML.
 
-function renderProjectOpen(ui, p) {
-  openReader(projectReader, p.name).catch((err) => {
-    ui.block(
-      `<span class="warn">couldn't load ${escapeHtml(p.name)} (${escapeHtml(err.message)}).</span> refresh to try again.`
-    );
-  });
+function tripDate({ month, endMonth, year }) {
+  return `${month}${endMonth ? `–${endMonth}` : ''} ${year}`;
 }
 
 function renderTravelsList(ui) {
-  const visitedRows = TRAVELS.visited
-    .map(
-      (t) =>
-        `<div class="row-sel travel-row"><a class="travel-link" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a><span class="travel-date">${escapeHtml(t.endMonth ? `${t.month}–${t.endMonth}` : t.month)} ${t.year}</span></div>`
-    )
-    .join('');
-  const wishRows = TRAVELS.wishlist
-    .map(
-      (t) =>
-        `<div class="row-sel travel-row"><a class="travel-link" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a></div>`
-    )
-    .join('');
-  const wrap = ui.block(
-    `<div class="travels-grid">` +
-      `<div class="travels-col"><div class="section-head">visited</div>${visitedRows}</div>` +
-      `<div class="travels-col"><div class="section-head">wishlist</div>${wishRows}</div>` +
-      `</div>`
-  );
+  const rows = TRAVELS.map(trip => terminalRow({
+    className: 'travel-row', label: trip.name, href: readerPath('travel', trip.name), action: 'travels', value: trip.name, wholeRow: true,
+    after: `<span class="row-meta">${escapeHtml(tripDate(trip))}</span>`,
+  }));
+  const wrap = ui.block(rows.join(''));
   attachListNav([...wrap.querySelectorAll('.travel-row')]);
+  return `${TRAVELS.length} trips listed.`;
 }
 
 // ── markdown reader ──────────────────────────────────────────────
@@ -801,18 +678,19 @@ async function loadProjectMd(name) {
 // _currentReader = { adapter, name } — drives keyboard nav, history, & escape.
 // `adapter` is one of projectReader / travelReader (defined below).
 let _currentReader = null;
+let _readerReturnFocus = null;
 
 // Browser-history integration for the reader modal.
 // Each reader open pushes a history entry so the browser back button closes
 // the modal instead of leaving the site. Internal nav between readers
 // (sidebar/arrow keys) replaces state to avoid polluting history.
-let _popstateInProgress = false;
-function pushReaderState(name, kind) {
+let readerRequest = 0;
+function pushReaderState(name, kind, mode) {
   const url = readerPath(kind, name);
-  if (history.state?.reader || location.pathname === url) {
+  if (mode === 'deep' || history.state?.reader) {
     // Carry the prior `pushed` flag forward across sibling navigation.
     // Deep-link entry has no prior state, so pushed stays false.
-    const pushed = !!history.state?.pushed;
+    const pushed = mode !== 'deep' && !!history.state?.pushed;
     history.replaceState({ reader: true, kind, name, pushed }, '', url);
   } else {
     history.pushState({ reader: true, kind, name, pushed: true }, '', url);
@@ -882,69 +760,78 @@ function attachProjectPhotoHandlers(projectName) {
   figures.forEach((fig, i) => {
     const img = fig.querySelector('img');
     if (!img) return;
-    img.style.cursor = 'zoom-in';
-    img.addEventListener('click', () => {
-      openProjectPhotoViewer(photos, i, projectName);
-    });
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'screenshot-zoom';
+    button.setAttribute('aria-label', `Enlarge screenshot ${i + 1}: ${photos[i].caption}`);
+    img.before(button);
+    button.append(img);
+    button.addEventListener('click', () => openProjectPhotoViewer(photos, i, projectName, button));
   });
 }
 
 // Project-flavored photoviewer open. Same overlay as the travel viewer; we
-// just construct _photoState directly from the figure list and stamp the
-// titlebar to read the project name instead of the travel name.
-function openProjectPhotoViewer(photos, idx, projectName) {
-  _photoState = { photos, idx, travelName: null, when: '' };
-  setOverlayTitle('photoviewer-cmd', 'projects', projectName);
-  renderThumbs();
-  renderPhoto();
-  document.getElementById('photoviewer').hidden = false;
+// pass it the project figures and label it with the project name.
+function openProjectPhotoViewer(photos, idx, projectName, trigger) {
+  photoViewer.open({ photos, idx, kind: 'projects', name: projectName, trigger });
 }
 
 const travelReader = {
   kind: 'travel',
   dataAttr: 'data-travels',
-  list: () => [...TRAVELS.visited, ...TRAVELS.wishlist],
+  list: () => TRAVELS,
   async loadEntry(name) {
-    const visited = TRAVELS.visited.find((t) => t.name === name);
-    if (visited) {
-      const text = await loadTravelMd(name);
-      const { fm, body } = parseFrontmatter(text);
-      fm.name = fm.name || name;
-      fm.country = fm.country || visited.country;
-      fm.photos = normalizeTravelPhotos(fm.photos, fm.name || name);
-      _travelFmCache.set(name, fm);
-      const html = renderMarkdown(body);
-      return { fm, html, isVisited: true };
-    }
-    const wish = TRAVELS.wishlist.find((t) => t.name === name);
-    return { entry: wish, isVisited: false };
+    const trip = TRAVELS.find((t) => t.name === name);
+    const text = await loadTravelMd(name);
+    const { fm, body } = parseFrontmatter(text);
+    fm.name = fm.name || name;
+    fm.country = fm.country || trip.country;
+    fm.photos = normalizeTravelPhotos(fm.photos, name);
+    _travelFmCache.set(name, fm);
+    return { fm, html: renderMarkdown(body) };
   },
-  renderSidebar(name, _data) {
-    return renderTravelSidebar(name);
-  },
-  renderBody(entry, data) {
-    if (data.isVisited) return renderTravelVisitedBody(data.fm, data.html);
-    return renderTravelWishlistBody(data.entry || entry);
+  renderSidebar: renderTravelSidebar,
+  renderBody(_entry, data) {
+    return renderTravelBody(data.fm, data.html);
   },
 };
 
 // Titlebar reads as a path (projects/sparrow) so it doesn't duplicate the
 // body heading and says which kind of entry is open.
-function setOverlayTitle(id, kind, name) {
-  document.getElementById(id).innerHTML =
-    `<span class="path">${kind}/</span>${escapeHtml(name)}`;
+function tryOpenReader(adapter, name, options) {
+  return openReader(adapter, name, options).catch(() => {
+    const message = `Couldn't load ${name}. Try opening it again.`;
+    ui.announce(message);
+    const existing = document.querySelector('#reader-error');
+    const error = document.querySelector('#reader').hidden ? document.querySelector('#page-error') : existing;
+    error.textContent = message;
+  });
 }
 
-async function openReader(adapter, name) {
+async function openReader(adapter, name, { trigger, pointerOpen = false, historyMode = 'push' } = {}) {
+  const request = ++readerRequest;
+  const returnFocus = trigger || document.activeElement;
+  document.getElementById('reader-error').textContent = '';
+  document.getElementById('page-error').textContent = '';
   const list = adapter.list();
   const idx = list.findIndex((e) => e.name === name);
-  if (idx < 0) return;
+  if (idx < 0) {
+    if (historyMode === 'deep') history.replaceState(null, '', readerIndex(adapter.kind));
+    throw new Error('Entry not found');
+  }
   const entry = list[idx];
   const prev = list[(idx - 1 + list.length) % list.length];
   const next = list[(idx + 1) % list.length];
 
-  await loadMarked();
-  const data = await adapter.loadEntry(name);
+  let data;
+  try {
+    await loadMarked();
+    data = await adapter.loadEntry(name);
+  } catch (error) {
+    if (request !== readerRequest) return;
+    throw error;
+  }
+  if (request !== readerRequest) return;
 
   setOverlayTitle('reader-cmd', adapter.kind === 'project' ? 'projects' : 'travels', name);
   document.getElementById('reader-count').textContent =
@@ -956,20 +843,42 @@ async function openReader(adapter, name) {
   const bodyEl = document.getElementById('reader-body');
   bodyEl.innerHTML = adapter.renderBody(entry, data);
   smartenTextNodes(bodyEl);
-  document.getElementById('reader-nav').innerHTML = `
-    <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(prev.name)}" href="${readerPath(adapter.kind, prev.name)}">← ${escapeHtml(prev.name)}</a>
-    <a class="nav-link" ${adapter.dataAttr}="${escapeHtml(next.name)}" href="${readerPath(adapter.kind, next.name)}">${escapeHtml(next.name)} →</a>
-  `;
+  const header = document.getElementById('reader-intro');
+  const title = bodyEl.firstElementChild;
+  header.replaceChildren(title);
+  if (bodyEl.firstElementChild?.classList.contains('proj-tagline')) header.append(bodyEl.firstElementChild);
+  for (const [selector, sibling, label, direction] of [
+    ['reader-prev', prev, `← ${prev.name}`, 'Previous'],
+    ['reader-next', next, `${next.name} →`, 'Next'],
+  ]) {
+    const link = document.getElementById(selector);
+    link.removeAttribute('data-open');
+    link.removeAttribute('data-travels');
+    link.setAttribute(adapter.dataAttr, sibling.name);
+    link.href = readerPath(adapter.kind, sibling.name);
+    link.textContent = label;
+    link.setAttribute('aria-label', `${direction}: ${sibling.name}`);
+  }
 
   _currentReader = { adapter, name };
   // Tell the server which entry was opened — client-side routing means this
   // open fires no other request it can see.
   beacon({ e: 'view', k: adapter.kind, n: name });
   const reader = document.getElementById('reader');
+  const opening = reader.hidden;
+  if (opening) {
+    _readerReturnFocus = returnFocus;
+    reader.toggleAttribute('data-pointer-open', pointerOpen);
+    document.getElementById('scrollarea').inert = true;
+  }
   reader.hidden = false;
   document.body.style.overflow = 'hidden';
   document.getElementById('reader-body').parentElement.scrollTop = 0;
-  if (!_popstateInProgress) pushReaderState(name, adapter.kind);
+  if (opening || !reader.contains(document.activeElement)) {
+    document.getElementById('reader-close').focus({ preventScroll: true });
+  }
+  document.getElementById('reader-status').textContent = `${name}, ${idx + 1} of ${list.length}.`;
+  if (historyMode !== 'pop') pushReaderState(name, adapter.kind, historyMode);
 
   // Optional adapter hook for post-mount DOM work (e.g. attaching click
   // handlers to rendered figures). Runs after innerHTML is set.
@@ -994,12 +903,10 @@ function renderTravelSidebar(currentName) {
     const active = t.name === currentName ? ' active' : '';
     return `<a class="item trav-item${active}" data-travels="${escapeHtml(t.name)}" href="/travels/${encodeURIComponent(t.name)}">${escapeHtml(t.name)}</a>`;
   };
-  const row = (label, list) =>
-    `<div class="row"><div class="label">${label}</div><div class="val">${list.map(item).join('')}</div></div>`;
-  return row('visited', TRAVELS.visited) + row('wishlist', TRAVELS.wishlist);
+  return `<div class="row"><div class="label">trips</div><div class="val">${TRAVELS.map(item).join('')}</div></div>`;
 }
 
-function renderTravelVisitedBody(fm, html) {
+function renderTravelBody(fm, html) {
   const title = `<h1 class="proj-title">${escapeHtml(fm.name || '')}</h1>`;
   const subParts = [];
   // Skip country when name is country-level (e.g. name=italy, country=italy) —
@@ -1051,27 +958,11 @@ function renderTravelVisitedBody(fm, html) {
             })
             .join('')}
         </div>
-        <button class="trav-photos-btn" tabindex="-1" data-trav-photos="${name}">view all ${photos.length} photos</button>
+        <button class="trav-photos-btn" type="button" data-trav-photos="${name}">view all ${photos.length} photos</button>
       </div>`
     : '';
 
   return title + sub + html + dl + photoBtn;
-}
-
-function renderTravelWishlistBody(entry) {
-  const title = `<h1 class="proj-title">${escapeHtml(entry.name)}</h1>`;
-  // Same country-equals-name suppression as visited entries.
-  const sameAsName =
-    entry.country &&
-    entry.country.toLowerCase() === (entry.name || '').toLowerCase();
-  const countryPart = entry.country && !sameAsName
-    ? `${escapeHtml(entry.country)} · `
-    : '';
-  const sub = `<div class="proj-tagline">${countryPart}someday</div>`;
-  const why = entry.why
-    ? `<p class="trav-why">${escapeHtml(entry.why)}</p>`
-    : '';
-  return title + sub + why;
 }
 
 // Photos parsed from frontmatter `photos:` list entries shaped as either:
@@ -1116,223 +1007,64 @@ function navigateReader(delta) {
   const idx = list.findIndex((e) => e.name === name);
   if (idx < 0) return;
   const target = list[(idx + delta + list.length) % list.length];
-  openReader(adapter, target.name);
+  tryOpenReader(adapter, target.name);
 }
 
-function closeReader() {
+function closeReader({ fromHistory = false } = {}) {
+  ++readerRequest;
   const reader = document.getElementById('reader');
   if (!reader || reader.hidden) return;
+  photoViewer.close();
   reader.hidden = true;
+  document.getElementById('scrollarea').inert = false;
   document.body.style.overflow = '';
   _currentReader = null;
-  ui.input?.focus();
-  // If the modal was opened during this browsing session (pushed), undo
-  // the entry. If it was a deep-link entry (replaced), silently clean the
-  // URL so the visitor stays on the site instead of being navigated away.
-  if (!_popstateInProgress && history.state?.reader) {
-    if (history.state.pushed) {
-      history.back();
-    } else {
-      // Deep-link entry: silently reset to root so the visitor stays on
-      // the site (rather than navigating away) and the URL bar doesn't
-      // keep showing /projects/spectre after the reader is closed.
-      history.replaceState({}, '', '/');
-    }
+  const target = _readerReturnFocus?.isConnected && _readerReturnFocus !== document.body
+    ? _readerReturnFocus : (ui.route.firstElementChild || ui.input);
+  _readerReturnFocus = null;
+  target?.focus({ preventScroll: true });
+  if (!fromHistory && history.state?.reader) {
+    const { pushed, kind } = history.state;
+    if (pushed) history.back();
+    else history.replaceState(null, '', readerIndex(kind));
   }
 }
 
-// Browser back button closes the reader; forward re-opens if applicable.
 window.addEventListener('popstate', () => {
-  _popstateInProgress = true;
-  try {
-    if (!history.state?.reader) {
-      closeReader();
-    } else {
-      const { kind, name } = history.state;
-      const adapter = kind === 'project' ? projectReader : travelReader;
-      openReader(adapter, name);
-    }
-  } finally {
-    _popstateInProgress = false;
+  if (!history.state?.reader) {
+    closeReader({ fromHistory: true });
+    return;
   }
+  const { kind, name } = history.state;
+  tryOpenReader(kind === 'project' ? projectReader : travelReader, name, { historyMode: 'pop' });
 });
 
-// ── photo viewer ──────────────────────────────────────────────────
-let _photoState = null; // { photos: [{src, caption}], idx, travelName, when }
+const photoViewer = createPhotoViewer({
+  root: document.getElementById('photoviewer'),
+  reader: document.getElementById('reader'),
+  reducedMotion: REDUCE_MOTION,
+  keepTabInOverlay,
+  shouldThrottleArrowNav,
+});
 
-function openPhotoViewer(travelName, startIdx = 0) {
+function openPhotoViewer(travelName, startIdx = 0, trigger = document.activeElement) {
   const fm = _travelFmCache.get(travelName);
   if (!fm || !fm.photos || !fm.photos.length) return;
   const idx = Math.min(Math.max(0, startIdx | 0), fm.photos.length - 1);
-  _photoState = { photos: fm.photos, idx, travelName, when: fm.when || '' };
-  setOverlayTitle('photoviewer-cmd', 'travels', travelName);
-  renderThumbs();
-  renderPhoto();
-  const pv = document.getElementById('photoviewer');
-  pv.hidden = false;
+  photoViewer.open({ photos: fm.photos, idx, kind: 'travels', name: travelName, when: fm.when || '', trigger });
 }
-
-// Thumbnail strip — rendered once per open, then `active` class shifts as
-// the user navigates. Each thumb uses the same src as the full image, with
-// background-size:cover — fine at 48px even for full-res photos.
-// Derive thumb URL from full-size src: insert /thumbs/ before the filename.
-// On 404, the <img> onerror handler falls back to the full-size src so
-// galleries without a thumbs/ subdir still work.
-function thumbSrcFor(src) {
-  const slash = src.lastIndexOf('/');
-  if (slash < 0) return src;
-  return src.slice(0, slash) + '/thumbs/' + src.slice(slash + 1);
-}
-
-function renderThumbs() {
-  if (!_photoState) return;
-  const strip = document.getElementById('photoviewer-thumbs');
-  const { photos } = _photoState;
-  strip.innerHTML = photos
-    .map((p, i) => {
-      const thumb = thumbSrcFor(p.src);
-      const full = encodeURI(p.src);
-      return `<button class="photoviewer-thumb" data-i="${i}" aria-label="photo ${i + 1}: ${escapeHtml(p.caption || '')}"><img src="${encodeURI(thumb)}" loading="lazy" decoding="async" alt="" onerror="this.onerror=null;this.src='${full}'" /></button>`;
-    })
-    .join('');
-  strip.querySelectorAll('.photoviewer-thumb').forEach((el) => {
-    el.addEventListener('click', () => {
-      const i = parseInt(el.dataset.i, 10);
-      if (!_photoState || Number.isNaN(i)) return;
-      _photoState.idx = i;
-      renderPhoto();
-    });
-  });
-}
-
-// src -> { w, h } captured from neighbor preloads. Lets the next renderPhoto
-// stamp intrinsic dimensions before the swap, so the browser allocates space
-// up-front and there's no brief layout flash when portrait↔landscape.
-const _photoDims = new Map();
-const _photoPreloads = new Set();
-
-function renderPhoto() {
-  if (!_photoState) return;
-  const { photos, idx, when } = _photoState;
-  const p = photos[idx];
-  const img = document.getElementById('photoviewer-img');
-  const dims = _photoDims.get(p.src);
-  if (dims) {
-    img.width = dims.w;
-    img.height = dims.h;
-  } else {
-    img.removeAttribute('width');
-    img.removeAttribute('height');
+function keepTabInOverlay(event, overlay) {
+  if (event.key !== 'Tab') return;
+  const controls = [...overlay.querySelectorAll('a[href], button:not([disabled])')]
+    .filter(el => el.tabIndex >= 0 && el.getClientRects().length);
+  const first = controls[0];
+  const last = controls.at(-1);
+  if (!first) return;
+  const active = document.activeElement;
+  if (!controls.includes(active) || (event.shiftKey ? active === first : active === last)) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
   }
-  img.src = p.src;
-  img.alt = p.caption || '';
-  // Dim while the new bytes arrive so the swap never shows a blank stage.
-  // `complete` is true synchronously for cached images, so nothing flickers
-  // when the neighbor preload already landed.
-  img.classList.toggle('loading', !img.complete);
-  img.addEventListener(
-    'load',
-    () => {
-      img.classList.remove('loading');
-      if (!dims) _photoDims.set(p.src, { w: img.naturalWidth, h: img.naturalHeight });
-    },
-    { once: true }
-  );
-  img.addEventListener('error', () => img.classList.remove('loading'), { once: true });
-  document.getElementById('photoviewer-count').textContent =
-    `${idx + 1} / ${photos.length}`;
-  document.getElementById('photoviewer-caption-text').textContent =
-    p.caption || '';
-  document.getElementById('photoviewer-caption-meta').textContent = when;
-
-  // Mark the active thumb + scroll it into view.
-  const strip = document.getElementById('photoviewer-thumbs');
-  if (strip) {
-    strip.querySelectorAll('.photoviewer-thumb').forEach((el, i) => {
-      const active = i === idx;
-      el.classList.toggle('active', active);
-      if (active) el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: scrollBehavior() });
-    });
-  }
-
-  // Preload ±2 neighbors so arrow-key browsing stays instant. Each preloaded
-  // Image also seeds _photoDims so the next swap has dimensions ready,
-  // eliminating the portrait↔landscape relayout flash.
-  const n = photos.length;
-  [1, -1, 2, -2].forEach((d) => {
-    const q = photos[((idx + d) % n + n) % n];
-    if (!q || !q.src || _photoDims.has(q.src) || _photoPreloads.has(q.src)) return;
-    _photoPreloads.add(q.src);
-    const probe = new Image();
-    probe.decoding = 'async';
-    probe.onload = () => {
-      _photoPreloads.delete(q.src);
-      _photoDims.set(q.src, { w: probe.naturalWidth, h: probe.naturalHeight });
-    };
-    probe.onerror = () => _photoPreloads.delete(q.src);
-    probe.src = q.src;
-  });
-}
-
-// Touch swipe on the photoviewer stage. The photo tracks the finger 1:1
-// and commits on release by velocity sign, falling back to distance for
-// a slow drag. The set loops, so there is no edge to rubber-band against.
-// Filtered to touch so mouse drags on desktop don't trigger.
-// touch-action: pan-y keeps vertical scroll native.
-(function attachSwipe() {
-  const stage = document.getElementById('photoviewer-stage');
-  const img = document.getElementById('photoviewer-img');
-  if (!stage || !img) return;
-  let startX = null;
-  let lastX = 0;
-  let lastT = 0;
-  let vx = 0; // px/ms, smoothed
-  stage.addEventListener('pointerdown', (e) => {
-    if (e.pointerType !== 'touch') return;
-    startX = lastX = e.clientX;
-    lastT = e.timeStamp;
-    vx = 0;
-    img.classList.add('dragging');
-    try {
-      stage.setPointerCapture(e.pointerId);
-    } catch {}
-  });
-  stage.addEventListener('pointermove', (e) => {
-    if (startX === null) return;
-    const dt = e.timeStamp - lastT || 1;
-    vx = 0.7 * vx + 0.3 * ((e.clientX - lastX) / dt);
-    lastX = e.clientX;
-    lastT = e.timeStamp;
-    img.style.transform = `translateX(${e.clientX - startX}px)`;
-  });
-  const release = (commit) => {
-    if (startX === null) return;
-    const dx = lastX - startX;
-    startX = null;
-    img.classList.remove('dragging');
-    img.style.transform = '';
-    if (!commit) return;
-    const fast = Math.abs(vx) > 0.4;
-    const far = Math.abs(dx) > 60;
-    if (fast) navigatePhoto(vx < 0 ? 1 : -1);
-    else if (far) navigatePhoto(dx < 0 ? 1 : -1);
-  };
-  stage.addEventListener('pointerup', () => release(true));
-  stage.addEventListener('pointercancel', () => release(false));
-})();
-
-function navigatePhoto(delta) {
-  if (!_photoState) return;
-  const n = _photoState.photos.length;
-  _photoState.idx = (_photoState.idx + delta + n) % n;
-  renderPhoto();
-}
-
-function closePhotoViewer() {
-  const pv = document.getElementById('photoviewer');
-  if (!pv || pv.hidden) return;
-  pv.hidden = true;
-  _photoState = null;
 }
 
 const ARROW_NAV_REPEAT_MS = 100;
@@ -1407,30 +1139,10 @@ document.addEventListener('visibilitychange', cancelReaderScroll);
 window.addEventListener('blur', cancelReaderScroll);
 
 document.addEventListener('keydown', (e) => {
-  const pv = document.getElementById('photoviewer');
-  if (pv && !pv.hidden) {
-    // Photo viewer takes precedence over the reader behind it.
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      closePhotoViewer();
-      return;
-    }
-    if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      if (shouldThrottleArrowNav(e)) return;
-      navigatePhoto(-1);
-      return;
-    }
-    if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      if (shouldThrottleArrowNav(e)) return;
-      navigatePhoto(1);
-      return;
-    }
-    return;
-  }
+  if (photoViewer.handleKey(e)) return;
   const reader = document.getElementById('reader');
   if (!reader || reader.hidden) return;
+  keepTabInOverlay(e, reader);
   if (e.key === 'Escape') {
     e.preventDefault();
     closeReader();
@@ -1447,19 +1159,24 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
     e.preventDefault();
-    if (e.repeat) return; // OS auto-repeat ignored; rAF loop owns the velocity
-    startReaderScroll(e.key === 'ArrowDown' ? 1 : -1);
+    const dir = e.key === 'ArrowDown' ? 1 : -1;
+    if (REDUCE_MOTION.matches) {
+      document.getElementById('reader-body').parentElement.scrollBy({ top: dir * 48, behavior: 'instant' });
+    } else if (!e.repeat) {
+      startReaderScroll(dir);
+    }
   }
   if (e.key === 'v' || e.key === 'V') {
     // Open the photoviewer for the current entry (travel reader only —
     // project reader has no `data-trav-photos` button to target).
-    const trigger = document.querySelector('#reader-body [data-trav-photos]');
+    const trigger = document.querySelector('#reader-body .trav-photos-btn');
     if (trigger) {
       e.preventDefault();
       trigger.click();
     }
     return;
   }
+  if (e.key === ' ' && e.target.closest('button')) return;
   if (e.key === 'PageDown' || e.key === 'PageUp' || e.key === ' ') {
     e.preventDefault();
     const scroller = document.getElementById('reader-body')?.parentElement;
@@ -1473,39 +1190,21 @@ document.addEventListener('keydown', (e) => {
   }
 });
 document.addEventListener('click', (e) => {
-  if (e.target.classList?.contains('reader-backdrop')) {
-    // Click backdrop closes whichever overlay is on top.
-    const pv = document.getElementById('photoviewer');
-    if (pv && !pv.hidden) closePhotoViewer();
-    else closeReader();
-  }
+  if (e.target.matches('#reader > .reader-backdrop')) closeReader();
   if (e.target.id === 'reader-close' || e.target.closest?.('#reader-close')) {
     e.preventDefault();
     closeReader();
-  }
-  if (e.target.id === 'photoviewer-close' || e.target.closest?.('#photoviewer-close')) {
-    e.preventDefault();
-    closePhotoViewer();
   }
   const photoBtn = e.target.closest('[data-trav-photos]');
   if (photoBtn) {
     e.preventDefault();
     const startIdx = parseInt(photoBtn.dataset.idx, 10);
-    openPhotoViewer(photoBtn.dataset.travPhotos, Number.isFinite(startIdx) ? startIdx : 0);
+    const trigger = photoBtn.tabIndex < 0
+      ? photoBtn.closest('.trav-photos').querySelector('.trav-photos-btn') : photoBtn;
+    openPhotoViewer(photoBtn.dataset.travPhotos, Number.isFinite(startIdx) ? startIdx : 0, trigger);
   }
-  if (e.target.id === 'photoviewer-prev') {
-    e.preventDefault();
-    navigatePhoto(-1);
-  }
-  if (e.target.id === 'photoviewer-next') {
-    e.preventDefault();
-    navigatePhoto(1);
-  }
-});
 
-// Footer · current location ("mode") from data.js.
-const modeEl = document.getElementById('mode');
-if (modeEl) modeEl.textContent = LOCATION;
+});
 
 // Same-origin behavioral beacon. One on load and one per project/travel
 // opened (client-side routing hides opens from the server). This is evidence
@@ -1539,61 +1238,50 @@ function beacon(params) {
 // (those need cmd+desc, not behavior). Keeping the two related but
 // separate: catalog vs. dispatch table.
 
-// `featuredOnly` is the landing digest: featured rows plus a one-line link
-// to the full list, so the prompt stays near the fold on first load.
-function renderProjectsList(ui, { featuredOnly = false } = {}) {
-  const renderRow = (p) => {
-    const status =
-      p.status === 'wip' ? `<span class="warn">[wip]</span> ` : '';
-    // Name + tagline only; the reader sidebar carries the stack.
-    return `<div class="row-sel proj-row"><div class="proj-body"><div class="proj-head">${status}<a class="proj-link" data-open="${p.name}" href="/projects/${encodeURIComponent(p.name)}">${p.name}</a><span class="proj-tag">${escapeHtml(p.tagline || '')}</span></div></div></div>`;
-  };
-  const featured = PROJECTS.filter((p) => p.featured);
-  const others = PROJECTS.filter((p) => !p.featured);
-  const sections = [];
-  if (featured.length)
-    sections.push(
-      (featuredOnly ? '' : `<div class="section-head">featured</div>`) +
-        featured.map(renderRow).join('')
-    );
-  if (others.length && featuredOnly)
-    sections.push(
-      `<div class="proj-more"><a class="key" data-run="/projects" href="/projects">+${others.length} more</a></div>`
-    );
-  else if (others.length)
-    sections.push(
-      `<div class="section-head">more</div>` +
-        others.map(renderRow).join('')
-    );
-  const wrap = ui.block(sections.join(''));
+function renderProjectsList(ui) {
+  const renderRow = (project) => terminalRow({
+    className: 'proj-row', label: project.name, href: readerPath('project', project.name), action: 'open', value: project.name, wholeRow: true,
+    before: project.status === 'wip' ? '<span class="warn">[wip]</span>' : '',
+    after: `<span class="row-description">${escapeHtml(project.tagline || '')}</span>`,
+  });
+  const wrap = ui.block(PROJECTS.map(renderRow).join(''));
   attachListNav([...wrap.querySelectorAll('.proj-row')]);
+  return `${PROJECTS.length} projects listed.`;
 }
 
 function renderThemeList(ui) {
   const current = document.body.dataset.theme || THEMES[0].name;
-  const rows = THEMES.map((t) => {
-    const swatches = [t.bg, t.fg, t.accent]
-      .map(
-        (c) => `<span class="theme-swatch" style="background:${c}"></span>`
-      )
-      .join('');
-    const active =
-      `<span class="theme-active"${t.name === current ? '' : ' hidden'}>active</span>`;
-    return `<div class="row-sel theme-row"><div class="theme-body"><a class="proj-link theme-link" data-theme="${t.name}" href="?cmd=theme+${encodeURIComponent(t.name)}">${t.name}</a><span class="theme-swatches">${swatches}</span>${active}</div></div>`;
-  }).join('');
-  const wrap = ui.block(rows);
+  const rows = THEMES.map((theme) => {
+    const swatches = [theme.bg, theme.fg, theme.accent]
+      .map(color => `<span class="theme-swatch" style="background:${color}"></span>`).join('');
+    return terminalRow({
+      className: 'theme-row', label: theme.name, action: 'theme', value: theme.name,
+      href: `?cmd=theme+${encodeURIComponent(theme.name)}`,
+      after: `<span class="theme-swatches" aria-hidden="true">${swatches}</span><span class="theme-active row-meta"${theme.name === current ? '' : ' hidden'}>active</span>`,
+    });
+  });
+  const wrap = ui.block(rows.join(''));
   attachListNav([...wrap.querySelectorAll('.theme-row')]);
+  return `${THEMES.length} themes listed.`;
 }
 
 const commandHandlers = {
   clear(ui) {
-    ui.main.innerHTML = '';
+    const returnFocusToMain = document.activeElement !== ui.input;
+    ++readerRequest;
+    ui.route.replaceChildren();
+    ui.main.replaceChildren();
+    document.getElementById('page-error').textContent = '';
     ui._turn = null;
+    ui.input.value = '';
+    ui.suggestions.close();
     clearActiveList();
-    // Reset the URL so a refresh doesn't re-run the last deep-linked command.
-    if (location.pathname !== '/' || location.search) {
-      history.replaceState({}, '', '/');
-    }
+    if (!ui.home.firstElementChild) ui.landing();
+    if (location.pathname !== '/') history.replaceState(null, '', '/');
+    if (returnFocusToMain) document.getElementById('main').focus({ preventScroll: true });
+    document.getElementById('scrollarea').scrollTo({ top: 0, behavior: 'instant' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    return 'Returned to the homepage.';
   },
   help(ui) {
     const width = Math.max(...COMMANDS.map((c) => c.cmd.length)) + 2;
@@ -1607,32 +1295,27 @@ const commandHandlers = {
   },
   about(ui) {
     ui.block(ABOUT);
+    return 'About Charlie.';
   },
   contact(ui) {
     ui.block(CONTACT);
+    return 'Contact options: email, GitHub, and LinkedIn.';
   },
   projects(ui) {
-    renderProjectsList(ui);
+    return renderProjectsList(ui);
   },
   travels(ui, args) {
     if (args.length === 0) {
-      renderTravelsList(ui);
-      return;
+      return renderTravelsList(ui);
     }
     const target = args[0].toLowerCase();
-    const visited = TRAVELS.visited.find((t) => t.name === target);
-    const wish = TRAVELS.wishlist.find((t) => t.name === target);
-    if (!visited && !wish) {
+    if (!TRAVELS.some((t) => t.name === target)) {
       ui.block(
         `<span class="warn">travels "${escapeHtml(target)}" not found</span>. try <span class="key">/travels</span> to list.`
       );
       return;
     }
-    openReader(travelReader, target).catch((err) => {
-      ui.block(
-        `<span class="warn">couldn't load ${escapeHtml(target)} (${escapeHtml(err.message)}).</span> refresh to try again.`
-      );
-    });
+    tryOpenReader(travelReader, target);
   },
   open(ui, args) {
     const p = PROJECTS.find((x) => x.name === args[0]);
@@ -1646,12 +1329,11 @@ const commandHandlers = {
       );
       return;
     }
-    renderProjectOpen(ui, p);
+    tryOpenReader(projectReader, p.name);
   },
   theme(ui, args) {
     if (args.length === 0) {
-      renderThemeList(ui);
-      return;
+      return renderThemeList(ui);
     }
     const target = args[0];
     const t = THEMES.find((x) => x.name === target);
@@ -1670,26 +1352,3 @@ const commandHandlers = {
 
 ui.init();
 beacon({ e: 'load' });
-
-function updateClock() {
-  const t = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  }).format(new Date());
-  document.getElementById('clock').textContent = t
-    .replace(' AM', 'am')
-    .replace(' PM', 'pm');
-}
-updateClock();
-setTimeout(
-  () => {
-    updateClock();
-    setInterval(updateClock, 60_000);
-  },
-  60_000 - (Date.now() % 60_000)
-);
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) updateClock();
-});

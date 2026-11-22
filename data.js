@@ -4,107 +4,60 @@
 // detail (stack, links, shipped, screenshots) stays in that project's
 // frontmatter at content/projects/{name}.md and is loaded on open.
 //
-// Order is rendering order (top = most prominent); `featured` is the
-// above-the-fold digest. `status: 'wip'` is the only status the list
-// badges; the rest is plain bookkeeping.
+// Projects are shown in this order. Only `wip` gets a status badge.
 export const PROJECTS = [
   {
     name: 'sparrow',
     tagline: 'cold email startups automatically',
     status: 'live',
-    featured: true,
   },
   {
     name: 'spectre',
-    tagline: 'fight anyone from anywhere in real-time',
+    tagline: '1v1 fighting game with your phone as a motion controller',
     status: 'live',
-    featured: true,
   },
   {
     name: 'cve-intel',
     tagline: 'natural language CVE search and analysis engine',
     status: 'live',
-    featured: true,
   },
   {
     name: 'podium',
     tagline: 'on-device speech practice app',
     status: 'live',
-    featured: false,
   },
   {
     name: 'philly-vibe-map',
     tagline: 'view neighborhood vibes from 1.1M yelp reviews',
     status: 'live',
-    featured: false,
   },
   {
     name: 'auto-shorts',
     tagline: 'end-to-end shortform video pipeline',
     status: 'live',
-    featured: false,
   },
   {
     name: 'algotrader-bridge',
     tagline: 'turn tradingview signals into automatic ibkr trading',
     status: 'live',
-    featured: false,
   },
   {
     name: 'skyops',
     tagline: 'charter flight operations platform',
     status: 'live',
-    featured: false,
   },
   {
     name: 'vulnscan',
     tagline: 'AST-based python vuln scanner with fix suggestions',
     status: 'dormant',
-    featured: false,
   },
 ];
 
-// Visited entries have full content at /content/travels/{name}.md.
-// Wishlist entries are one-liners only — `why` is rendered inline.
-// Ordered most-recent first (visited) / by preference (wishlist).
-export const TRAVELS = {
-  visited: [
-    {
-      name: 'yunnan',
-      country: 'china',
-      month: 'jul',
-      year: 2024,
-    },
-    {
-      name: 'peru',
-      country: 'peru',
-      month: 'jun',
-      endMonth: 'jul',
-      year: 2025,
-    },
-  ],
-  wishlist: [
-    {
-      name: 'patagonia',
-      country: 'argentina / chile',
-      why: 'hike the o loop',
-    },
-    {
-      name: 'vietnam',
-      country: 'vietnam',
-      why: 'motorbike around the entire country',
-    },
-    {
-      name: 'guatemala',
-      country: 'guatemala',
-      why: 'see volcanos erupt',
-    },
-  ],
-};
-
-// Footer mode indicator — current location/context. Shown next to the moon
-// glyph. Update when you move.
-export const LOCATION = 'ithaca';
+// Each trip has a matching entry at /content/travels/{name}.md.
+export const TRAVELS = [
+  { name: 'yunnan', country: 'china', month: 'jul', year: 2024 },
+  { name: 'peru', country: 'peru', month: 'jun', endMonth: 'jul', year: 2025 },
+];
 
 export const ABOUT = `Hi, I'm Charlie. I'm studying Computer Science and Statistics at Cornell University.
 
@@ -122,10 +75,10 @@ export const COMMANDS = [
   { cmd: '/about', desc: 'info about me' },
   { cmd: '/projects', desc: 'some things I’ve built' },
   { cmd: '/contact', desc: 'how to reach me' },
-  { cmd: '/travels', desc: 'some places I’ve visited & want to visit' },
+  { cmd: '/travels', desc: 'places I’ve visited' },
   { cmd: '/theme', desc: 'change the color scheme' },
   { cmd: '/help', desc: 'list commands' },
-  { cmd: '/clear', desc: 'clear the screen' },
+  { cmd: '/clear', desc: 'return to the clean homepage' },
 ];
 
 // Each theme is six tones. Only the accent carries hue; it is the theme's
@@ -147,7 +100,7 @@ export const THEMES = [
     accent: '#56b6c2',
     dim: '#9398a6',
     mute: '#3e4451',
-    red: '#e06c75',
+    red: '#ee7c86',
   },
   {
     name: 'catppuccin',
