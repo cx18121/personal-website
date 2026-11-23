@@ -173,6 +173,10 @@ button {
 .home-intro { margin-block-start: var(--s3); text-wrap: pretty; }
 .home-intro p { margin: 0; }
 .home-intro p + p { margin-block-start: var(--s4); }
+.home-contact {
+  margin-block-start: var(--s5);
+  white-space: pre-wrap;
+}
 .home-links {
   display: flex;
   flex-wrap: wrap;
@@ -227,7 +231,6 @@ button {
 .main .block .name {
   font-weight: 700;
 }
-/* Copy-to-clipboard button rendered as a link (e.g. email in /contact). */
 .copy {
   all: unset;
   color: var(--fg);
@@ -244,12 +247,9 @@ button {
   touch-action: manipulation;
   transition: text-decoration-color var(--t-fast) ease-out;
 }
-.copy-status {
-  opacity: 0;
-  transition: opacity var(--t-fast) ease-out;
-}
-.copy-status.show {
-  opacity: 1;
+.copy.copied {
+  color: var(--accent);
+  text-decoration-color: currentColor;
 }
 
 /* Projects, travels, and themes share one selectable row rhythm. */
@@ -1024,7 +1024,8 @@ button:focus-visible {
   }
   /* iOS Safari zooms inputs under 16px on focus. */
   .promptbox input,
-  .home-intro {
+  .home-intro,
+  .home-contact {
     font-size: 16px;
   }
   .autocomplete .item {

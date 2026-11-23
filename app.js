@@ -7,6 +7,7 @@ import {
   TRAVELS,
   ABOUT,
   CONTACT,
+  HOME_CONTACT,
   COMMANDS,
   THEMES,
 } from './data.js';
@@ -16,25 +17,6 @@ const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 // reach scrollTo()/scrollIntoView() options.
 function scrollBehavior() {
   return REDUCE_MOTION.matches ? 'instant' : 'smooth';
-}
-
-// Copies `data-copy` text and flashes a status in the adjacent `.copy-status`.
-async function copyToClipboard(el) {
-  const status = el.nextElementSibling;
-  const show = (msg, cls) => {
-    if (!status?.classList.contains('copy-status')) return;
-    status.textContent = `  ${msg}`;
-    status.classList.toggle('warn', cls === 'warn');
-    status.classList.add('show');
-    clearTimeout(status._t);
-    status._t = setTimeout(() => status.classList.remove('show'), 1600);
-  };
-  try {
-    await navigator.clipboard.writeText(el.dataset.copy);
-    show('copied');
-  } catch {
-    show('select and copy manually', 'warn');
-  }
 }
 
 // Levenshtein-based "did you mean" suggestion across known commands + project names.
@@ -218,7 +200,19 @@ const ui = {
       }
       const copier = e.target.closest('[data-copy]');
       if (copier) {
-        copyToClipboard(copier);
+        navigator.clipboard.writeText(copier.dataset.copy).then(
+          () => {
+            copier.textContent = 'copied';
+            copier.classList.add('copied');
+            clearTimeout(copier._restore);
+            copier._restore = setTimeout(() => {
+              copier.textContent = copier.dataset.copy;
+              copier.classList.remove('copied');
+            }, 1200);
+            this.announce('Email copied.');
+          },
+          () => this.announce('Copy failed. Select the email to copy it.')
+        );
         return;
       }
       const runner = e.target.closest('a[data-run]');
@@ -414,8 +408,8 @@ const ui = {
   // The bio isn't part of the terminal's scrollback.
   landing() {
     const paragraphs = ABOUT.split('\n\n').map(text => `<p>${escapeHtml(text)}</p>`).join('');
-    const links = ['/projects', '/contact'].map(cmd => `<a href="${cmd}" translate="no">${cmd}</a>`).join('<span aria-hidden="true">·</span>');
-    this.home.innerHTML = `<section class="home-intro" aria-label="About Charlie">${paragraphs}</section><nav class="home-links" aria-label="Explore">${links}</nav>`;
+    const links = ['/projects', '/travels'].map(cmd => `<a href="${cmd}" translate="no">${cmd}</a>`).join('<span aria-hidden="true">·</span>');
+    this.home.innerHTML = `<section class="home-intro" aria-label="About Charlie">${paragraphs}</section><section class="home-contact" aria-label="Contact">${HOME_CONTACT}</section><nav class="home-links" aria-label="Explore">${links}</nav>`;
     smartenTextNodes(this.home.querySelector('.home-intro'));
   },
   run(raw) {
@@ -426,7 +420,7 @@ const ui = {
     this.histIdx = -1;
     const norm = cmd.startsWith('/') ? cmd.slice(1) : cmd;
     const [name, ...args] = norm.split(/\s+/);
-    if (name !== 'clear') this.echo(raw);
+    if (name !== 'clear') this.echo(commandHandlers[name] ? '/' + norm : raw);
 
     // Drop the list highlight unless this command is "drill into the list"
     // (open/travels/theme with an argument). Those route through the body

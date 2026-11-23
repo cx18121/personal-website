@@ -67,18 +67,21 @@ I'm currently a software engineer at Pango (YC S26) where I build agents to auto
 
 In my free time, I enjoy rock climbing, hiking, and skiing. I was also 7x challenger and peaked at top 20 in North America (top 0.004%) in Teamfight Tactics.`;
 
-export const CONTACT = `email     <button type="button" class="copy" data-copy="cx267@cornell.edu">cx267@cornell.edu</button><span class="copy-status muted" aria-live="polite"></span>
-github    <a href="https://github.com/cx18121" target="_blank" rel="noreferrer">github.com/cx18121</a>
-linkedin  <a href="https://www.linkedin.com/in/charles-xue/" target="_blank" rel="noreferrer">linkedin.com/in/charles-xue</a>`;
+const EMAIL = `<button type="button" class="copy" data-copy="cx267@cornell.edu">cx267@cornell.edu</button>`;
+const GITHUB = `<a href="https://github.com/cx18121" target="_blank" rel="noreferrer">github.com/cx18121</a>`;
+const LINKEDIN = `<a href="https://www.linkedin.com/in/charles-xue/" target="_blank" rel="noreferrer">linkedin.com/in/charles-xue</a>`;
+
+export const CONTACT = `email     ${EMAIL}
+github    ${GITHUB}
+linkedin  ${LINKEDIN}`;
+
+export const HOME_CONTACT = [EMAIL, GITHUB, LINKEDIN].join('\n');
 
 export const COMMANDS = [
-  { cmd: '/about', desc: 'info about me' },
   { cmd: '/projects', desc: 'some things I’ve built' },
-  { cmd: '/contact', desc: 'how to reach me' },
   { cmd: '/travels', desc: 'places I’ve visited' },
   { cmd: '/theme', desc: 'change the color scheme' },
   { cmd: '/help', desc: 'list commands' },
-  { cmd: '/clear', desc: 'return to the clean homepage' },
 ];
 
 // Each theme is six tones. Only the accent carries hue; it is the theme's
