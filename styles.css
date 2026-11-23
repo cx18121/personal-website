@@ -394,6 +394,8 @@ button {
 
 .sr-only {
   position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
   width: 1px;
   height: 1px;
   padding: 0;
